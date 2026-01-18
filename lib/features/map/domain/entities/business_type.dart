@@ -1,0 +1,15 @@
+enum BusinessType {
+  drinkAndEat,
+  shop,
+  personalService,
+  professionalService,
+  healthAndWellness,
+  education,
+  constructionAndHome,
+  transportation,
+  entertainment,
+  technology,
+  informalBusiness,
+  mixed,
+  unknown,
+}

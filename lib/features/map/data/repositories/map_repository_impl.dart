@@ -1,0 +1,55 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dartz/dartz.dart';
+import 'package:ournego/core/failures.dart';
+import 'package:ournego/features/map/data/datasources/geolocator_datasource.dart';
+import 'package:ournego/features/map/data/datasources/supabase_map_datasource.dart';
+import 'package:ournego/features/map/data/models/business_model.dart';
+import 'package:ournego/features/map/domain/entities/app_position.dart';
+import 'package:ournego/features/map/domain/entities/business.dart';
+import 'package:ournego/features/map/domain/repositories/map_repository.dart';
+
+class MapRepositoryImpl implements MapRepository {
+  final GeolocatorDatasource geolocationDatasource;
+  final SupabaseMapDatasource businessesDatasource;
+  final FirebaseFirestore firestore;
+
+  MapRepositoryImpl({
+    required this.geolocationDatasource,
+    required this.businessesDatasource,
+    required this.firestore,
+  });
+
+  @override
+  Future<Either<Failure, AppPosition>> getCurrentLocation() async {
+    try {
+      final position = await geolocationDatasource.getCurrentLocation();
+      return Right(
+        AppPosition(latitude: position.latitude, longitude: position.longitude),
+      );
+    } on Exception {
+      return Left(LocationPermissionDeniedFailure());
+    } catch (_) {
+      return Left(ServerFailure());
+    }
+  }
+  /*
+  @override
+  Stream<List<Business>> getBusinesses() {
+    return firestore.collection('businesses').snapshots().map((snapshot) {
+      return snapshot.docs
+          .map((doc) => BusinessModel.fromFirestore(doc))
+          .toList();
+    });
+  }*/
+
+  @override
+  Stream<List<Business>> getBusinesses() {
+    final businesses = businessesDatasource.getBusinesses();
+
+    return businesses.map((data) {
+      return data.map((businesses) {
+        return BusinessModel.fromSupabase(businesses);
+      }).toList();
+    });
+  }
+}

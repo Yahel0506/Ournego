@@ -1,0 +1,4 @@
+include: package:flutter_lints/flutter.yaml
+analyzer:
+  errors:
+    empty_constructor_bodies: ignore

@@ -1,0 +1,77 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ournego/features/auth/domain/usecases/has_profile_usecase.dart';
+import 'package:ournego/features/auth/presentation/pages/complete_profile_screen.dart';
+import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
+import 'package:ournego/features/map/presentation/pages/map_screen.dart';
+import 'package:ournego/features/navigation/presentation/providers/navigation_provider.dart';
+import 'package:ournego/features/navigation/presentation/widgets/navigation_bar_widget.dart';
+
+class MainLayoutScreen extends ConsumerStatefulWidget {
+  const MainLayoutScreen({super.key});
+
+  @override
+  ConsumerState<MainLayoutScreen> createState() => _MainLayoutScreenState();
+}
+
+class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
+  @override
+  void initState() {
+    final authRepository = ref.read(authRepositoryProvider);
+    final hasProfile = HasProfileUsecase(
+      repository: authRepository,
+    ).checkHasProfile();
+
+    hasProfile.then((result) {
+      result.fold((failure) {}, (hasProfile) {
+        if (!hasProfile) {
+          Navigator.popUntil(context, (route) => route.isFirst);
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => CompleteProfileScreen()),
+          );
+        }
+      });
+    });
+
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = ref.watch(pageControllerProvider);
+
+    return Scaffold(
+      resizeToAvoidBottomInset: false,
+      body: Stack(
+        alignment: Alignment.bottomCenter,
+        children: [
+          Column(
+            children: [
+              Expanded(
+                child: Stack(
+                  children: [
+                    PageView(
+                      physics: ScrollPhysics(
+                        parent: NeverScrollableScrollPhysics(),
+                      ),
+                      controller: controller,
+                      onPageChanged: (index) {
+                        ref
+                            .read(navigationIndexProvider.notifier)
+                            .setIndex(index);
+                      },
+                      children: [Placeholder(), MapScreen(), Placeholder()],
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 56),
+            ],
+          ),
+          AppNavigationBar(),
+        ],
+      ),
+    );
+  }
+}
