@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
 
 class TopNavigationBarWidget extends ConsumerWidget {
   const TopNavigationBarWidget({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final asyncUser = ref.watch(profileStreamProvider);
+    final imageUrl = asyncUser.value?.profilePicture ?? '';
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 40.0),
       child: Row(
@@ -50,17 +54,22 @@ class TopNavigationBarWidget extends ConsumerWidget {
               minimumSize: Size(60, 60),
               padding: EdgeInsets.zero,
             ),
-            child: Container(
-              width: 44,
+            child: SizedBox(
               height: 44,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Color(0x7E6A6A6A),
-              ),
-              child: Icon(
-                Icons.person,
-                size: 28,
-                color: Theme.of(context).colorScheme.onSurface,
+              width: 44,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(30),
+                child: Image(
+                  image: NetworkImage(imageUrl),
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Icon(
+                      Icons.account_circle_rounded,
+                      size: 44,
+                      color: Colors.grey,
+                    );
+                  },
+                ),
               ),
             ),
           ),
