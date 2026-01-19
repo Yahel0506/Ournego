@@ -132,11 +132,9 @@ class BusinessInformationWidget extends ConsumerWidget {
                     context: context,
                     builder: (context) {
                       return AlertDialog(
-                        content: Center(
-                          child: Text(
-                            'Lamentablemente, este negocio no cuenta con número de teléfono :(',
-                            style: OurnegoTextStyles.body,
-                          ),
+                        content: Text(
+                          'Lamentablemente, este negocio no cuenta con número de teléfono :(',
+                          style: OurnegoTextStyles.body,
                         ),
                         backgroundColor: Theme.of(context).colorScheme.surface,
                         actions: [
@@ -483,11 +481,9 @@ class _BusinessOwnerContact extends ConsumerWidget {
                         context: context,
                         builder: (context) {
                           return AlertDialog(
-                            content: Center(
-                              child: Text(
-                                'Lamentablemente, este negocio no cuenta con número de teléfono :(',
-                                style: OurnegoTextStyles.body,
-                              ),
+                            content: Text(
+                              'Lamentablemente, este negocio no cuenta con número de teléfono :(',
+                              style: OurnegoTextStyles.body,
                             ),
                             backgroundColor: Theme.of(
                               context,
@@ -543,11 +539,9 @@ class _BusinessOwnerContact extends ConsumerWidget {
                         context: context,
                         builder: (context) {
                           return AlertDialog(
-                            content: Center(
-                              child: Text(
-                                'Lamentablemente, este negocio no cuenta con número de teléfono :(',
-                                style: OurnegoTextStyles.body,
-                              ),
+                            content: Text(
+                              'Lamentablemente, este negocio no cuenta con número de teléfono :(',
+                              style: OurnegoTextStyles.body,
                             ),
                             backgroundColor: Theme.of(
                               context,
