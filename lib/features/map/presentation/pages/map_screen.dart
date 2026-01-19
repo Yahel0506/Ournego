@@ -233,6 +233,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final location =
         ref.watch(mapProvider).value ?? AppPosition(latitude: 0, longitude: 0);
     final businessState = ref.watch(businessesStreamProvider);
+    final businessFavorites = ref.watch(businessFavoritesUsecaseProvider);
 
     final bool isDarkModeOn =
         MediaQuery.of(context).platformBrightness == Brightness.dark;
@@ -330,6 +331,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                       final BusinessMarker marker = GetBusinessMarkerUsecase(
                         business: business,
                       )();
+
 
                       if (_isMarkerVisible) {
                         return Marker(

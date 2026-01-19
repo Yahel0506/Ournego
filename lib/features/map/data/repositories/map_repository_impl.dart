@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:ournego/core/failures.dart';
 import 'package:ournego/features/map/data/datasources/geolocator_datasource.dart';
 import 'package:ournego/features/map/data/datasources/supabase_map_datasource.dart';
@@ -51,5 +52,35 @@ class MapRepositoryImpl implements MapRepository {
         return BusinessModel.fromSupabase(businesses);
       }).toList();
     });
+  }
+
+  @override
+  Future<Either<Failure, void>> addBusinessToFavorites(String businessId) async {
+    try {
+      await businessesDatasource.addBusinessToFavorites(businessId);
+      return Right(null);
+    } on Exception {
+      return Left(ServerFailure());
+    } catch (_) {
+      return Left(ServerFailure());
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> removeBusinessFromFavorites(String businessId) async {
+    try {
+      await businessesDatasource.removeBusinessFromFavorites(businessId);
+      return Right(null);
+    } on Exception {
+      return Left(ServerFailure());
+    } catch (_) {
+      return Left(ServerFailure());
+    }
+  }
+
+  @override
+  Stream<bool> isBusinessFavorite(String businessId)  {
+      final isFavorite =  businessesDatasource.isBusinessFavorite(businessId);
+      return isFavorite;
   }
 }

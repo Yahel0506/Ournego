@@ -14,6 +14,8 @@ import 'package:ournego/features/map/presentation/providers/notifiers/map_notifi
 import 'package:ournego/features/map/presentation/providers/notifiers/modal_state_notifier.dart';
 import 'package:ournego/features/map/presentation/providers/notifiers/selected_business_notifier.dart';
 
+import '../../domain/usecases/business_favorites_usecase.dart';
+
 final geolocationDatasourceProvider = Provider((ref) {
   return GeolocatorDatasource();
 });
@@ -64,3 +66,16 @@ final ownerProfileStreamProvider = StreamProvider.autoDispose
       final authRepository = ref.watch(authRepositoryProvider);
       return GetProfileUsecase(repository: authRepository)(userId: ownerId);
     });
+
+final isBusinessFavoriteStreamProvider = StreamProvider.autoDispose
+    .family<bool, String>((ref, businessId) {
+      final repository = ref.read(mapRepositoryProvider);
+      return BusinessFavoritesUsecase(
+        repository: repository,
+      ).isFavorite(businessId);
+    });
+
+final businessFavoritesUsecaseProvider = Provider((ref) {
+  final repository = ref.read(mapRepositoryProvider);
+  return BusinessFavoritesUsecase(repository: repository);
+});

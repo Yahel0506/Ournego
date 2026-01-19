@@ -42,6 +42,9 @@ class BusinessInformationWidget extends ConsumerWidget {
         ? const ClampingScrollPhysics()
         : const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics());
 
+    final isFavorite =
+        ref.watch(isBusinessFavoriteStreamProvider(business.id)).value ?? false;
+
     List<Widget> listChildren;
 
     if (isCollapsed) {
@@ -49,6 +52,7 @@ class BusinessInformationWidget extends ConsumerWidget {
       // ------------------------------- Colapsed Widget List ------------------------------------//
       // -----------------------------------------------------------------------------------------//
       listChildren = [
+        // ------------------------------- Business Name and Icon ------------------------------------//
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 2),
           child: Row(
@@ -62,14 +66,19 @@ class BusinessInformationWidget extends ConsumerWidget {
                   softWrap: false,
                 ),
               ),
-              Icon(icon),
+              _BusinessFavoriteButton(
+                isFavorite: isFavorite,
+                business: business,
+              ),
             ],
           ),
         ),
         const SizedBox(height: 5),
+        // ------------------------------- Action Buttons ------------------------------------//
         Row(
           children: [
             const Spacer(),
+            // ------------------------------- General Opinion Button ------------------------------------//
             ElevatedButton(
               style: ButtonStyle(
                 shadowColor: WidgetStatePropertyAll(Colors.transparent),
@@ -84,6 +93,7 @@ class BusinessInformationWidget extends ConsumerWidget {
               child: const Icon(Icons.emoji_emotions, size: 20),
             ),
             const Spacer(),
+            // ------------------------------- Search Products Button ------------------------------------//
             ElevatedButton(
               style: ButtonStyle(
                 shadowColor: WidgetStatePropertyAll(Colors.transparent),
@@ -103,6 +113,7 @@ class BusinessInformationWidget extends ConsumerWidget {
               ),
             ),
             const Spacer(),
+            // ------------------------------- Message Button ------------------------------------//
             ElevatedButton(
               style: ButtonStyle(
                 shadowColor: WidgetStatePropertyAll(Colors.transparent),
@@ -160,6 +171,7 @@ class BusinessInformationWidget extends ConsumerWidget {
       listChildren = [
         // ------------------------------- Business Name ------------------------------------//
         Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               child: Text(
@@ -169,7 +181,8 @@ class BusinessInformationWidget extends ConsumerWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            Align(alignment: Alignment.topRight, child: Icon(icon, size: 30)),
+            // ---------------- Favorite Button ------------------------------------//
+            _BusinessFavoriteButton(isFavorite: isFavorite, business: business),
           ],
         ),
         const SizedBox(height: 10),
@@ -247,6 +260,48 @@ class BusinessInformationWidget extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _BusinessFavoriteButton extends ConsumerWidget {
+  const _BusinessFavoriteButton({
+    super.key,
+    required this.isFavorite,
+    required this.business,
+  });
+
+  final bool isFavorite;
+  final Business business;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ElevatedButton(
+      style: ButtonStyle(
+        shadowColor: WidgetStatePropertyAll(Colors.transparent),
+        backgroundColor: WidgetStatePropertyAll(
+          isFavorite ? Colors.red.withAlpha(100) : Colors.grey.withAlpha(80),
+        ),
+        foregroundColor: WidgetStatePropertyAll(
+          Theme.of(context).colorScheme.onSurface,
+        ),
+        padding: WidgetStatePropertyAll(
+          EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        ),
+        shape: WidgetStatePropertyAll(CircleBorder()),
+        minimumSize: WidgetStatePropertyAll(Size(40, 40)),
+      ),
+      onPressed: () async {
+        await ref
+            .read(businessFavoritesUsecaseProvider)
+            .toggleFavorite(business.id, isFavorite);
+        ref.invalidate(isBusinessFavoriteStreamProvider(business.id));
+      },
+      child: Icon(
+        isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+        color: isFavorite ? Colors.red : Colors.grey,
+        size: 18,
       ),
     );
   }
@@ -539,6 +594,7 @@ class _BusinessOwnerContact extends ConsumerWidget {
 
 class _BusinessOpinionsButton extends StatelessWidget {
   const _BusinessOpinionsButton({super.key, required this.business});
+
   final Business business;
 
   @override
