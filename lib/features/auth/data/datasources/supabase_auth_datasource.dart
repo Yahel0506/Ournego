@@ -6,6 +6,14 @@ import 'package:path/path.dart' as p;
 class SupabaseAuthDatasource {
   final _supabase = Supabase.instance.client;
 
+  String _requireUserId() {
+    final user = _supabase.auth.currentUser;
+    if (user == null) {
+      throw Exception('no-authenticated-user');
+    }
+    return user.id;
+  }
+
   Future<User> signUpWithEmail(String email, String password) async {
     final AuthResponse res = await _supabase.auth.signUp(
       email: email,
@@ -41,7 +49,7 @@ class SupabaseAuthDatasource {
   }
 
   Future<bool> checkHasProfile() async {
-    final String userId = _supabase.auth.currentUser!.id;
+    final String userId = _requireUserId();
     final data = await _supabase
         .from('users')
         .select('has_profile')
@@ -60,7 +68,7 @@ class SupabaseAuthDatasource {
 
       return data;
     } else {
-      final String userId = _supabase.auth.currentUser!.id;
+      final String userId = _requireUserId();
 
       final data = _supabase
           .from('users')
@@ -72,7 +80,7 @@ class SupabaseAuthDatasource {
   }
 
   Future<void> updateProfilePicture(File profilePicture) async {
-    final String userId = _supabase.auth.currentUser!.id;
+    final String userId = _requireUserId();
     await _supabase.storage
         .from('profile_pictures')
         .upload(
@@ -83,12 +91,12 @@ class SupabaseAuthDatasource {
   }
 
   Future<void> updateUserName(String name) async {
-    final userId = _supabase.auth.currentUser!.id;
+    final userId = _requireUserId();
     await _supabase.from('users').update({'name': name}).eq('id', userId);
   }
 
   Future<void> confirmHasProfile() async {
-    final userId = _supabase.auth.currentUser!.id;
+    final userId = _requireUserId();
     await _supabase
         .from('users')
         .update({'has_profile': true})
