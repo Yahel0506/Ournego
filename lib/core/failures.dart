@@ -30,3 +30,6 @@ class UserProfileNotFound extends Failure {}
 class LocationPermissionDeniedFailure extends Failure {}
 
 class LocationPermissionDeniedForeverFailure extends Failure {}
+
+// Si la operación requiere autenticación pero no hay usuario loggeado
+class AuthenticationRequiredFailure extends Failure {}

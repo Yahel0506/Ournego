@@ -59,7 +59,10 @@ class MapRepositoryImpl implements MapRepository {
     try {
       await businessesDatasource.addBusinessToFavorites(businessId);
       return Right(null);
-    } on Exception {
+    } on Exception catch (e) {
+      if (e.toString().contains('no-authenticated-user')) {
+        return Left(AuthenticationRequiredFailure());
+      }
       return Left(ServerFailure());
     } catch (_) {
       return Left(ServerFailure());
@@ -71,7 +74,10 @@ class MapRepositoryImpl implements MapRepository {
     try {
       await businessesDatasource.removeBusinessFromFavorites(businessId);
       return Right(null);
-    } on Exception {
+    } on Exception catch (e) {
+      if (e.toString().contains('no-authenticated-user')) {
+        return Left(AuthenticationRequiredFailure());
+      }
       return Left(ServerFailure());
     } catch (_) {
       return Left(ServerFailure());

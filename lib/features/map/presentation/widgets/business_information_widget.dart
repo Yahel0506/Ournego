@@ -10,6 +10,8 @@ import 'package:ournego/features/map/domain/entities/business.dart';
 import 'package:ournego/features/map/domain/entities/product.dart';
 import 'package:ournego/features/map/domain/usecases/get_business_marker_usecase.dart';
 import 'package:ournego/features/map/presentation/providers/map_providers.dart';
+import 'package:ournego/features/auth/presentation/pages/auth_selection_screen.dart';
+import 'package:ournego/core/failures.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class BusinessInformationWidget extends ConsumerWidget {
@@ -291,10 +293,29 @@ class _BusinessFavoriteButton extends ConsumerWidget {
         minimumSize: WidgetStatePropertyAll(Size(40, 40)),
       ),
       onPressed: () async {
-        await ref
+        final result = await ref
             .read(businessFavoritesUsecaseProvider)
             .toggleFavorite(business.id, isFavorite);
-        ref.invalidate(isBusinessFavoriteStreamProvider(business.id));
+
+        result.fold(
+          (failure) {
+            if (failure is AuthenticationRequiredFailure) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AuthSelectionScreen(),
+                ),
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('No se pudo actualizar favorito')),
+              );
+            }
+          },
+          (_) {
+            ref.invalidate(isBusinessFavoriteStreamProvider(business.id));
+          },
+        );
       },
       child: Icon(
         isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
