@@ -64,24 +64,10 @@ class SupabaseAuthRepositoryImpl implements AuthRepository {
       if (!hasProfile) {
         debugPrint('No tiene perfil');
         return Left(UserProfileNotFound());
-      } else {
-        final Map<String, dynamic> profile = await authDatasource
-            .getProfile()
-            .map((data) {
-              return data.map((user) {
-                final userMap = user;
-                return userMap;
-              }).toList()[0];
-            })
-            .single;
-
-        if (profile.isEmpty) {
-          debugPrint('El profile está vacío');
-          return Left(UserProfileNotFound());
-        }
-
-        return Right(user);
       }
+
+      debugPrint('Login exitoso para usuario: ${user.email}');
+      return Right(user);
     } on AuthException catch (e) {
       if (e.message.contains('Invalid login credentials')) {
         return Left(InvalidCredentialsFailure());
@@ -89,9 +75,10 @@ class SupabaseAuthRepositoryImpl implements AuthRepository {
       debugPrint(e.message);
       return Left(ServerFailure());
     } on Exception catch (e) {
-      debugPrint(e.toString());
+      debugPrint('Exception en logInWithEmail: ${e.toString()}');
       return Left(ServerFailure());
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Error desconocido en logInWithEmail: ${e.toString()}');
       return Left(ServerFailure());
     }
   }

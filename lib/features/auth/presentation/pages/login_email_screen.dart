@@ -190,10 +190,12 @@ class PrimaryButton extends StatelessWidget {
               final prefs = await SharedPreferences.getInstance();
               await prefs.setBool('hasSeenOnboarding', true);
 
-              Navigator.popUntil(context, (route) => route.isFirst);
-              Navigator.pushReplacement(
-                context,
+              // Pequeña pausa para asegurar que las operaciones anteriores se completen
+              await Future.delayed(Duration(milliseconds: 100));
+
+              Navigator.of(context).pushAndRemoveUntil(
                 MaterialPageRoute(builder: (context) => MainLayoutScreen()),
+                (route) => false,
               );
             },
           );
