@@ -148,7 +148,7 @@ class PrimaryButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return ElevatedButton(
       onPressed: () async {
-        if (formKey.currentState!.validate()) {
+        if (formKey.currentState?.validate() ?? false) {
           final usecase = LogInWithEmailUsecase(repository: repository);
 
           final result = await usecase(

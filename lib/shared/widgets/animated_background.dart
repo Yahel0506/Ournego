@@ -58,7 +58,7 @@ class _AnimatedBackgroundState extends State<AnimatedBackground>
 
   void _startTimer() {
     // Si ya existe un timer corriendo, no creamos otro
-    if (timerAnimation != null && timerAnimation!.isActive) return;
+    if (timerAnimation != null && (timerAnimation?.isActive ?? false)) return;
 
     timerAnimation = Timer.periodic(const Duration(seconds: 4), (timer) {
       _updatePositions();

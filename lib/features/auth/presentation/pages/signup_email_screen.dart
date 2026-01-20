@@ -80,7 +80,7 @@ class _SignupEmailScreenState extends ConsumerState<SignupEmailScreen> {
                                 }
                               },
                               onChanged: (value) {
-                                _formKey.currentState!.validate();
+                                _formKey.currentState?.validate();
                               },
                               decoration: InputDecoration(
                                 hint: Text(text.primaryHint),
@@ -95,7 +95,7 @@ class _SignupEmailScreenState extends ConsumerState<SignupEmailScreen> {
                       // Botón SignUp
                       ElevatedButton(
                         onPressed: () {
-                          if (_formKey.currentState!.validate()) {
+                          if (_formKey.currentState?.validate() ?? false) {
                             Navigator.push(
                               context,
                               MaterialPageRoute(

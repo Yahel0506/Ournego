@@ -47,7 +47,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_initialCenter != null) {
         _animatedMapController.animateTo(
-          dest: _initialCenter!,
+          dest: _initialCenter,
           zoom: _initialZoom ?? 15,
         );
       }
@@ -331,7 +331,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
                       final BusinessMarker marker = GetBusinessMarkerUsecase(
                         business: business,
                       )();
-
 
                       if (_isMarkerVisible) {
                         return Marker(

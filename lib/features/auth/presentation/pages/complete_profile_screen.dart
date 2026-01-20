@@ -168,7 +168,7 @@ class CompleteProfileScreen extends ConsumerWidget {
                       // Botón SignUp
                       ElevatedButton(
                         onPressed: () async {
-                          if (_formKey.currentState!.validate()) {
+                          if (_formKey.currentState?.validate() ?? false) {
                             final result = await UpdateProfileUsecase(
                               repository: repository,
                             ).updateUserName(_nameController.text);

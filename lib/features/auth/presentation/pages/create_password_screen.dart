@@ -120,8 +120,11 @@ class _CreatePasswordScreen extends ConsumerState<CreatePasswordScreen> {
                                   color: !hasCapitalLetter
                                       ? Colors.red
                                       : Theme.of(
-                                          context,
-                                        ).textTheme.bodyLarge!.color,
+                                              context,
+                                            ).textTheme.bodyLarge?.color ??
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.onSurface,
                                 ),
                               ),
                             ],
@@ -141,8 +144,11 @@ class _CreatePasswordScreen extends ConsumerState<CreatePasswordScreen> {
                                   color: !hasNumbersOrSpecialChars
                                       ? Colors.red
                                       : Theme.of(
-                                          context,
-                                        ).textTheme.bodyLarge!.color,
+                                              context,
+                                            ).textTheme.bodyLarge?.color ??
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.onSurface,
                                 ),
                               ),
                             ],
@@ -162,8 +168,11 @@ class _CreatePasswordScreen extends ConsumerState<CreatePasswordScreen> {
                                   color: !minimumLenght
                                       ? Colors.red
                                       : Theme.of(
-                                          context,
-                                        ).textTheme.bodyLarge!.color,
+                                              context,
+                                            ).textTheme.bodyLarge?.color ??
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.onSurface,
                                 ),
                               ),
                             ],
@@ -189,7 +198,7 @@ class _CreatePasswordScreen extends ConsumerState<CreatePasswordScreen> {
                                 }
                               },
                               onChanged: (value) {
-                                _formKey.currentState!.validate();
+                                _formKey.currentState?.validate();
                               },
                               decoration: InputDecoration(
                                 hint: Text(text.secondaryHint.toString()),
@@ -208,7 +217,8 @@ class _CreatePasswordScreen extends ConsumerState<CreatePasswordScreen> {
                               hasCapitalLetter &&
                               hasNumbersOrSpecialChars &&
                               minimumLenght;
-                          if (_formKey.currentState!.validate() && isValid) {
+                          if ((_formKey.currentState?.validate() ?? false) &&
+                              isValid) {
                             final usecase = SignUpWithEmailUsecase(
                               repository: repository,
                             );
