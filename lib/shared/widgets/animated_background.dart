@@ -13,7 +13,6 @@ class AnimatedBackground extends StatefulWidget {
   State<AnimatedBackground> createState() => _AnimatedBackgroundState();
 }
 
-// AGREGAMOS LOS MIXINS (Los poderes para vigilar)
 class _AnimatedBackgroundState extends State<AnimatedBackground>
     with WidgetsBindingObserver, RouteAware {
   Timer? timerAnimation;
@@ -33,35 +32,24 @@ class _AnimatedBackgroundState extends State<AnimatedBackground>
   @override
   void initState() {
     super.initState();
-    // 1. Nos registramos como vigilantes del ciclo de vida de la App
     WidgetsBinding.instance.addObserver(this);
 
-    // 2. Iniciamos el movimiento INMEDIATAMENTE después de que se dibuje el primer frame
-    // Esto evita que esperes 4 segundos para ver las bolas moverse la primera vez.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _updatePositions(); // Mueve las bolas ya
-      _startTimer(); // Prende el reloj para el futuro
+      _updatePositions();
+      _startTimer();
     });
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // 3. Nos registramos en el RouteObserver para saber si nos tapan
-    // (Importa routeObserver de tu main.dart)
     final modalRoute = ModalRoute.of(context);
     if (modalRoute is PageRoute) {
-      routeObserver.subscribe(
-        this,
-        modalRoute,
-      ); // Descomenta esto cuando importes routeObserver
+      routeObserver.subscribe(this, modalRoute);
     }
   }
 
-  // --- LÓGICA DE CONTROL ---
-
   void _startTimer() {
-    // Si ya existe un timer corriendo, no creamos otro
     if (timerAnimation != null && (timerAnimation?.isActive ?? false)) return;
 
     timerAnimation = Timer.periodic(const Duration(seconds: 4), (timer) {
@@ -73,16 +61,14 @@ class _AnimatedBackgroundState extends State<AnimatedBackground>
     timerAnimation?.cancel();
     timerAnimation = null;
     // TODO: Replace `print` with a logger and remove in production.
-    // print("Animación Pausada (Ahorrando Batería)");
   }
 
   void _updatePositions() {
-    if (!mounted) return; // Seguridad extra
+    if (!mounted) return;
 
     setState(() {
       double w = MediaQuery.of(context).size.width;
       double h = MediaQuery.of(context).size.height;
-      // Tu fórmula del efecto infinito
       // TODO: Consider making these deltas configurable and testable.
       top1 = (Random().nextDouble() * h) - 150;
       left1 = (Random().nextDouble() * w) - 150;
@@ -95,48 +81,39 @@ class _AnimatedBackgroundState extends State<AnimatedBackground>
     });
   }
 
-  // --- VIGILANTE 1: ESTADO DE LA APP (Home / Segundo Plano) ---
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive) {
-      _stopTimer(); // Si minimiza la app -> Stop
+      _stopTimer();
     } else if (state == AppLifecycleState.resumed) {
-      _startTimer(); // Si vuelve -> Play
+      _startTimer();
     }
   }
 
-  // --- VIGILANTE 2: NAVEGACIÓN (Pila de pantallas) ---
-
-  // Cuando empujas una pantalla nueva ENCIMA de esta (Did Push Next)
   @override
   void didPushNext() {
     _stopTimer();
   }
 
-  // Cuando quitas la pantalla de arriba y esta vuelve a verse (Did Pop Next)
   @override
   void didPopNext() {
     _startTimer();
-    _updatePositions(); // Para que se mueva apenas vuelvas
+    _updatePositions();
   }
 
   @override
   void dispose() {
-    // LIMPIEZA TOTAL
-    WidgetsBinding.instance.removeObserver(this); // Dejar de vigilar app
-    routeObserver.unsubscribe(
-      this,
-    ); // Dejar de vigilar rutas (Descomenta al tener routeObserver)
+    WidgetsBinding.instance.removeObserver(this);
+    routeObserver.unsubscribe(this);
     _stopTimer();
-    super.dispose(); // El super SIEMPRE al final
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        // CAPA 1
         AnimatedPositioned(
           duration: const Duration(seconds: 4),
           curve: Curves.easeInOut,
@@ -181,7 +158,6 @@ class _AnimatedBackgroundState extends State<AnimatedBackground>
             ),
           ),
         ),
-        // CAPA BLUR
         BackdropFilter(
           filter: imageUrl.ImageFilter.blur(sigmaX: 80, sigmaY: 80),
           child: Container(
