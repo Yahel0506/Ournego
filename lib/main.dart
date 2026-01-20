@@ -9,11 +9,16 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 final RouteObserver<ModalRoute<void>> routeObserver =
     RouteObserver<ModalRoute<void>>();
+// TODO: (Security) Move Supabase URL and anonKey to secure storage or
+// environment variables. Avoid committing secrets into source control.
+// Perspective: Add a config loader that reads from `.env` or platform
+// secure storage and fail loudly if keys are missing.
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp();
   await Supabase.initialize(
+    // TODO: load these values from secure config (not hardcoded)
     url: 'https://qixuodrtemljgppdlmvc.supabase.co',
     anonKey: 'sb_secret_t9Axhc3n2DDnyYvmsiypnA_mBEYlBxH',
   );

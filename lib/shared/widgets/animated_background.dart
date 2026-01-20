@@ -18,6 +18,10 @@ class _AnimatedBackgroundState extends State<AnimatedBackground>
     with WidgetsBindingObserver, RouteAware {
   Timer? timerAnimation;
 
+  // TODO: Reuse a single Random instance instead of creating many.
+  // Perspective: Create `final _random = Random()` and use it in
+  // `_updatePositions` for slightly better performance and testability.
+
   // Posiciones
   double top1 = 0;
   double left1 = 0;
@@ -68,9 +72,8 @@ class _AnimatedBackgroundState extends State<AnimatedBackground>
   void _stopTimer() {
     timerAnimation?.cancel();
     timerAnimation = null;
-    print(
-      "Animación Pausada (Ahorrando Batería)",
-    ); // Para que veas en consola que funciona
+    // TODO: Replace `print` with a logger and remove in production.
+    // print("Animación Pausada (Ahorrando Batería)");
   }
 
   void _updatePositions() {
@@ -79,8 +82,8 @@ class _AnimatedBackgroundState extends State<AnimatedBackground>
     setState(() {
       double w = MediaQuery.of(context).size.width;
       double h = MediaQuery.of(context).size.height;
-
       // Tu fórmula del efecto infinito
+      // TODO: Consider making these deltas configurable and testable.
       top1 = (Random().nextDouble() * h) - 150;
       left1 = (Random().nextDouble() * w) - 150;
 

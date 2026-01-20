@@ -16,6 +16,11 @@ class OurnegoColors {
   static const Color noche = Color(0xFF161616);
   static const Color blanco = Color(0xFFFFFFFF);
 
+  // TODO: Extract semantic color tokens (e.g. `background`, `surface`,
+  // `accent`) and provide accessibility helpers (contrast checks).
+  // Perspective: Add unit tests for color contrast and a `fromHex`
+  // helper to allow theming from design tokens.
+
   //* --- TEMA CLARO ---
   static final ThemeData lightTheme = ThemeData(
     useMaterial3: true,

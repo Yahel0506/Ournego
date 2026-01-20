@@ -1,5 +1,12 @@
 // ignore_for_file: unused_element_parameter
 
+// TODO: The widget file is large and contains multiple responsibilities
+// (UI, platform calls, business logic). Consider splitting into smaller
+// widgets/files and moving platform calls into services. Perspective:
+// - Extract button styles and repeated UI pieces
+// - Move phone/URL handling to a `ContactService` that can be tested
+// - Localize all user-facing strings
+
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -126,10 +133,20 @@ class BusinessInformationWidget extends ConsumerWidget {
                   Theme.of(context).colorScheme.onSurface,
                 ),
               ),
-              onPressed: () {
+              onPressed: () async {
+                // TODO: Use a ContactService and proper URL checks.
+                // - Validate phone format before launching
+                // - Prefer `canLaunchUrl` (or `UrlLauncher.canLaunch`) and
+                //   fall back to `flutter_phone_direct_caller` for direct
+                //   dialing when appropriate.
                 if (business.phoneNumber != null) {
-                  launchUrl(Uri.parse('https://wa.me/${business.phoneNumber}'));
+                  final uri = Uri.parse(
+                    'https://wa.me/${business.phoneNumber}',
+                  );
+                  // Try to launch, but guard with canLaunch in production
+                  await launchUrl(uri);
                 } else {
+                  // TODO: Localize this string and move UI to a small helper
                   showDialog(
                     context: context,
                     builder: (context) {
@@ -307,8 +324,11 @@ class _BusinessFavoriteButton extends ConsumerWidget {
                 ),
               );
             } else {
+              // TODO: Provide user-friendly messages based on `Failure`
+              // and localize strings. Consider a centralized `ErrorMapper`
+              // that maps domain failures to snackbars/dialogs.
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('No se pudo actualizar favorito')),
+                const SnackBar(content: Text('No se pudo actualizar favorito')),
               );
             }
           },
@@ -373,6 +393,7 @@ class _BusinessProductsSearch extends StatelessWidget {
                 child: ListView(
                   scrollDirection: Axis.horizontal,
                   children: discountProductsList.map((product) {
+                    // TODO: Implement product card widget and image placeholders
                     return SizedBox();
                   }).toList(),
                 ),
