@@ -113,14 +113,14 @@ class TermsRichText extends StatelessWidget {
               text: config.termsText2,
               style: OurnegoTextStyles.link,
               recognizer: TapGestureRecognizer()
-                ..onTap = () => launchTermsUrl('https://flutterpedia.com'),
+                ..onTap = () => launchTermsUrl('https://ournego.framer.website/terms-and-conditions'),
             ),
             TextSpan(text: config.termsText3),
             TextSpan(
               text: config.termsText4,
               style: OurnegoTextStyles.link,
               recognizer: TapGestureRecognizer()
-                ..onTap = () => launchTermsUrl('https://flutterpedia.com'),
+                ..onTap = () => launchTermsUrl('https://ournego.framer.website/privacy-policy'),
             ),
           ],
         ),
