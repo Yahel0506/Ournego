@@ -79,6 +79,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
   void initState() {
     super.initState();
 
+    bool permissionModalAlreadyShown = false;
+
     ProviderSubscription<AsyncValue<AppPosition>> updateLocation() {
       return ref.listenManual<AsyncValue<AppPosition>>(mapProvider, (
         previous,
@@ -94,6 +96,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
             }
           },
           error: (error, stackTrace) {
+            if (permissionModalAlreadyShown) return;
+            permissionModalAlreadyShown = true;
             WidgetsBinding.instance.addPostFrameCallback((_) {
               switch (error) {
                 case LocationPermissionDeniedFailure():
@@ -543,6 +547,12 @@ class _MapScreenState extends ConsumerState<MapScreen>
                             duration: Durations.short4,
                           );
                         },
+                        backgroundColor: Theme.of(
+                          context,
+                        ).colorScheme.secondaryContainer,
+                        foregroundColor: Theme.of(
+                          context,
+                        ).colorScheme.onSurface,
                         child: Icon(Icons.zoom_in),
                       ),
                       SizedBox(height: 12),
@@ -557,6 +567,12 @@ class _MapScreenState extends ConsumerState<MapScreen>
                             duration: Durations.short4,
                           );
                         },
+                        backgroundColor: Theme.of(
+                          context,
+                        ).colorScheme.secondaryContainer,
+                        foregroundColor: Theme.of(
+                          context,
+                        ).colorScheme.onSurface,
                         child: Icon(Icons.zoom_out),
                       ),
                       SizedBox(height: 12),
@@ -569,6 +585,12 @@ class _MapScreenState extends ConsumerState<MapScreen>
                             rotation: 0,
                           );
                         },
+                        backgroundColor: Theme.of(
+                          context,
+                        ).colorScheme.secondaryContainer,
+                        foregroundColor: Theme.of(
+                          context,
+                        ).colorScheme.onSurface,
                         child: Icon(Icons.location_searching),
                       ),
                     ],
