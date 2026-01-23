@@ -49,7 +49,7 @@ dev_dependencies:
 flutter_icons:
   android: true
   ios: true
-  image_path: assets/icons/app_icon_2.png
+  image_path: assets/icons/app_icon.png
   adaptive_icon_background: assets/icons/app_icon_background.png
   adaptive_icon_foreground: assets/icons/app_icon_foreground.png
   adaptive_icon_foreground_inset: 25
