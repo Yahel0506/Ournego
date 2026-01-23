@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class CreatePasswordScreen extends ConsumerStatefulWidget {
   final String email;
+
   const CreatePasswordScreen({super.key, required this.email});
 
   @override
@@ -252,11 +253,7 @@ class _CreatePasswordScreen extends ConsumerState<CreatePasswordScreen> {
                                 prefs.setBool('hasSeenOnboarding', true);
 
                                 // Navegar a la siguiente pantalla o mostrar éxito
-                                Navigator.popUntil(
-                                  context,
-                                  (route) => route.isFirst,
-                                );
-                                Navigator.pushReplacement(
+                                Navigator.push(
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) =>

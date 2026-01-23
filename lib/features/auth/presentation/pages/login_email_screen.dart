@@ -11,6 +11,7 @@ import 'package:ournego/features/auth/data/datasources/local_error_messages_data
 import 'package:ournego/features/auth/domain/entities/auth_screen_text.dart';
 import 'package:ournego/features/auth/domain/repositories/auth_repository.dart';
 import 'package:ournego/features/auth/domain/usecases/log_in_with_email_usecase.dart';
+import 'package:ournego/features/auth/presentation/pages/auth_selection_screen.dart';
 import 'package:ournego/features/auth/presentation/pages/complete_profile_screen.dart';
 import 'package:ournego/features/auth/presentation/pages/signup_email_screen.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
@@ -188,15 +189,27 @@ class PrimaryButton extends StatelessWidget {
             (user) async {
               TextInput.finishAutofillContext();
               final prefs = await SharedPreferences.getInstance();
-              await prefs.setBool('hasSeenOnboarding', true);
 
-              // Pequeña pausa para asegurar que las operaciones anteriores se completen
-              await Future.delayed(Duration(milliseconds: 100));
+              if (prefs.getBool('hasSeenOnboarding') ?? false) {
+                Navigator.of(
+                  context,
+                ).popUntil((route) => route.settings.name == '/authSelection');
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (context.mounted) {
+                    Navigator.of(context).pop();
+                  }
+                });
+              } else {
+                await prefs.setBool('hasSeenOnboarding', true);
 
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (context) => MainLayoutScreen()),
-                (route) => false,
-              );
+                // Pequeña pausa para asegurar que las operaciones anteriores se completen
+                await Future.delayed(Duration(milliseconds: 100));
+
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => MainLayoutScreen()),
+                  (route) => false,
+                );
+              }
             },
           );
         }
@@ -240,6 +253,7 @@ class EmailInput extends StatelessWidget {
             if (value == null || value.isEmpty) {
               return 'Introduce tu correo electrónico';
             }
+            // TODO: La validación de email actual impide utilizar emails con caracteres especiales, como la ñ.
             if (value.isEmail == false) {
               return 'El correo no es válido';
             } else {

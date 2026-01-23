@@ -212,14 +212,34 @@ class CompleteProfileScreen extends ConsumerWidget {
                                   (_) async {
                                     final prefs =
                                         await SharedPreferences.getInstance();
-                                    prefs.setBool('hasSeenOnboarding', true);
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            MainLayoutScreen(),
-                                      ),
-                                    );
+
+                                    if (prefs.getBool('hasSeenOnboarding') ??
+                                        false) {
+                                      Navigator.of(context).popUntil(
+                                        (route) =>
+                                            route.settings.name ==
+                                            '/authSelection',
+                                      );
+                                      WidgetsBinding.instance
+                                          .addPostFrameCallback((_) {
+                                            if (context.mounted) {
+                                              Navigator.of(context).pop();
+                                            }
+                                          });
+                                    } else {
+                                      // Pequeña pausa para asegurar que las operaciones anteriores se completen
+                                      await Future.delayed(
+                                        Duration(milliseconds: 100),
+                                      );
+
+                                      Navigator.of(context).pushAndRemoveUntil(
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              MainLayoutScreen(),
+                                        ),
+                                        (route) => false,
+                                      );
+                                    }
                                   },
                                 );
                               },

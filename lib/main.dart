@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ournego/core/ournego_colors.dart';
+import 'package:ournego/features/auth/presentation/pages/auth_selection_screen.dart';
 import 'package:ournego/features/navigation/presentation/pages/main_layout_screen.dart';
 import 'package:ournego/features/onboarding/presentation/pages/onboarding_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -31,6 +32,7 @@ Future<void> main() async {
 
 class MyApp extends StatelessWidget {
   final bool startOnMap;
+
   const MyApp({super.key, required this.startOnMap});
 
   @override
