@@ -57,6 +57,7 @@ class OurnegoColors {
 
       secondary: mentaOscuro,
       onSecondary: noche,
+      secondaryContainer: verdeCastleton,
 
       surface: Color(0xFF1E2625), // Gris oscuro verdoso
       onSurface: Color(0xFFE1E3E1), // Blanco hueso
