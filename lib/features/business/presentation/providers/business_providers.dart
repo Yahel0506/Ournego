@@ -1,17 +1,43 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ournego/features/business/data/datasources/business_geocoding_datasource.dart';
 import 'package:ournego/features/business/data/datasources/business_supabase_datasource.dart';
 import 'package:ournego/features/business/domain/repositories/business_repository.dart'
     show BusinessRepository;
+import 'package:ournego/features/business/domain/usecases/register_business_usecase.dart';
 import 'package:riverpod/src/framework.dart';
 
 import '../../data/repositories/business_repository_impl.dart';
+import '../../domain/usecases/get_addresses_suggestions_usecase.dart';
 
 final businessSupabaseDatasourceProvider = Provider<BusinessSupabaseDatasource>(
   (ref) {
     return BusinessSupabaseDatasource();
   },
 );
+
+final businessGeocodingDatasourceProvider =
+    Provider<BusinessGeocodingDatasource>((ref) {
+      return BusinessGeocodingDatasource();
+    });
+
 final businessRepositoryProvider = Provider<BusinessRepository>((ref) {
-  final datasource = ref.watch(businessSupabaseDatasourceProvider);
-  return BusinessRepositoryImpl(businessDatasource: datasource);
+  final businessDatasource = ref.watch(businessSupabaseDatasourceProvider);
+  final geocodingDatasource = ref.watch(businessGeocodingDatasourceProvider);
+  return BusinessRepositoryImpl(
+    businessDatasource: businessDatasource,
+    geocodingDatasource: geocodingDatasource,
+  );
+});
+
+final getAdressesSuggestionsUsecaseProvider =
+    Provider<GetAddressesSuggestionsUsecase>((ref) {
+      final repository = ref.watch(businessRepositoryProvider);
+      return GetAddressesSuggestionsUsecase(repository: repository);
+    });
+
+final registerBusinessUsecaseProvider = Provider<RegisterBusinessUsecase>((
+  ref,
+) {
+  final repository = ref.watch(businessRepositoryProvider);
+  return RegisterBusinessUsecase(repository: repository);
 });

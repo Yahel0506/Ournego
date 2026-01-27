@@ -4,6 +4,7 @@ import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/features/auth/presentation/pages/auth_selection_screen.dart';
 import 'package:ournego/features/auth/presentation/widgets/auth_selection_widget.dart';
 import 'package:ournego/features/business/domain/usecases/check_if_logged_usecase.dart';
+import 'package:ournego/features/business/presentation/pages/business_form_screen.dart';
 import 'package:ournego/features/business/presentation/providers/business_providers.dart';
 
 class RegisterBusinessWidget extends ConsumerWidget {
@@ -49,14 +50,14 @@ class RegisterBusinessWidget extends ConsumerWidget {
                   if (isLoggedIn) {
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (context) => AuthSelectionScreen(),
-                        settings: RouteSettings(name: '/authSelection'),
+                        builder: (context) => BusinessFormScreen(),
                       ),
                     );
                   } else {
                     Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (context) => AuthSelectionScreen(),
+                        settings: RouteSettings(name: '/authSelection'),
                       ),
                     );
                   }
