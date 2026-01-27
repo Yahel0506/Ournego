@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ournego/features/auth/domain/usecases/has_profile_usecase.dart';
 import 'package:ournego/features/auth/presentation/pages/complete_profile_screen.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
+import 'package:ournego/features/business/presentation/pages/business_panel_screen.dart';
+import 'package:ournego/features/business/presentation/providers/business_providers.dart';
 import 'package:ournego/features/map/presentation/pages/map_screen.dart';
 import 'package:ournego/features/business/presentation/pages/register_business_screen.dart';
 import 'package:ournego/features/navigation/presentation/providers/navigation_provider.dart';
@@ -41,18 +43,19 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
   @override
   Widget build(BuildContext context) {
     final controller = ref.watch(pageControllerProvider);
+    final isOwnerAsync = ref.watch(isOwnerProvider);
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      body: Stack(
-        alignment: Alignment.bottomCenter,
-        children: [
-          Column(
+      body: isOwnerAsync.when(
+        data: (isOwner) {
+          return Stack(
+            alignment: Alignment.bottomCenter,
             children: [
-              Expanded(
-                child: Stack(
-                  children: [
-                    PageView(
+              Column(
+                children: [
+                  Expanded(
+                    child: PageView(
                       physics: ScrollPhysics(
                         parent: NeverScrollableScrollPhysics(),
                       ),
@@ -65,17 +68,21 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
                       children: [
                         Placeholder(),
                         MapScreen(),
-                        RegisterBusinessScreen(),
+                        isOwner
+                            ? BusinessPanelScreen()
+                            : RegisterBusinessScreen(),
                       ],
                     ),
-                  ],
-                ),
+                  ),
+                  SizedBox(height: 56),
+                ],
               ),
-              SizedBox(height: 56),
+              AppNavigationBar(),
             ],
-          ),
-          AppNavigationBar(),
-        ],
+          );
+        },
+        loading: () => Center(child: CircularProgressIndicator()),
+        error: (_, __) => Center(child: Text('Error al cargar datos')),
       ),
     );
   }

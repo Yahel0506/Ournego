@@ -7,6 +7,7 @@ import 'package:ournego/features/business/domain/usecases/register_business_usec
 import 'package:riverpod/src/framework.dart';
 
 import '../../data/repositories/business_repository_impl.dart';
+import '../../domain/usecases/check_if_owner_usecase.dart';
 import '../../domain/usecases/get_addresses_suggestions_usecase.dart';
 
 final businessSupabaseDatasourceProvider = Provider<BusinessSupabaseDatasource>(
@@ -40,4 +41,15 @@ final registerBusinessUsecaseProvider = Provider<RegisterBusinessUsecase>((
 ) {
   final repository = ref.watch(businessRepositoryProvider);
   return RegisterBusinessUsecase(repository: repository);
+});
+
+final checkIfOwnerUsecaseProvider = Provider<CheckIfOwnerUsecase>((ref) {
+  final repository = ref.watch(businessRepositoryProvider);
+  return CheckIfOwnerUsecase(repository: repository);
+});
+
+final isOwnerProvider = FutureProvider<bool>((ref) async {
+  final usecase = ref.watch(checkIfOwnerUsecaseProvider);
+  final result = await usecase();
+  return result.fold((failure) => false, (isOwner) => isOwner);
 });

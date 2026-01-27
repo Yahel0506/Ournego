@@ -93,4 +93,15 @@ class BusinessRepositoryImpl implements BusinessRepository {
       return Left(ServerFailure());
     }
   }
+
+  @override
+  Future<Either<Failure, bool>> checkIfOwner() async {
+    try {
+      final isOwner = await businessDatasource.checkIfOwner();
+      return Right(isOwner);
+    } catch (e) {
+      debugPrint('Error checking if owner: ${e.toString()}');
+      return Left(ServerFailure());
+    }
+  }
 }

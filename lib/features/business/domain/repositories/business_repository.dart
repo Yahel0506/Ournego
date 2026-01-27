@@ -24,4 +24,6 @@ abstract class BusinessRepository {
     required String phoneNumber,
     required List<AppSchedule> hours,
   });
+
+  Future<Either<Failure, bool>> checkIfOwner();
 }

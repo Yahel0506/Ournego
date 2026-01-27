@@ -64,4 +64,20 @@ class BusinessSupabaseDatasource {
       }),
     );
   }
+
+  Future<bool> checkIfOwner() async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) {
+      return false;
+    }
+    final String userId = user.id;
+    final response = await _supabase
+        .from('businesses')
+        .select('business_id')
+        .eq('owner_id', userId)
+        .limit(1)
+        .maybeSingle();
+
+    return response != null;
+  }
 }

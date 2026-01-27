@@ -6,6 +6,10 @@ class LocalAppNavigationBarDatasource {
   }
 
   List<IconData> getNavigationBarItemsIcons() {
-    return [Icons.home_rounded, Icons.location_on_rounded, Icons.store_rounded];
+    return [
+      Icons.people_rounded,
+      Icons.location_on_rounded,
+      Icons.store_rounded,
+    ];
   }
 }

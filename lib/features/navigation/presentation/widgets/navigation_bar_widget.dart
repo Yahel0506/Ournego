@@ -39,7 +39,7 @@ class _AppNavigationBarState extends ConsumerState<AppNavigationBar> {
         child: Row(
           children: [
             Spacer(),
-            // ------------------ Home Button ------------------
+            // ------------------ Community Button ------------------
             IconButton(
               padding: EdgeInsets.zero,
               onPressed: () {
