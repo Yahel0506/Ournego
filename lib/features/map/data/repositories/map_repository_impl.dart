@@ -12,12 +12,10 @@ import 'package:ournego/features/map/domain/repositories/map_repository.dart';
 class MapRepositoryImpl implements MapRepository {
   final GeolocatorDatasource geolocationDatasource;
   final SupabaseMapDatasource businessesDatasource;
-  final FirebaseFirestore firestore;
 
   MapRepositoryImpl({
     required this.geolocationDatasource,
     required this.businessesDatasource,
-    required this.firestore,
   });
 
   @override
@@ -33,6 +31,7 @@ class MapRepositoryImpl implements MapRepository {
       return Left(ServerFailure());
     }
   }
+
   /*
   @override
   Stream<List<Business>> getBusinesses() {
@@ -55,7 +54,9 @@ class MapRepositoryImpl implements MapRepository {
   }
 
   @override
-  Future<Either<Failure, void>> addBusinessToFavorites(String businessId) async {
+  Future<Either<Failure, void>> addBusinessToFavorites(
+    String businessId,
+  ) async {
     try {
       await businessesDatasource.addBusinessToFavorites(businessId);
       return Right(null);
@@ -70,7 +71,9 @@ class MapRepositoryImpl implements MapRepository {
   }
 
   @override
-  Future<Either<Failure, void>> removeBusinessFromFavorites(String businessId) async {
+  Future<Either<Failure, void>> removeBusinessFromFavorites(
+    String businessId,
+  ) async {
     try {
       await businessesDatasource.removeBusinessFromFavorites(businessId);
       return Right(null);
@@ -85,8 +88,8 @@ class MapRepositoryImpl implements MapRepository {
   }
 
   @override
-  Stream<bool> isBusinessFavorite(String businessId)  {
-      final isFavorite =  businessesDatasource.isBusinessFavorite(businessId);
-      return isFavorite;
+  Stream<bool> isBusinessFavorite(String businessId) {
+    final isFavorite = businessesDatasource.isBusinessFavorite(businessId);
+    return isFavorite;
   }
 }

@@ -20,9 +20,9 @@ final geolocationDatasourceProvider = Provider((ref) {
   return GeolocatorDatasource();
 });
 
-final firestoreDatasourceProvider = Provider((ref) {
+/*final firestoreDatasourceProvider = Provider((ref) {
   return FirebaseFirestore.instance;
-});
+});*/
 
 final businessesDatasourceProvider = Provider((ref) {
   return SupabaseMapDatasource();
@@ -31,11 +31,10 @@ final businessesDatasourceProvider = Provider((ref) {
 final mapRepositoryProvider = Provider<MapRepositoryImpl>((ref) {
   final businessesDatasource = ref.read(businessesDatasourceProvider);
   final geolocationDatasource = ref.read(geolocationDatasourceProvider);
-  final firestore = ref.read(firestoreDatasourceProvider);
+  //final firestore = ref.read(firestoreDatasourceProvider);
   return MapRepositoryImpl(
     geolocationDatasource: geolocationDatasource,
     businessesDatasource: businessesDatasource,
-    firestore: firestore,
   );
 });
 

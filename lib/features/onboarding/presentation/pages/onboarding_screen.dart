@@ -24,43 +24,48 @@ class OnboardingScreen extends ConsumerWidget {
         children: [
           // Fondo Colores Desenfocados
           AnimatedBackground(),
-          PageView(
-            controller: controller,
-            children: [
-              // Slide 0: Bienvenida
-              GenericSlide(
-                title: slides[0].title,
-                description: slides[0].description.toString(),
-                imagePath: slides[0].imagePath.toString(),
+          Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: 500),
+              child: PageView(
+                controller: controller,
+                children: [
+                  // Slide 0: Bienvenida
+                  GenericSlide(
+                    title: slides[0].title,
+                    description: slides[0].description.toString(),
+                    imagePath: slides[0].imagePath.toString(),
+                  ),
+                  // Slide 1: Funciones de la App
+                  GenericSlide(
+                    title: slides[1].title,
+                    description: slides[1].description.toString(),
+                    imagePath: slides[1].imagePath.toString(),
+                  ),
+                  // Slide 2: Acceso a la Ubicación
+                  LocationSlide(
+                    title: slides[2].title,
+                    description: slides[2].description.toString(),
+                    imagePath: slides[2].imagePath.toString(),
+                    buttonText: slides[2].buttonText,
+                  ),
+                  // Slide 3: Inicio de Sesión
+                  LoginSlide(
+                    title: authSelection.title,
+                    imagePath: authSelection.imagePath.toString(),
+                    darkImagePath: authSelection.darkImagePath.toString(),
+                    googleLogin: authSelection.googleLogin.toString(),
+                    emailLogin: authSelection.emailLogin.toString(),
+                    phoneLogin: authSelection.phoneLogin.toString(),
+                    guestAccess: authSelection.guestAccess.toString(),
+                    termsText1: authSelection.termsText1.toString(),
+                    termsText2: authSelection.termsText2.toString(),
+                    termsText3: authSelection.termsText3.toString(),
+                    termsText4: authSelection.termsText4.toString(),
+                  ),
+                ],
               ),
-              // Slide 1: Funciones de la App
-              GenericSlide(
-                title: slides[1].title,
-                description: slides[1].description.toString(),
-                imagePath: slides[1].imagePath.toString(),
-              ),
-              // Slide 2: Acceso a la Ubicación
-              LocationSlide(
-                title: slides[2].title,
-                description: slides[2].description.toString(),
-                imagePath: slides[2].imagePath.toString(),
-                buttonText: slides[2].buttonText,
-              ),
-              // Slide 3: Inicio de Sesión
-              LoginSlide(
-                title: authSelection.title,
-                imagePath: authSelection.imagePath.toString(),
-                darkImagePath: authSelection.darkImagePath.toString(),
-                googleLogin: authSelection.googleLogin.toString(),
-                emailLogin: authSelection.emailLogin.toString(),
-                phoneLogin: authSelection.phoneLogin.toString(),
-                guestAccess: authSelection.guestAccess.toString(),
-                termsText1: authSelection.termsText1.toString(),
-                termsText2: authSelection.termsText2.toString(),
-                termsText3: authSelection.termsText3.toString(),
-                termsText4: authSelection.termsText4.toString(),
-              ),
-            ],
+            ),
           ),
           // ------ Contador de paginas ------
           Column(
