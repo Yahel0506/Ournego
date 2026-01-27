@@ -268,6 +268,15 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
                   ),
                   SizedBox(height: 16),
                   TextFormField(
+                    validator: (value) {
+                      if (value != null && value.isNotEmpty) {
+                        final phoneRegExp = RegExp(r'^\d{10}$');
+                        if (!phoneRegExp.hasMatch(value)) {
+                          return 'Por favor ingresa un número de teléfono válido de 10 dígitos';
+                        }
+                      }
+                      return null;
+                    },
                     controller: _phoneController,
                     keyboardType: TextInputType.phone,
                     decoration: InputDecoration(
@@ -306,7 +315,7 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
                               })
                               .whereType<AppSchedule>()
                               .toList();
-                          await registerBusinessUsecase(
+                          final response = await registerBusinessUsecase(
                             name: _nameController.text,
                             description: _descriptionController.text,
                             category: _selectedCategory ?? 12,
@@ -325,12 +334,38 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
                             phoneNumber: _phoneController.text,
                             hours: hours,
                           );
-                          // Aquí puedes manejar el envío del formulario
-                          debugPrint('Formulario válido. Enviando datos...');
-                        } else {
-                          debugPrint(
-                            'Formulario inválido. Por favor revisa los campos.',
+
+                          response.fold(
+                            (failure) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Error al registrar el negocio. Intenta de nuevo.',
+                                  ),
+                                ),
+                              );
+                            },
+                            (success) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Negocio registrado exitosamente.',
+                                  ),
+                                ),
+                              );
+                              Navigator.of(context).pop();
+                            },
                           );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Formulario inválido. Por favor revisa los campos.',
+                              ),
+                            ),
+                          );
+                          ref.invalidate(isOwnerProvider);
+                          Navigator.of(context).pop();
                         }
                       },
                       child: Text(
