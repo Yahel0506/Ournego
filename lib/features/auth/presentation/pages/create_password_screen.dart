@@ -248,10 +248,6 @@ class _CreatePasswordScreen extends ConsumerState<CreatePasswordScreen> {
                                 );
                               },
                               (user) async {
-                                final prefs =
-                                    await SharedPreferences.getInstance();
-                                prefs.setBool('hasSeenOnboarding', true);
-
                                 // Navegar a la siguiente pantalla o mostrar éxito
                                 Navigator.push(
                                   context,
