@@ -1,3 +1,4 @@
+import 'package:feedback/feedback.dart';
 import 'package:flutter/gestures.dart';
 
 import 'package:firebase_core/firebase_core.dart';
@@ -37,7 +38,11 @@ Future<void> main() async {
   final prefs = await SharedPreferences.getInstance();
   final bool hasSeenOnboarding = prefs.getBool('hasSeenOnboarding') ?? false;
 
-  runApp(ProviderScope(child: MyApp(startOnMap: hasSeenOnboarding)));
+  runApp(
+    BetterFeedback(
+      child: ProviderScope(child: MyApp(startOnMap: hasSeenOnboarding)),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
