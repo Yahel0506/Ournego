@@ -353,6 +353,7 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
                                   ),
                                 ),
                               );
+                              ref.invalidate(isOwnerProvider);
                               Navigator.of(context).pop();
                             },
                           );
