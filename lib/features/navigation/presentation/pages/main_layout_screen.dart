@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ournego/core/feedback/presentation/widgets/feedback_dialog_widget.dart';
 import 'package:ournego/features/auth/domain/usecases/has_profile_usecase.dart';
 import 'package:ournego/features/auth/presentation/pages/complete_profile_screen.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
@@ -9,6 +10,8 @@ import 'package:ournego/features/map/presentation/pages/map_screen.dart';
 import 'package:ournego/features/business/presentation/pages/register_business_screen.dart';
 import 'package:ournego/features/navigation/presentation/providers/navigation_provider.dart';
 import 'package:ournego/features/navigation/presentation/widgets/navigation_bar_widget.dart';
+import 'package:shake/shake.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class MainLayoutScreen extends ConsumerStatefulWidget {
   const MainLayoutScreen({super.key});
@@ -18,6 +21,8 @@ class MainLayoutScreen extends ConsumerStatefulWidget {
 }
 
 class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
+  ShakeDetector? _detector;
+
   @override
   void initState() {
     final authRepository = ref.read(authRepositoryProvider);
@@ -38,6 +43,22 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
     });
 
     super.initState();
+
+    _detector = ShakeDetector.autoStart(
+      onPhoneShake: (shakeEvent) {
+        showDialog(
+          context: context,
+          builder: (context) => FeedbackDialogWidget(),
+        );
+      },
+      shakeThresholdGravity: 2.7,
+    );
+  }
+
+  @override
+  void dispose() {
+    _detector?.stopListening();
+    super.dispose();
   }
 
   @override
