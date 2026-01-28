@@ -159,4 +159,16 @@ class SupabaseAuthRepositoryImpl implements AuthRepository {
       return Left(ServerFailure());
     }
   }
+
+  @override
+  Future<Either<Failure, void>> logOut() async {
+    try {
+      return Right(await authDatasource.logOut());
+    } on Exception catch (e) {
+      debugPrint(e.toString());
+      return Left(ServerFailure());
+    } catch (_) {
+      return Left(ServerFailure());
+    }
+  }
 }

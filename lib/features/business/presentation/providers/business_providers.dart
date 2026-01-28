@@ -7,6 +7,7 @@ import 'package:ournego/features/business/domain/usecases/register_business_usec
 import 'package:riverpod/src/framework.dart';
 
 import '../../data/repositories/business_repository_impl.dart';
+import '../../domain/usecases/check_if_logged_usecase.dart';
 import '../../domain/usecases/check_if_owner_usecase.dart';
 import '../../domain/usecases/get_addresses_suggestions_usecase.dart';
 
@@ -28,6 +29,17 @@ final businessRepositoryProvider = Provider<BusinessRepository>((ref) {
     businessDatasource: businessDatasource,
     geocodingDatasource: geocodingDatasource,
   );
+});
+
+final checkIfLoggedUsecaseProvider = Provider<CheckIfLoggedUsecase>((ref) {
+  final repository = ref.watch(businessRepositoryProvider);
+  return CheckIfLoggedUsecase(repository);
+});
+
+final isLoggedProvider = StreamProvider<bool>((ref) {
+  final usecase = ref.watch(checkIfLoggedUsecaseProvider);
+  final result = usecase();
+  return result;
 });
 
 final getAdressesSuggestionsUsecaseProvider =

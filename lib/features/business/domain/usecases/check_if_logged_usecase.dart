@@ -8,7 +8,7 @@ class CheckIfLoggedUsecase {
 
   CheckIfLoggedUsecase(this.repository);
 
-  Future<Either<Failure, bool>> call() async {
-    return await repository.isLoggedIn();
+  Stream<bool> call() {
+    return repository.isLoggedIn();
   }
 }

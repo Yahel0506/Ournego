@@ -102,4 +102,8 @@ class SupabaseAuthDatasource {
         .update({'has_profile': true})
         .eq('id', userId);
   }
+
+  Future<void> logOut() async {
+    await _supabase.auth.signOut();
+  }
 }

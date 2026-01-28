@@ -36,4 +36,6 @@ abstract class AuthRepository {
   Future<Either<Failure, void>> confirmHasProfile();
 
   Future<Either<Failure, bool>> checkHasProfile();
+
+  Future<Either<Failure, void>> logOut();
 }

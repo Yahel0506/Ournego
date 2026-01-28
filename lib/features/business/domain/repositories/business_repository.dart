@@ -7,7 +7,7 @@ import 'package:ournego/features/map/domain/entities/app_position.dart';
 import '../../../../core/failures.dart';
 
 abstract class BusinessRepository {
-  Future<Either<Failure, bool>> isLoggedIn();
+  Stream<bool> isLoggedIn();
 
   Future<Either<Failure, List<AppPosition>>> getAddressesSuggestions(
     String query,

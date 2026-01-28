@@ -8,8 +8,10 @@ class BusinessSupabaseDatasource {
   final _supabase = Supabase.instance.client;
 
   // TODO: Move to Auth Datasource
-  Future<Session?> isLoggedIn() async {
-    final session = await _supabase.auth.currentSession;
+  Stream<Session?> isLoggedIn() {
+    final session = _supabase.auth.onAuthStateChange.map(
+      (event) => event.session,
+    );
     return session;
   }
 

@@ -33,7 +33,40 @@ class RegisterBusinessWidget extends ConsumerWidget {
           SizedBox(height: 32),
           ElevatedButton(
             onPressed: () async {
-              final isLoggedInResult = await CheckIfLoggedUsecase(repository)();
+              final isLoggedStream = ref.watch(isLoggedProvider);
+
+              isLoggedStream.when(
+                data: (isLogged) {
+                  if (isLogged) {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => BusinessFormScreen(),
+                      ),
+                    );
+                  } else {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => AuthSelectionScreen(),
+                        settings: RouteSettings(name: '/authSelection'),
+                      ),
+                    );
+                  }
+                },
+                loading: () {
+                  // Optionally show a loading indicator
+                },
+                error: (error, stack) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Ha habido un error. Por favor, inténtalo de nuevo.',
+                        style: OurnegoTextStyles.errorText,
+                      ),
+                    ),
+                  );
+                },
+              );
+              /*final isLoggedInResult = await CheckIfLoggedUsecase(repository)();
 
               isLoggedInResult.fold(
                 (failure) {
@@ -62,7 +95,7 @@ class RegisterBusinessWidget extends ConsumerWidget {
                     );
                   }
                 },
-              );
+              );*/
             },
             style: ButtonStyle(
               backgroundColor: WidgetStatePropertyAll(

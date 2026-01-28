@@ -20,14 +20,10 @@ class BusinessRepositoryImpl implements BusinessRepository {
   });
 
   @override
-  Future<Either<Failure, bool>> isLoggedIn() async {
-    try {
-      final session = await businessDatasource.isLoggedIn();
-      final result = session != null;
-      return Right(result);
-    } catch (e) {
-      return Left(ServerFailure());
-    }
+  Stream<bool> isLoggedIn() {
+    final session = businessDatasource.isLoggedIn();
+    final isLogged = session.map((currentSession) => currentSession != null);
+    return isLogged;
   }
 
   @override
