@@ -6,6 +6,7 @@ import 'package:ournego/features/auth/presentation/pages/complete_profile_screen
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
 import 'package:ournego/features/business/presentation/pages/business_panel_screen.dart';
 import 'package:ournego/features/business/presentation/providers/business_providers.dart';
+import 'package:ournego/features/community/presentation/pages/community_screen.dart';
 import 'package:ournego/features/map/presentation/pages/map_screen.dart';
 import 'package:ournego/features/business/presentation/pages/register_business_screen.dart';
 import 'package:ournego/features/navigation/presentation/providers/navigation_provider.dart';
@@ -87,7 +88,7 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
                             .setIndex(index);
                       },
                       children: [
-                        Placeholder(),
+                        CommunityScreen(),
                         MapScreen(),
                         isOwner
                             ? BusinessPanelScreen()

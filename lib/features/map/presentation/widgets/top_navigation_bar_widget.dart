@@ -17,10 +17,6 @@ class TopNavigationBarWidget extends ConsumerWidget {
 
     final isLoggedAsync = ref.watch(isLoggedProvider);
     final logOutUsecase = ref.watch(logOutUsecaseProvider);
-    // TODO: Improve this by using a more efficient method to check login status
-    /*Timer.periodic(const Duration(seconds: 1), (_) {
-      ref.invalidate(isLoggedProvider);
-    });*/
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 40.0),
