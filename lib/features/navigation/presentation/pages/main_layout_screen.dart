@@ -12,7 +12,6 @@ import 'package:ournego/features/business/presentation/pages/register_business_s
 import 'package:ournego/features/navigation/presentation/providers/navigation_provider.dart';
 import 'package:ournego/features/navigation/presentation/widgets/navigation_bar_widget.dart';
 import 'package:shake/shake.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class MainLayoutScreen extends ConsumerStatefulWidget {
   const MainLayoutScreen({super.key});
@@ -21,11 +20,16 @@ class MainLayoutScreen extends ConsumerStatefulWidget {
   ConsumerState<MainLayoutScreen> createState() => _MainLayoutScreenState();
 }
 
-class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
+class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen>
+    with WidgetsBindingObserver {
   ShakeDetector? _detector;
+  AppLifecycleState? _appLifecycleState;
 
   @override
   void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+
     final authRepository = ref.read(authRepositoryProvider);
     final hasProfile = HasProfileUsecase(
       repository: authRepository,
@@ -43,21 +47,36 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
       });
     });
 
-    super.initState();
-
     _detector = ShakeDetector.autoStart(
       onPhoneShake: (shakeEvent) {
+        if (_appLifecycleState != AppLifecycleState.resumed) {
+          return;
+        }
+
+        if (ref.read(isFeedbackDialogOpenProvider)) {
+          return;
+        }
+        ref.read(isFeedbackDialogOpenProvider.notifier).setIsOpen();
         showDialog(
           context: context,
           builder: (context) => FeedbackDialogWidget(),
-        );
+        ).then((_) {
+          ref.read(isFeedbackDialogOpenProvider.notifier).setIsClosed();
+        });
       },
       shakeThresholdGravity: 2.7,
     );
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    _appLifecycleState = state;
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _detector?.stopListening();
     super.dispose();
   }
