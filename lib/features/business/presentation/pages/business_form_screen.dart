@@ -39,6 +39,7 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
   );
   int? _selectedCategory = 0; // 0 - 12
   final _phoneController = TextEditingController();
+  final _isSending = ValueNotifier<bool>(false);
 
   Future<File> pickBusinessImage() async {
     return _picker.pickImage(source: ImageSource.gallery).then((pickedFile) {
@@ -304,7 +305,13 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
                       onPressed: () async {
                         final hasImage = _pickedImage.path.isNotEmpty;
 
+                        if (_isSending.value) return;
+
                         if (_formKey.currentState!.validate() && hasImage) {
+                          _isSending.value = true;
+
+                          debugPrint('${_isSending.value}');
+
                           final hours = _hoursPickers
                               .map((picker) {
                                 final schedule = picker.getSchedule();
@@ -358,21 +365,40 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
                             },
                           );
                         } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Formulario inválido. Por favor revisa los campos.',
-                              ),
-                            ),
+                          String errorMessage;
+                          if (!hasImage) {
+                            errorMessage =
+                                'Por favor sube una foto del negocio.';
+                          } else {
+                            errorMessage =
+                                'Por favor completa todos los campos requeridos.';
+                          }
+
+                          showDialog(
+                            context: context,
+                            builder: (buildContext) {
+                              return AlertDialog(
+                                title: Text('Error'),
+                                content: Text(errorMessage),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.of(buildContext).pop();
+                                    },
+                                    child: Text('OK'),
+                                  ),
+                                ],
+                              );
+                            },
                           );
-                          ref.invalidate(isOwnerProvider);
-                          Navigator.of(context).pop();
                         }
                       },
-                      child: Text(
-                        'Registrar Negocio',
-                        style: OurnegoTextStyles.header,
-                      ),
+                      child: _isSending.value
+                          ? CircularProgressIndicator(color: Colors.black)
+                          : Text(
+                              'Registrar Negocio',
+                              style: OurnegoTextStyles.header,
+                            ),
                     ),
                   ),
                 ],

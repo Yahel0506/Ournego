@@ -14,19 +14,15 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 final RouteObserver<ModalRoute<void>> routeObserver =
     RouteObserver<ModalRoute<void>>();
-// TODO: (Security) Move Supabase URL and anonKey to secure storage or
-// environment variables. Avoid committing secrets into source control.
-// Perspective: Add a config loader that reads from `.env` or platform
-// secure storage and fail loudly if keys are missing.
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
+  // TODO: Remove all Firebase references if not used
   // await Firebase.initializeApp();
 
   await dotenv.load(fileName: ".env");
 
   await Supabase.initialize(
-    // TODO: load these values from secure config (not hardcoded)
     url:
         dotenv.env['SUPABASE_URL'] ??
         (throw Exception('SUPABASE_URL not found in environment (.env)')),
