@@ -306,15 +306,6 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
                   ),
                   SizedBox(height: 16),
                   TextFormField(
-                    validator: (value) {
-                      if (value != null && value.isNotEmpty) {
-                        final phoneRegExp = RegExp(r'^\d{10}$');
-                        if (!phoneRegExp.hasMatch(value)) {
-                          return 'Por favor ingresa un número de teléfono válido de 10 dígitos';
-                        }
-                      }
-                      return null;
-                    },
                     controller: _phoneController,
                     keyboardType: TextInputType.phone,
                     decoration: InputDecoration(
@@ -556,7 +547,7 @@ class BusinessAddressInput extends StatelessWidget {
             }
             return null;
           },
-          controller: controller,
+          controller: _addressController,
           focusNode: focusNode,
           decoration: InputDecoration(
             hintStyle: OurnegoTextStyles.body.copyWith(
@@ -581,6 +572,8 @@ class BusinessAddressInput extends StatelessWidget {
           zoom: 16,
           curve: Curves.bounceInOut,
         );
+
+        _addressController.text = place.address;
       },
       suggestionsCallback: (query) async {
         if (query.isEmpty || query.length < 3) {
