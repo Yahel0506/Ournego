@@ -14,6 +14,7 @@ import 'package:ournego/features/business/presentation/pages/components/business
 import 'package:ournego/features/map/domain/entities/app_position.dart';
 import 'package:ournego/shared/widgets/animated_background.dart';
 
+import '../../../map/presentation/providers/map_providers.dart';
 import '../../domain/entitites/app_schedule.dart';
 import '../providers/business_providers.dart';
 
@@ -31,6 +32,7 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
   final _descriptionController = TextEditingController();
   final _addressController = TextEditingController();
   late final _animatedMapController = AnimatedMapController(vsync: this);
+  late ProviderSubscription<AsyncValue<AppPosition>> _providerSubscription;
   final _picker = ImagePicker();
   File _pickedImage = File('');
   final List<BusinessHoursPicker> _hoursPickers = List.generate(
@@ -52,6 +54,40 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
   }
 
   @override
+  void initState() {
+    super.initState();
+
+    ProviderSubscription<AsyncValue<AppPosition>> updateLocation() {
+      return ref.listenManual<AsyncValue<AppPosition>>(mapProvider, (
+        previous,
+        next,
+      ) {
+        next.whenOrNull(
+          data: (data) {
+            _animatedMapController.animateTo(
+              dest: LatLng(data.latitude, data.longitude),
+              zoom: 15,
+            );
+          },
+          error: (error, stackTrace) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Error al obtener la ubicación actual. Por favor selecciona la ubicación manualmente.',
+                  ),
+                ),
+              );
+            });
+          },
+        );
+      });
+    }
+
+    _providerSubscription = updateLocation();
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _descriptionController.dispose();
@@ -69,6 +105,8 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
     final bool isDarkModeOn =
         MediaQuery.of(context).platformBrightness == Brightness.dark;
 
+    // TODO: Acces to .env file for tokens
+
     const String myAccessToken =
         'pk.eyJ1IjoieWFoZWwwNTA2IiwiYSI6ImNta2Q5a3l2aTBhMnczZXB3dXVpM29kd2cifQ.7EkrO3IQj-HfS2bR7tKPcg';
     const String myUsername = 'yahel0506';
@@ -76,7 +114,6 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
     const String styleIdDark = 'cmke90wyw005w01qqgz7k6av3';
     const String styleIdLight = 'cmke8zt80000v01rx067dbgpr';
 
-    //final String currentStyleId = isDarkModeOn ? styleIdDark : styleIdLight;
     final String currentStyleId = isDarkModeOn ? styleIdLight : styleIdDark;
 
     return Scaffold(
@@ -451,6 +488,12 @@ class BusinessPositionSelector extends StatelessWidget {
                 bottomRight: Radius.circular(30),
               ),
               child: FlutterMap(
+                options: MapOptions(
+                  initialCenter: LatLng(19.4326, -99.1332),
+                  initialZoom: 12,
+                  maxZoom: 18,
+                  minZoom: 3,
+                ),
                 mapController: _animatedMapController.mapController,
                 children: [
                   TileLayer(
@@ -460,7 +503,6 @@ class BusinessPositionSelector extends StatelessWidget {
                     tileProvider: NetworkTileProvider(
                       headers: {
                         'User-Agent': 'com.ournego.app',
-                        // Mismo nombre que arriba
                         'Referer': 'com.ournego.app',
                       },
                       cachingProvider:
