@@ -31,6 +31,7 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _addressController = TextEditingController();
+  final _addressFocusNode = FocusNode();
   late final _animatedMapController = AnimatedMapController(vsync: this);
   late ProviderSubscription<AsyncValue<AppPosition>> _providerSubscription;
   final _picker = ImagePicker();
@@ -42,6 +43,8 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
   int? _selectedCategory = 0; // 0 - 12
   final _phoneController = TextEditingController();
   final _isSending = ValueNotifier<bool>(false);
+
+  final ScrollController _scrollController = ScrollController();
 
   Future<File> pickBusinessImage() async {
     return _picker.pickImage(source: ImageSource.gallery).then((pickedFile) {
@@ -125,6 +128,7 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
             child: Form(
               key: _formKey,
               child: ListView(
+                controller: _scrollController,
                 children: [
                   Divider(),
                   SizedBox(height: 24),
@@ -225,6 +229,8 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
                     animatedMapController: _animatedMapController,
                     getAddressesSuggestionsUsecase:
                         getAddressesSuggestionsUsecase,
+                    focusNode: _addressFocusNode,
+                    scrollController: _scrollController,
                   ),
                   SizedBox(height: 16),
                   BusinessPositionSelector(
@@ -528,16 +534,29 @@ class BusinessAddressInput extends StatelessWidget {
     required TextEditingController addressController,
     required AnimatedMapController animatedMapController,
     required this.getAddressesSuggestionsUsecase,
+    required this.focusNode,
+    required this.scrollController,
   }) : _addressController = addressController,
        _animatedMapController = animatedMapController;
 
   final TextEditingController _addressController;
   final AnimatedMapController _animatedMapController;
   final GetAddressesSuggestionsUsecase getAddressesSuggestionsUsecase;
+  final FocusNode focusNode;
+  final ScrollController scrollController;
 
   @override
   Widget build(BuildContext context) {
+    if (focusNode.hasFocus) {
+      scrollController.animateTo(
+        670,
+        duration: Duration(milliseconds: 300),
+        curve: Curves.linear,
+      );
+    }
+
     return TypeAheadField(
+      focusNode: focusNode,
       controller: _addressController,
       builder: (context, controller, focusNode) {
         return TextFormField(
