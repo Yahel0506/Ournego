@@ -6,7 +6,7 @@ class Business {
   final String description;
   final String ownerId;
   final String address;
-  final int? phoneNumber;
+  final String? phoneNumber;
   final double latitude;
   final double longitude;
   final BusinessType type;

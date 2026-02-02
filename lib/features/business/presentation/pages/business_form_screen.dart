@@ -385,6 +385,7 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
                                   ),
                                 ),
                               );
+                              _isSending.value = false;
                             },
                             (success) {
                               ScaffoldMessenger.of(context).showSnackBar(
@@ -549,7 +550,7 @@ class BusinessAddressInput extends StatelessWidget {
   Widget build(BuildContext context) {
     if (focusNode.hasFocus) {
       scrollController.animateTo(
-        670,
+        970,
         duration: Duration(milliseconds: 300),
         curve: Curves.linear,
       );
