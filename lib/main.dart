@@ -23,7 +23,7 @@ Future<void> main() async {
   late final bool hasSeenOnboarding;
 
   try {
-    await dotenv.load(fileName: ".env");
+    await dotenv.load(fileName: "assets/.env");
 
     await Supabase.initialize(
       url:
