@@ -21,10 +21,10 @@ jobs:
         run: flutter pub get
         
       - name: Build Web
-        run: flutter build web --release --web-renderer auto
+        run: flutter build web --release
 
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_OURNEGO }}' # No cambies el nombre de este secret
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_... }}' # No cambies el nombre de este secret
           channelId: live
