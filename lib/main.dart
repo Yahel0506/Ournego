@@ -20,19 +20,28 @@ Future<void> main() async {
   // TODO: Remove all Firebase references if not used
   // await Firebase.initializeApp();
 
-  await dotenv.load(fileName: ".env");
+  late final bool hasSeenOnboarding;
 
-  await Supabase.initialize(
-    url:
-        dotenv.env['SUPABASE_URL'] ??
-        (throw Exception('SUPABASE_URL not found in environment (.env)')),
-    anonKey:
-        dotenv.env['SUPABASE_ANON_KEY'] ??
-        (throw Exception('SUPABASE_ANON_KEY not found in environment (.env)')),
-  );
+  try {
+    await dotenv.load(fileName: ".env");
 
-  final prefs = await SharedPreferences.getInstance();
-  final bool hasSeenOnboarding = prefs.getBool('hasSeenOnboarding') ?? false;
+    await Supabase.initialize(
+      url:
+          dotenv.env['SUPABASE_URL'] ??
+          (throw Exception('SUPABASE_URL not found in environment (.env)')),
+      anonKey:
+          dotenv.env['SUPABASE_ANON_KEY'] ??
+          (throw Exception(
+            'SUPABASE_ANON_KEY not found in environment (.env)',
+          )),
+    );
+
+    final prefs = await SharedPreferences.getInstance();
+    hasSeenOnboarding = prefs.getBool('hasSeenOnboarding') ?? false;
+  } catch (e) {
+    print('Error loading environment variables: $e');
+    // Handle the error as needed, e.g., show an error message or exit the app
+  }
 
   runApp(
     BetterFeedback(
