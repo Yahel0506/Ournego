@@ -24,7 +24,7 @@ jobs:
 
       # Ahora sí, la compu ya sabe qué es flutter
       - name: Build Web
-        run: flutter build web --release --dart-define=SUPABASE_URL=https://qixuodrtemljgppdlmvc.supabase.co --dart-define=SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFpeHVvZHJ0ZW1samdwcGRsbXZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMzY5MTksImV4cCI6MjA4MzgxMjkxOX0.1Tv9P2NWygNtU5M9BWdP1VZRBqjoxB_jgq29hGd6BI8
+        run: flutter build web --release
 
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
