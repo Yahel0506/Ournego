@@ -1,5 +1,6 @@
 import 'package:feedback/feedback.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +13,16 @@ import 'package:ournego/features/onboarding/presentation/pages/onboarding_screen
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+// Import for web-specific code
+import 'dart:js_interop' as js;
+
+@js.JS('window.ENV')
+external js.JSObject? get _windowEnv;
+
+extension on js.JSObject {
+  external js.JSString? operator [](js.JSString key);
+}
+
 final RouteObserver<ModalRoute<void>> routeObserver =
     RouteObserver<ModalRoute<void>>();
 
@@ -20,14 +31,31 @@ Future<void> main() async {
   // TODO: Remove all Firebase references if not used
   // await Firebase.initializeApp();
 
-  late final bool hasSeenOnboarding;
+  bool hasSeenOnboarding = false;
 
   try {
-    const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
-    const supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+    String supabaseUrl;
+    String supabaseAnonKey;
+
+    if (kIsWeb) {
+      // For web, get variables from window.ENV (loaded from config.js)
+      supabaseUrl = _getWebEnvVariable('SUPABASE_URL');
+      supabaseAnonKey = _getWebEnvVariable('SUPABASE_ANON_KEY');
+    } else {
+      // For mobile/desktop, use String.fromEnvironment or flutter_dotenv
+      supabaseUrl = const String.fromEnvironment('SUPABASE_URL');
+      supabaseAnonKey = const String.fromEnvironment('SUPABASE_ANON_KEY');
+
+      // If not provided via --dart-define, try loading from .env file
+      if (supabaseUrl.isEmpty || supabaseAnonKey.isEmpty) {
+        await dotenv.load(fileName: '.env');
+        supabaseUrl = dotenv.env['SUPABASE_URL'] ?? '';
+        supabaseAnonKey = dotenv.env['SUPABASE_ANON_KEY'] ?? '';
+      }
+    }
 
     if (supabaseUrl.isEmpty || supabaseAnonKey.isEmpty) {
-      throw Exception('Supabase credentials not found');
+      throw Exception('Supabase credentials not found in environment');
     }
 
     await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
@@ -36,6 +64,7 @@ Future<void> main() async {
     hasSeenOnboarding = prefs.getBool('hasSeenOnboarding') ?? false;
   } catch (e) {
     print('Error loading environment variables: $e');
+    // Continue with default value for hasSeenOnboarding
   }
 
   runApp(
@@ -43,6 +72,25 @@ Future<void> main() async {
       child: ProviderScope(child: MyApp(startOnMap: hasSeenOnboarding)),
     ),
   );
+}
+
+// Helper function to get environment variables from web
+String _getWebEnvVariable(String key) {
+  if (!kIsWeb) return '';
+
+  try {
+    final env = _windowEnv;
+    if (env != null) {
+      final value = env[key.toJS];
+      if (value != null) {
+        return value.toDart;
+      }
+    }
+  } catch (e) {
+    print('Error reading web environment variable $key: $e');
+  }
+
+  return '';
 }
 
 class MyApp extends StatelessWidget {
