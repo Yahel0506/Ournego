@@ -13,7 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 final RouteObserver<ModalRoute<void>> routeObserver =
-RouteObserver<ModalRoute<void>>();
+    RouteObserver<ModalRoute<void>>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,18 +23,14 @@ Future<void> main() async {
   late final bool hasSeenOnboarding;
 
   try {
-    await dotenv.load(fileName: ".env");
+    const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
+    const supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
-    await Supabase.initialize(
-      url:
-      dotenv.env['SUPABASE_URL'] ??
-          (throw Exception('SUPABASE_URL not found in environment (.env)')),
-      anonKey:
-      dotenv.env['SUPABASE_ANON_KEY'] ??
-          (throw Exception(
-            'SUPABASE_ANON_KEY not found in environment (.env)',
-          )),
-    );
+    if (supabaseUrl.isEmpty || supabaseAnonKey.isEmpty) {
+      throw Exception('Supabase credentials not found');
+    }
+
+    await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
 
     final prefs = await SharedPreferences.getInstance();
     hasSeenOnboarding = prefs.getBool('hasSeenOnboarding') ?? false;
@@ -73,9 +69,8 @@ class MyApp extends StatelessWidget {
 
 class MyCustomScrollBehavior extends MaterialScrollBehavior {
   @override
-  Set<PointerDeviceKind> get dragDevices =>
-      {
-        PointerDeviceKind.touch,
-        PointerDeviceKind.mouse,
-      };
+  Set<PointerDeviceKind> get dragDevices => {
+    PointerDeviceKind.touch,
+    PointerDeviceKind.mouse,
+  };
 }
