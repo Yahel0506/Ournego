@@ -1,0 +1,6 @@
+// Configuration for web platform
+// Note: These are public keys that are safe to expose on the client side
+window.ENV = {
+    SUPABASE_URL: 'https://qixuodrtemljgppdlmvc.supabase.co',
+    SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFpeHVvZHJ0ZW1samdwcGRsbXZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMzY5MTksImV4cCI6MjA4MzgxMjkxOX0.1Tv9P2NWygNtU5M9BWdP1VZRBqjoxB_jgq29hGd6BI8'
+};
