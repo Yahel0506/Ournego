@@ -36,7 +36,6 @@ Future<void> main() async {
     hasSeenOnboarding = prefs.getBool('hasSeenOnboarding') ?? false;
   } catch (e) {
     print('Error loading environment variables: $e');
-    // Handle the error as needed, e.g., show an error message or exit the app
   }
 
   runApp(
