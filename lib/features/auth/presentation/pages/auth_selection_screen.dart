@@ -15,21 +15,30 @@ class AuthSelectionScreen extends ConsumerWidget {
       body: Stack(
         children: [
           AnimatedBackground(),
-          AuthSelectionWidget(
-            title: authSelection.title,
-            imagePath: authSelection.imagePath.toString(),
-            darkImagePath: authSelection.darkImagePath.toString(),
-            googleLogin: authSelection.googleLogin.toString(),
-            emailLogin: authSelection.emailLogin.toString(),
-            phoneLogin: authSelection.phoneLogin.toString(),
-            guestAccess: authSelection.guestAccess.toString(),
-            termsText1: authSelection.termsText1.toString(),
-            termsText2: authSelection.termsText2.toString(),
-            termsText3: authSelection.termsText3.toString(),
-            termsText4: authSelection.termsText4.toString(),
-            onSuccess: () {
-              Navigator.pop(context);
-            },
+          Row(
+            children: [
+              Spacer(),
+              ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: 500),
+                child: AuthSelectionWidget(
+                  title: authSelection.title,
+                  imagePath: authSelection.imagePath.toString(),
+                  darkImagePath: authSelection.darkImagePath.toString(),
+                  googleLogin: authSelection.googleLogin.toString(),
+                  emailLogin: authSelection.emailLogin.toString(),
+                  phoneLogin: authSelection.phoneLogin.toString(),
+                  guestAccess: authSelection.guestAccess.toString(),
+                  termsText1: authSelection.termsText1.toString(),
+                  termsText2: authSelection.termsText2.toString(),
+                  termsText3: authSelection.termsText3.toString(),
+                  termsText4: authSelection.termsText4.toString(),
+                  onSuccess: () {
+                    Navigator.pop(context);
+                  },
+                ),
+              ),
+              Spacer(),
+            ],
           ),
         ],
       ),
