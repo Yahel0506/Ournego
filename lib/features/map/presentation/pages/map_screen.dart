@@ -12,6 +12,7 @@ import 'package:ournego/features/map/domain/usecases/get_business_marker_usecase
 import 'package:ournego/features/map/presentation/providers/map_providers.dart';
 import 'package:ournego/features/map/presentation/widgets/business_information_widget.dart';
 import 'package:ournego/features/map/presentation/widgets/top_navigation_bar_widget.dart';
+import 'package:ournego/shared/widgets/information_card_widget.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -86,7 +87,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
         previous,
         next,
       ) {
-        next.whenOrNull(
+        next.when(
           data: (data) {
             if (_initialCenter == null) {
               _animatedMapController.animateTo(
@@ -94,6 +95,31 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 zoom: 15,
               );
             }
+          },
+          loading: () {
+            Future.delayed(Duration(seconds: 5)).then((_) {
+              if (next.isLoading && !permissionModalAlreadyShown) {
+                permissionModalAlreadyShown = true;
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  showModalBottomSheet(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return Container(
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surface,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: InformationCardWidget(
+                          title: "Ha ocurrido un error al obtener la ubicación",
+                          description: "",
+                          imagePath: "assets/images/location_error.png",
+                        ),
+                      );
+                    },
+                  );
+                });
+              }
+            });
           },
           error: (error, stackTrace) {
             if (permissionModalAlreadyShown) return;
@@ -104,50 +130,40 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   showModalBottomSheet(
                     context: context,
                     builder: (BuildContext context) {
-                      return Column(
-                        children: [
-                          Spacer(),
-                          Container(
-                            height: MediaQuery.heightOf(context) / 2,
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  'El permiso de ubicación fue denegado. Por favor, habilítalo para usar la función de mapa.',
-                                  style: OurnegoTextStyles.errorText,
-                                  textAlign: TextAlign.center,
-                                ),
-                                const SizedBox(height: 16),
-                                ElevatedButton(
-                                  style: ButtonStyle(
-                                    backgroundColor: WidgetStatePropertyAll(
-                                      Theme.of(context).colorScheme.primary,
-                                    ),
-                                  ),
-                                  onPressed: () async {
-                                    final status = await Permission.location
-                                        .request();
-                                    if (status.isGranted) {
-                                      // ignore: unused_result
-                                      ref.refresh(mapProvider);
-                                      Navigator.of(context).pop();
-                                    }
-                                  },
-                                  child: Text(
-                                    'Solicitar permiso de ubicación',
-                                    style: TextStyle(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.surface,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                      return Center(
+                        child: Column(
+                          children: [
+                            InformationCardWidget(
+                              title: "El permiso de ubicación fue denegado",
+                              description:
+                                  "Por favor, habilítalo para usar la función de mapa.",
+                              imagePath: "assets/images/location_error.png",
                             ),
-                          ),
-                          Spacer(),
-                        ],
+                            SizedBox(height: 10),
+                            ElevatedButton(
+                              style: ButtonStyle(
+                                backgroundColor: WidgetStatePropertyAll(
+                                  Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
+                              onPressed: () async {
+                                final status = await Permission.location
+                                    .request();
+                                if (status.isGranted) {
+                                  // ignore: unused_result
+                                  ref.refresh(mapProvider);
+                                  Navigator.of(context).pop();
+                                }
+                              },
+                              child: Text(
+                                'Solicitar permiso de ubicación',
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.surface,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       );
                     },
                   );
@@ -155,44 +171,35 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   showModalBottomSheet(
                     context: context,
                     builder: (BuildContext context) {
-                      return Column(
-                        children: [
-                          Spacer(),
-                          Container(
-                            height: MediaQuery.heightOf(context) / 2,
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  'El permiso de ubicación fue denegado permanentemente.\nPor favor, habilítalo desde la configuración de la app.',
-                                  style: OurnegoTextStyles.errorText,
-                                  textAlign: TextAlign.center,
-                                ),
-                                const SizedBox(height: 16),
-                                ElevatedButton(
-                                  style: ButtonStyle(
-                                    backgroundColor: WidgetStatePropertyAll(
-                                      Theme.of(context).colorScheme.primary,
-                                    ),
-                                  ),
-                                  onPressed: () async {
-                                    await openAppSettings();
-                                  },
-                                  child: Text(
-                                    'Abrir configuración de la app',
-                                    style: TextStyle(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.surface,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                      return Center(
+                        child: Column(
+                          children: [
+                            InformationCardWidget(
+                              title:
+                                  "El permiso de ubicación fue negado permanentemente",
+                              description:
+                                  "Por favor, habilítalo manualmente desde la configuración de tu dispositivo para usar la función de mapa.",
+                              imagePath: "assets/images/location_error.png",
                             ),
-                          ),
-                          Spacer(),
-                        ],
+                            SizedBox(height: 10),
+                            ElevatedButton(
+                              style: ButtonStyle(
+                                backgroundColor: WidgetStatePropertyAll(
+                                  Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
+                              onPressed: () async {
+                                await openAppSettings();
+                              },
+                              child: Text(
+                                'Solicitar permiso de ubicación',
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.surface,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       );
                     },
                   );
