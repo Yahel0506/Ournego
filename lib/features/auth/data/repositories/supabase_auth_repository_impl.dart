@@ -83,6 +83,17 @@ class SupabaseAuthRepositoryImpl implements AuthRepository {
     }
   }
 
+  Future<Either<Failure, void>> signInWithGoogle() async {
+    try {
+      return Right(await authDatasource.signInWithGoogle());
+    } on Exception catch (e) {
+      debugPrint(e.toString());
+      return Left(ServerFailure());
+    } catch (_) {
+      return Left(ServerFailure());
+    }
+  }
+
   @override
   Future<Either<Failure, void>> updateProfilePicture(
     File profilePicture,

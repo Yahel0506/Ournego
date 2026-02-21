@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:path/path.dart' as p;
 
@@ -105,5 +106,41 @@ class SupabaseAuthDatasource {
 
   Future<void> logOut() async {
     await _supabase.auth.signOut();
+  }
+
+  Future<void> signInWithGoogle() async {
+    const webClientId =
+        '544311850300-ajutqk3e1djlccqiqs0o7a1qsuck5arl.apps.googleusercontent.com';
+
+    final GoogleSignIn googleSignIn = GoogleSignIn.instance;
+
+    googleSignIn.initialize(serverClientId: webClientId);
+
+    final googleUser = await googleSignIn.authenticate();
+    final googleAuth = googleUser.authentication;
+
+    final idToken = googleAuth.idToken;
+
+    if (idToken == null) {
+      throw 'No se encontró ID Token';
+    }
+
+    await _supabase.auth.signInWithIdToken(
+      provider: OAuthProvider.google,
+      idToken: idToken,
+    );
+
+    final hasProfile = await checkHasProfile();
+
+    if (!hasProfile) {
+      await _supabase.from('users').insert({
+        'id': _supabase.auth.currentUser!.id,
+        'name': googleUser.displayName,
+        'has_profile': true,
+      });
+
+      if (googleUser.photoUrl != null)
+        updateProfilePicture(File.fromUri(Uri.parse(googleUser.photoUrl!)));
+    }
   }
 }

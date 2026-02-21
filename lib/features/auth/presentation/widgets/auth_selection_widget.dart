@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/features/auth/presentation/pages/login_email_screen.dart';
+import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -113,14 +114,18 @@ class TermsRichText extends StatelessWidget {
               text: config.termsText2,
               style: OurnegoTextStyles.link,
               recognizer: TapGestureRecognizer()
-                ..onTap = () => launchTermsUrl('https://ournego.framer.website/terms-and-conditions'),
+                ..onTap = () => launchTermsUrl(
+                  'https://ournego.framer.website/terms-and-conditions',
+                ),
             ),
             TextSpan(text: config.termsText3),
             TextSpan(
               text: config.termsText4,
               style: OurnegoTextStyles.link,
               recognizer: TapGestureRecognizer()
-                ..onTap = () => launchTermsUrl('https://ournego.framer.website/privacy-policy'),
+                ..onTap = () => launchTermsUrl(
+                  'https://ournego.framer.website/privacy-policy',
+                ),
             ),
           ],
         ),
@@ -171,6 +176,7 @@ class GuestAccessButton extends ConsumerWidget {
 
 class PhoneLoginButton extends ConsumerWidget {
   const PhoneLoginButton({super.key, required this.config});
+
   final AuthSelectionWidget config;
 
   @override
@@ -203,6 +209,7 @@ class PhoneLoginButton extends ConsumerWidget {
 
 class MailLoginButton extends ConsumerWidget {
   const MailLoginButton({super.key, required this.config});
+
   final AuthSelectionWidget config;
 
   @override
@@ -240,6 +247,7 @@ class MailLoginButton extends ConsumerWidget {
 
 class GoogleLoginButton extends ConsumerWidget {
   const GoogleLoginButton({super.key, required this.config});
+
   final AuthSelectionWidget config;
 
   @override
@@ -248,8 +256,25 @@ class GoogleLoginButton extends ConsumerWidget {
       width: double.infinity,
       height: 50,
       child: ElevatedButton(
-        onPressed: () {
-          // ref.read(authControllerProvider.notifier).loginWithGoogle();
+        onPressed: () async {
+          final googleSignIn = await ref.read(
+            signInWithGoogleUsecaseProvider,
+          )();
+          googleSignIn.fold(
+            (failure) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Error: ${failure.toString()}')),
+              );
+            },
+            (_) async {
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setBool('hasSeenOnboarding', true);
+
+              if (config.onSuccess != null) {
+                config.onSuccess!();
+              }
+            },
+          );
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: Theme.of(context).colorScheme.onSurface,
