@@ -13,15 +13,9 @@ import 'package:ournego/features/onboarding/presentation/pages/onboarding_screen
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-// Import for web-specific code
-import 'dart:js_interop' as js;
-
-@js.JS('window.ENV')
-external js.JSObject? get _windowEnv;
-
-extension on js.JSObject {
-  external js.JSString? operator [](js.JSString key);
-}
+// Conditional import for web-specific environment configuration
+import 'package:ournego/core/env_config_stub.dart'
+    if (dart.library.js_interop) 'package:ournego/core/env_config_web.dart';
 
 final RouteObserver<ModalRoute<void>> routeObserver =
     RouteObserver<ModalRoute<void>>();
@@ -39,8 +33,8 @@ Future<void> main() async {
 
     if (kIsWeb) {
       // For web, get variables from window.ENV (loaded from config.js)
-      supabaseUrl = _getWebEnvVariable('SUPABASE_URL');
-      supabaseAnonKey = _getWebEnvVariable('SUPABASE_ANON_KEY');
+      supabaseUrl = getWebEnvVariable('SUPABASE_URL');
+      supabaseAnonKey = getWebEnvVariable('SUPABASE_ANON_KEY');
     } else {
       // For mobile/desktop, use String.fromEnvironment or flutter_dotenv
       supabaseUrl = const String.fromEnvironment('SUPABASE_URL');
@@ -72,25 +66,6 @@ Future<void> main() async {
       child: ProviderScope(child: MyApp(startOnMap: hasSeenOnboarding)),
     ),
   );
-}
-
-// Helper function to get environment variables from web
-String _getWebEnvVariable(String key) {
-  if (!kIsWeb) return '';
-
-  try {
-    final env = _windowEnv;
-    if (env != null) {
-      final value = env[key.toJS];
-      if (value != null) {
-        return value.toDart;
-      }
-    }
-  } catch (e) {
-    print('Error reading web environment variable $key: $e');
-  }
-
-  return '';
 }
 
 class MyApp extends StatelessWidget {
