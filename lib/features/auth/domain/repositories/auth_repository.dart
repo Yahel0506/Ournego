@@ -24,6 +24,8 @@ abstract class AuthRepository {
     String password,
   );
 
+  Future<Either<Failure, void>> signInWithGoogle();
+
   Future<Either<Failure, void>> updateProfilePicture(File profilePicture);
 
   Future<Either<Failure, void>> updateUserName(String name);

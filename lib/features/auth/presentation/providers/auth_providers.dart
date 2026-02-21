@@ -15,6 +15,8 @@ import 'package:ournego/features/auth/domain/repositories/auth_repository.dart';
 import 'package:ournego/features/auth/domain/usecases/get_profile_usecase.dart';
 import 'package:ournego/features/auth/domain/usecases/log_out_usecase.dart';
 
+import '../../domain/usecases/sign_in_with_google_usecase.dart';
+
 /*final firebaseAuthRepositoryProvider = Provider<AuthRepository>((ref) {
   final localAuthSelectionDatasource = LocalAuthSelectionDatasource();
   final firebaseAuthDatasource = FirebaseAuthDatasource();
@@ -64,4 +66,11 @@ final profileStreamProvider = StreamProvider<AppUser>((ref) {
 final logOutUsecaseProvider = Provider<LogOutUsecase>((ref) {
   final repository = ref.watch(authRepositoryProvider);
   return LogOutUsecase(repository: repository);
+});
+
+final signInWithGoogleUsecaseProvider = Provider<SignInWithGoogleUsecase>((
+  ref,
+) {
+  final repository = ref.watch(authRepositoryProvider);
+  return SignInWithGoogleUsecase(repository);
 });
