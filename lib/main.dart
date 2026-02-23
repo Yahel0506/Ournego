@@ -2,12 +2,10 @@ import 'package:feedback/feedback.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ournego/core/ournego_colors.dart';
-import 'package:ournego/features/auth/presentation/pages/auth_selection_screen.dart';
 import 'package:ournego/features/navigation/presentation/pages/main_layout_screen.dart';
 import 'package:ournego/features/onboarding/presentation/pages/onboarding_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -84,8 +82,67 @@ class MyApp extends StatelessWidget {
       title: 'Ournego',
       theme: OurnegoColors.lightTheme,
       darkTheme: OurnegoColors.darkTheme,
-      home: homeWidget,
+      home: kIsWeb ? AuthStateListener(child: homeWidget) : homeWidget,
     );
+  }
+}
+
+/// Widget que escucha cambios en el estado de autenticación
+/// Útil para manejar el callback de OAuth en web
+class AuthStateListener extends StatefulWidget {
+  final Widget child;
+
+  const AuthStateListener({super.key, required this.child});
+
+  @override
+  State<AuthStateListener> createState() => _AuthStateListenerState();
+}
+
+class _AuthStateListenerState extends State<AuthStateListener> {
+  @override
+  void initState() {
+    super.initState();
+    if (kIsWeb) {
+      // Escuchar cambios de autenticación para manejar el callback de OAuth
+      Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+        final session = data.session;
+        if (session != null && mounted) {
+          // Usuario autenticado, verificar si tiene perfil
+          _checkAndCreateProfile();
+        }
+      });
+    }
+  }
+
+  Future<void> _checkAndCreateProfile() async {
+    try {
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      if (userId == null) return;
+
+      final data = await Supabase.instance.client
+          .from('users')
+          .select('has_profile')
+          .eq('id', userId)
+          .maybeSingle();
+
+      if (data == null) {
+        // No existe el usuario en la tabla, crearlo
+        final user = Supabase.instance.client.auth.currentUser;
+        await Supabase.instance.client.from('users').insert({
+          'id': userId,
+          'name':
+              user?.userMetadata?['full_name'] ?? user?.email?.split('@')[0],
+          'has_profile': true,
+        });
+      }
+    } catch (e) {
+      print('Error al verificar/crear perfil: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return widget.child;
   }
 }
 
