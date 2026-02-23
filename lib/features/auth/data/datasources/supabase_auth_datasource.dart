@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:path/path.dart' as p;
@@ -109,38 +110,65 @@ class SupabaseAuthDatasource {
   }
 
   Future<void> signInWithGoogle() async {
-    const webClientId =
-        '544311850300-ajutqk3e1djlccqiqs0o7a1qsuck5arl.apps.googleusercontent.com';
+    if (kIsWeb) {
+      // Para web, usar el flujo OAuth nativo de Supabase
+      await _supabase.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: kIsWeb
+            ? null
+            : 'io.supabase.flutterquickstart://login-callback/',
+      );
 
-    final GoogleSignIn googleSignIn = GoogleSignIn.instance;
+      // En web, el flujo OAuth redirige, así que el código siguiente no se ejecuta
+      // hasta que el usuario regrese. La verificación del perfil se debe hacer después
+      // del redirect en la app
+    } else {
+      // Para móvil (Android/iOS), usar google_sign_in
+      const webClientId =
+          '544311850300-ajutqk3e1djlccqiqs0o7a1qsuck5arl.apps.googleusercontent.com';
 
-    googleSignIn.initialize(serverClientId: webClientId);
+      final GoogleSignIn googleSignIn = GoogleSignIn.instance;
 
-    final googleUser = await googleSignIn.authenticate();
-    final googleAuth = googleUser.authentication;
+      googleSignIn.initialize(serverClientId: webClientId);
 
-    final idToken = googleAuth.idToken;
+      final googleUser = await googleSignIn.authenticate();
 
-    if (idToken == null) {
-      throw 'No se encontró ID Token';
+      final googleAuth = googleUser.authentication;
+
+      final idToken = googleAuth.idToken;
+
+      if (idToken == null) {
+        throw 'No se encontró ID Token';
+      }
+
+      await _supabase.auth.signInWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: idToken,
+      );
+
+      // Verificar y crear perfil si es necesario
+      await _ensureUserProfile(googleUser.displayName, googleUser.photoUrl);
     }
+  }
 
-    await _supabase.auth.signInWithIdToken(
-      provider: OAuthProvider.google,
-      idToken: idToken,
-    );
-
+  Future<void> _ensureUserProfile(String? displayName, String? photoUrl) async {
     final hasProfile = await checkHasProfile();
 
     if (!hasProfile) {
       await _supabase.from('users').insert({
         'id': _supabase.auth.currentUser!.id,
-        'name': googleUser.displayName,
+        'name': displayName,
         'has_profile': true,
       });
 
-      if (googleUser.photoUrl != null)
-        updateProfilePicture(File.fromUri(Uri.parse(googleUser.photoUrl!)));
+      // Solo intentar actualizar foto de perfil en móvil
+      if (!kIsWeb && photoUrl != null) {
+        try {
+          updateProfilePicture(File.fromUri(Uri.parse(photoUrl)));
+        } catch (e) {
+          print('Error al actualizar foto de perfil: $e');
+        }
+      }
     }
   }
 }
