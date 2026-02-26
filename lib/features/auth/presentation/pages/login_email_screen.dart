@@ -62,76 +62,72 @@ class _LoginEmailScreenState extends ConsumerState<LoginEmailScreen> {
       body: Stack(
         children: [
           AnimatedBackground(),
-          Row(
-            children: [
-              Spacer(),
-              ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: 500),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 30,
-                    vertical: 120,
-                  ),
-                  child: Column(
-                    children: [
-                      // Título de la screen
-                      Text(text.title, style: OurnegoTextStyles.header),
-                      Spacer(),
-                      // Campos de texto
-                      Form(
-                        key: _formKey,
-                        child: Column(
-                          children: [
-                            // Introducir email
-                            AutofillGroup(
-                              child: EmailInput(
-                                text: text,
-                                controller: _emailController,
-                              ),
-                            ),
-                            SizedBox(height: 30),
-                            // Introducir contraseña
-                            AutofillGroup(
-                              child: PasswordInput(
-                                text: text,
-                                controller: _passwordController,
-                              ),
-                            ),
-                            SizedBox(height: 30),
-                            // Botón Login
-                            PrimaryButton(
+          Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: 500),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 30,
+                  vertical: 120,
+                ),
+                child: Column(
+                  children: [
+                    // Título de la screen
+                    Text(text.title, style: OurnegoTextStyles.header),
+                    Spacer(),
+                    // Campos de texto
+                    Form(
+                      key: _formKey,
+                      child: Column(
+                        children: [
+                          // Introducir email
+                          AutofillGroup(
+                            child: EmailInput(
                               text: text,
-                              repository: repository,
-                              errorMessages: errorMessages,
-                              formKey: _formKey,
-                              emailController: _emailController,
-                              passwordController: _passwordController,
+                              controller: _emailController,
                             ),
-                          ],
-                        ),
-                      ),
-                      Spacer(),
-                      // Texto para hacer SignUp
-                      InkWell(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => SignupEmailScreen(),
+                          ),
+                          SizedBox(height: 30),
+                          // Introducir contraseña
+                          AutofillGroup(
+                            child: PasswordInput(
+                              text: text,
+                              controller: _passwordController,
                             ),
-                          );
-                        },
-                        child: Text(
-                          text.signUp.toString(),
-                          style: OurnegoTextStyles.link,
-                        ),
+                          ),
+                          SizedBox(height: 30),
+                          // Botón Login
+                          PrimaryButton(
+                            text: text,
+                            repository: repository,
+                            errorMessages: errorMessages,
+                            formKey: _formKey,
+                            emailController: _emailController,
+                            passwordController: _passwordController,
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                    Spacer(),
+                    // Texto para hacer SignUp
+                    InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => SignupEmailScreen(),
+                          ),
+                        );
+                      },
+                      child: Text(
+                        text.signUp.toString(),
+                        style: OurnegoTextStyles.link,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              Spacer(),
-            ],
+            ),
           ),
         ],
       ),

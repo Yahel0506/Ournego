@@ -73,233 +73,221 @@ class CompleteProfileScreen extends ConsumerWidget {
       body: Stack(
         children: [
           AnimatedBackground(),
-          Row(
-            children: [
-              Spacer(),
-              ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: 500),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 30,
-                    vertical: 120,
-                  ),
-                  child: Column(
-                    children: [
-                      // Título de la screen
-                      Text(
-                        text.title,
-                        style: OurnegoTextStyles.header,
-                        textAlign: TextAlign.center,
-                      ),
-                      Spacer(),
-                      // Campos de texto
-                      Form(
-                        key: _formKey,
-                        child: Column(
-                          children: [
-                            SizedBox(
-                              height: 150,
-                              width: 150,
-                              child: Stack(
-                                children: [
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(1000),
-                                    child: Image(
-                                      fit: BoxFit.cover,
-                                      image: NetworkImage(
-                                        '$imageUrl?v=${DateTime.now().millisecondsSinceEpoch}',
-                                      ),
-                                      errorBuilder:
-                                          (context, error, stackTrace) {
-                                            return Container(
-                                              color: Colors.grey.withAlpha(127),
-                                              width: double.maxFinite,
-                                              height: double.maxFinite,
-                                              child: Icon(
-                                                Icons.account_circle,
-                                                size: 60,
-                                              ),
-                                            );
-                                          },
+          Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: 500),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 30,
+                  vertical: 120,
+                ),
+                child: Column(
+                  children: [
+                    // Título de la screen
+                    Text(
+                      text.title,
+                      style: OurnegoTextStyles.header,
+                      textAlign: TextAlign.center,
+                    ),
+                    Spacer(),
+                    // Campos de texto
+                    Form(
+                      key: _formKey,
+                      child: Column(
+                        children: [
+                          SizedBox(
+                            height: 150,
+                            width: 150,
+                            child: Stack(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(1000),
+                                  child: Image(
+                                    fit: BoxFit.cover,
+                                    image: NetworkImage(
+                                      '$imageUrl?v=${DateTime.now().millisecondsSinceEpoch}',
                                     ),
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Container(
+                                        color: Colors.grey.withAlpha(127),
+                                        width: double.maxFinite,
+                                        height: double.maxFinite,
+                                        child: Icon(
+                                          Icons.account_circle,
+                                          size: 60,
+                                        ),
+                                      );
+                                    },
                                   ),
-                                  Align(
-                                    alignment: Alignment.bottomRight,
-                                    child: ElevatedButton(
-                                      onPressed: () async {
-                                        final path = await cropImage();
+                                ),
+                                Align(
+                                  alignment: Alignment.bottomRight,
+                                  child: ElevatedButton(
+                                    onPressed: () async {
+                                      final path = await cropImage();
 
-                                        if (path != null) {
-                                          final profilePicture = File(path);
-                                          UpdateProfileUsecase(
-                                            repository: repository,
-                                          ).updateProfilePicture(
-                                            profilePicture,
+                                      if (path != null) {
+                                        final profilePicture = File(path);
+                                        UpdateProfileUsecase(
+                                          repository: repository,
+                                        ).updateProfilePicture(profilePicture);
+                                      }
+                                    },
+                                    style: ButtonStyle(
+                                      minimumSize: WidgetStatePropertyAll(
+                                        Size(50, 50),
+                                      ),
+                                    ),
+                                    child: Icon(Icons.edit_rounded, size: 20),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: 30),
+                          // Introducir nombre de usuario
+                          AutofillGroup(
+                            child: Column(
+                              children: [
+                                // Instrucción
+                                Text(
+                                  text.primaryInstruction,
+                                  style: OurnegoTextStyles.body,
+                                ),
+                                SizedBox(height: 10),
+                                TextFormField(
+                                  controller: _nameController,
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Crea un nombre de usuario';
+                                    } else {
+                                      return null;
+                                    }
+                                  },
+                                  decoration: InputDecoration(
+                                    hint: Text(text.primaryHint),
+                                    filled: true,
+                                    border: OutlineInputBorder(),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: 30),
+                          // Botón SignUp
+                          ElevatedButton(
+                            onPressed: () async {
+                              if (_formKey.currentState?.validate() ?? false) {
+                                final result = await UpdateProfileUsecase(
+                                  repository: repository,
+                                ).updateUserName(_nameController.text);
+
+                                result.fold(
+                                  (failure) {
+                                    final message = errorMessages
+                                        .getErrorMessage(failure);
+                                    // Mostrar error
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          message,
+                                          style: OurnegoTextStyles.errorText,
+                                        ),
+                                        backgroundColor: Colors.transparent,
+                                      ),
+                                    );
+                                  },
+                                  (_) async {
+                                    final confirmed = await HasProfileUsecase(
+                                      repository: repository,
+                                    ).confirmHasProfile();
+
+                                    confirmed.fold(
+                                      (failure) {
+                                        final message = errorMessages
+                                            .getErrorMessage(failure);
+                                        // Mostrar error
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              message,
+                                              style:
+                                                  OurnegoTextStyles.errorText,
+                                            ),
+                                            backgroundColor: Colors.transparent,
+                                          ),
+                                        );
+                                      },
+                                      (_) async {
+                                        final prefs =
+                                            await SharedPreferences.getInstance();
+
+                                        if (prefs.getBool(
+                                              'hasSeenOnboarding',
+                                            ) ??
+                                            false) {
+                                          Navigator.of(context).popUntil(
+                                            (route) =>
+                                                route.settings.name ==
+                                                '/authSelection',
+                                          );
+                                          WidgetsBinding.instance
+                                              .addPostFrameCallback((_) {
+                                                if (context.mounted) {
+                                                  Navigator.of(context).pop();
+                                                }
+                                              });
+                                        } else {
+                                          // Pequeña pausa para asegurar que las operaciones anteriores se completen
+                                          await Future.delayed(
+                                            Duration(milliseconds: 100),
+                                          );
+
+                                          Navigator.of(
+                                            context,
+                                          ).pushAndRemoveUntil(
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  MainLayoutScreen(),
+                                            ),
+                                            (route) => false,
                                           );
                                         }
                                       },
-                                      style: ButtonStyle(
-                                        minimumSize: WidgetStatePropertyAll(
-                                          Size(50, 50),
-                                        ),
-                                      ),
-                                      child: Icon(Icons.edit_rounded, size: 20),
-                                    ),
-                                  ),
-                                ],
+                                    );
+                                  },
+                                );
+                              }
+                            },
+                            style: ButtonStyle(
+                              minimumSize: WidgetStatePropertyAll(
+                                Size(double.infinity, 50),
                               ),
-                            ),
-                            SizedBox(height: 30),
-                            // Introducir nombre de usuario
-                            AutofillGroup(
-                              child: Column(
-                                children: [
-                                  // Instrucción
-                                  Text(
-                                    text.primaryInstruction,
-                                    style: OurnegoTextStyles.body,
-                                  ),
-                                  SizedBox(height: 10),
-                                  TextFormField(
-                                    controller: _nameController,
-                                    validator: (value) {
-                                      if (value == null || value.isEmpty) {
-                                        return 'Crea un nombre de usuario';
-                                      } else {
-                                        return null;
-                                      }
-                                    },
-                                    decoration: InputDecoration(
-                                      hint: Text(text.primaryHint),
-                                      filled: true,
-                                      border: OutlineInputBorder(),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            SizedBox(height: 30),
-                            // Botón SignUp
-                            ElevatedButton(
-                              onPressed: () async {
-                                if (_formKey.currentState?.validate() ??
-                                    false) {
-                                  final result = await UpdateProfileUsecase(
-                                    repository: repository,
-                                  ).updateUserName(_nameController.text);
-
-                                  result.fold(
-                                    (failure) {
-                                      final message = errorMessages
-                                          .getErrorMessage(failure);
-                                      // Mostrar error
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            message,
-                                            style: OurnegoTextStyles.errorText,
-                                          ),
-                                          backgroundColor: Colors.transparent,
-                                        ),
-                                      );
-                                    },
-                                    (_) async {
-                                      final confirmed = await HasProfileUsecase(
-                                        repository: repository,
-                                      ).confirmHasProfile();
-
-                                      confirmed.fold(
-                                        (failure) {
-                                          final message = errorMessages
-                                              .getErrorMessage(failure);
-                                          // Mostrar error
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                message,
-                                                style:
-                                                    OurnegoTextStyles.errorText,
-                                              ),
-                                              backgroundColor:
-                                                  Colors.transparent,
-                                            ),
-                                          );
-                                        },
-                                        (_) async {
-                                          final prefs =
-                                              await SharedPreferences.getInstance();
-
-                                          if (prefs.getBool(
-                                                'hasSeenOnboarding',
-                                              ) ??
-                                              false) {
-                                            Navigator.of(context).popUntil(
-                                              (route) =>
-                                                  route.settings.name ==
-                                                  '/authSelection',
-                                            );
-                                            WidgetsBinding.instance
-                                                .addPostFrameCallback((_) {
-                                                  if (context.mounted) {
-                                                    Navigator.of(context).pop();
-                                                  }
-                                                });
-                                          } else {
-                                            // Pequeña pausa para asegurar que las operaciones anteriores se completen
-                                            await Future.delayed(
-                                              Duration(milliseconds: 100),
-                                            );
-
-                                            Navigator.of(
-                                              context,
-                                            ).pushAndRemoveUntil(
-                                              MaterialPageRoute(
-                                                builder: (context) =>
-                                                    MainLayoutScreen(),
-                                              ),
-                                              (route) => false,
-                                            );
-                                          }
-                                        },
-                                      );
-                                    },
-                                  );
+                              backgroundColor: WidgetStateProperty.resolveWith((
+                                states,
+                              ) {
+                                if (states.contains(WidgetState.pressed)) {
+                                  return OurnegoColors.azulVerde;
+                                } else {
+                                  return OurnegoColors.azulCielo;
                                 }
-                              },
-                              style: ButtonStyle(
-                                minimumSize: WidgetStatePropertyAll(
-                                  Size(double.infinity, 50),
-                                ),
-                                backgroundColor:
-                                    WidgetStateProperty.resolveWith((states) {
-                                      if (states.contains(
-                                        WidgetState.pressed,
-                                      )) {
-                                        return OurnegoColors.azulVerde;
-                                      } else {
-                                        return OurnegoColors.azulCielo;
-                                      }
-                                    }),
-                                foregroundColor: WidgetStatePropertyAll(
-                                  Theme.of(context).colorScheme.onPrimary,
-                                ),
+                              }),
+                              foregroundColor: WidgetStatePropertyAll(
+                                Theme.of(context).colorScheme.onPrimary,
                               ),
-                              child: Text(text.primaryButton),
                             ),
-                          ],
-                        ),
+                            child: Text(text.primaryButton),
+                          ),
+                        ],
                       ),
-                      Spacer(),
-                    ],
-                  ),
+                    ),
+                    Spacer(),
+                  ],
                 ),
               ),
-              Spacer(),
-            ],
+            ),
           ),
         ],
       ),

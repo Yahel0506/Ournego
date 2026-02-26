@@ -15,9 +15,9 @@ class AuthSelectionScreen extends ConsumerWidget {
       body: Stack(
         children: [
           AnimatedBackground(),
-          ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: 500),
-            child: Center(
+          Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: 500),
               child: AuthSelectionWidget(
                 title: authSelection.title,
                 imagePath: authSelection.imagePath.toString(),
