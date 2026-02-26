@@ -54,257 +54,244 @@ class _CreatePasswordScreen extends ConsumerState<CreatePasswordScreen> {
       body: Stack(
         children: [
           AnimatedBackground(),
-          Row(
-            children: [
-              Spacer(),
-              ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: 500),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 30,
-                    vertical: 120,
-                  ),
-                  child: Column(
-                    children: [
-                      // Título de la screen
-                      Text(
-                        text.title,
-                        style: OurnegoTextStyles.header,
-                        textAlign: TextAlign.center,
-                      ),
-                      Spacer(),
-                      // Campos de texto
-                      Form(
-                        key: _formKey,
-                        child: Column(
-                          children: [
-                            // Crear contraseña
-                            AutofillGroup(
-                              child: Column(
-                                children: [
-                                  // Instrucción
-                                  Text(
-                                    text.primaryInstruction,
-                                    style: OurnegoTextStyles.body,
-                                  ),
-                                  SizedBox(height: 10),
-                                  TextFormField(
-                                    controller: _passwordController,
-                                    onChanged: (value) {
-                                      setState(() {
-                                        hasCapitalLetter = value.contains(
-                                          RegExp(r'[A-Z]'),
-                                        );
-                                        hasNumbersOrSpecialChars = value
-                                            .contains(
-                                              RegExp(
-                                                r'[0-9!@#$%^&*(),.?":{}|<>]',
-                                              ),
-                                            );
-                                        minimumLenght = value.length >= 8;
-                                      });
-                                    },
-                                    decoration: InputDecoration(
-                                      hint: Text(text.primaryHint),
-                                      filled: true,
-                                      border: OutlineInputBorder(),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-
-                            SizedBox(height: 10),
-                            Column(
+          Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: 500),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 30,
+                  vertical: 120,
+                ),
+                child: Column(
+                  children: [
+                    // Título de la screen
+                    Text(
+                      text.title,
+                      style: OurnegoTextStyles.header,
+                      textAlign: TextAlign.center,
+                    ),
+                    Spacer(),
+                    // Campos de texto
+                    Form(
+                      key: _formKey,
+                      child: Column(
+                        children: [
+                          // Crear contraseña
+                          AutofillGroup(
+                            child: Column(
                               children: [
-                                Row(
-                                  children: [
-                                    Icon(
-                                      hasCapitalLetter
-                                          ? Icons.check
-                                          : Icons.panorama_fish_eye,
-                                      size: 12,
-                                    ),
-                                    SizedBox(width: 10),
-                                    Text(
-                                      passwordRules[0],
-                                      style: OurnegoTextStyles.body.copyWith(
-                                        color: !hasCapitalLetter
-                                            ? Colors.red
-                                            : Theme.of(context)
-                                                      .textTheme
-                                                      .bodyLarge
-                                                      ?.color ??
-                                                  Theme.of(
-                                                    context,
-                                                  ).colorScheme.onSurface,
-                                      ),
-                                    ),
-                                  ],
+                                // Instrucción
+                                Text(
+                                  text.primaryInstruction,
+                                  style: OurnegoTextStyles.body,
                                 ),
-                                Row(
-                                  children: [
-                                    Icon(
-                                      hasNumbersOrSpecialChars
-                                          ? Icons.check
-                                          : Icons.panorama_fish_eye,
-                                      size: 12,
-                                    ),
-                                    SizedBox(width: 10),
-                                    Text(
-                                      passwordRules[1],
-                                      style: OurnegoTextStyles.body.copyWith(
-                                        color: !hasNumbersOrSpecialChars
-                                            ? Colors.red
-                                            : Theme.of(context)
-                                                      .textTheme
-                                                      .bodyLarge
-                                                      ?.color ??
-                                                  Theme.of(
-                                                    context,
-                                                  ).colorScheme.onSurface,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                Row(
-                                  children: [
-                                    Icon(
-                                      minimumLenght
-                                          ? Icons.check
-                                          : Icons.panorama_fish_eye,
-                                      size: 12,
-                                    ),
-                                    SizedBox(width: 10),
-                                    Text(
-                                      passwordRules[2],
-                                      style: OurnegoTextStyles.body.copyWith(
-                                        color: !minimumLenght
-                                            ? Colors.red
-                                            : Theme.of(context)
-                                                      .textTheme
-                                                      .bodyLarge
-                                                      ?.color ??
-                                                  Theme.of(
-                                                    context,
-                                                  ).colorScheme.onSurface,
-                                      ),
-                                    ),
-                                  ],
+                                SizedBox(height: 10),
+                                TextFormField(
+                                  controller: _passwordController,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      hasCapitalLetter = value.contains(
+                                        RegExp(r'[A-Z]'),
+                                      );
+                                      hasNumbersOrSpecialChars = value.contains(
+                                        RegExp(r'[0-9!@#$%^&*(),.?":{}|<>]'),
+                                      );
+                                      minimumLenght = value.length >= 8;
+                                    });
+                                  },
+                                  decoration: InputDecoration(
+                                    hint: Text(text.primaryHint),
+                                    filled: true,
+                                    border: OutlineInputBorder(),
+                                  ),
                                 ),
                               ],
                             ),
-                            SizedBox(height: 30),
-                            AutofillGroup(
-                              child: Column(
+                          ),
+
+                          SizedBox(height: 10),
+                          Column(
+                            children: [
+                              Row(
                                 children: [
-                                  // Instrucción
-                                  Text(
-                                    text.secondaryInstruction.toString(),
-                                    style: OurnegoTextStyles.body,
+                                  Icon(
+                                    hasCapitalLetter
+                                        ? Icons.check
+                                        : Icons.panorama_fish_eye,
+                                    size: 12,
                                   ),
-                                  SizedBox(height: 10),
-                                  TextFormField(
-                                    validator: (value) {
-                                      if (value != _passwordController.text) {
-                                        return 'Las contraseñas no coinciden';
-                                      } else {
-                                        return null;
-                                      }
-                                    },
-                                    onChanged: (value) {
-                                      _formKey.currentState?.validate();
-                                    },
-                                    decoration: InputDecoration(
-                                      hint: Text(text.secondaryHint.toString()),
-                                      filled: true,
-                                      border: OutlineInputBorder(),
+                                  SizedBox(width: 10),
+                                  Text(
+                                    passwordRules[0],
+                                    style: OurnegoTextStyles.body.copyWith(
+                                      color: !hasCapitalLetter
+                                          ? Colors.red
+                                          : Theme.of(
+                                                  context,
+                                                ).textTheme.bodyLarge?.color ??
+                                                Theme.of(
+                                                  context,
+                                                ).colorScheme.onSurface,
                                     ),
                                   ),
                                 ],
                               ),
-                            ),
-                            SizedBox(height: 30),
-                            // Botón Login
-                            ElevatedButton(
-                              onPressed: () async {
-                                final bool isValid =
-                                    hasCapitalLetter &&
-                                    hasNumbersOrSpecialChars &&
-                                    minimumLenght;
-                                if ((_formKey.currentState?.validate() ??
-                                        false) &&
-                                    isValid) {
-                                  final usecase = SignUpWithEmailUsecase(
-                                    repository: repository,
-                                  );
-
-                                  final result = await usecase(
-                                    email,
-                                    _passwordController.text,
-                                  );
-
-                                  result.fold(
-                                    (failure) {
-                                      final message = errorMessages
-                                          .getErrorMessage(failure);
-                                      // Mostrar error
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            message,
-                                            style: OurnegoTextStyles.body
-                                                .copyWith(color: Colors.red),
-                                          ),
-                                          backgroundColor: Colors.transparent,
-                                        ),
-                                      );
-                                    },
-                                    (user) async {
-                                      // Navegar a la siguiente pantalla o mostrar éxito
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              CompleteProfileScreen(),
-                                        ),
-                                      );
-                                    },
-                                  );
-                                }
-                              },
-                              style: ButtonStyle(
-                                minimumSize: WidgetStatePropertyAll(
-                                  Size(double.infinity, 50),
-                                ),
-                                backgroundColor:
-                                    WidgetStateProperty.resolveWith((states) {
-                                      if (states.contains(
-                                        WidgetState.pressed,
-                                      )) {
-                                        return OurnegoColors.azulVerde;
-                                      } else {
-                                        return OurnegoColors.azulCielo;
-                                      }
-                                    }),
-                                foregroundColor: WidgetStatePropertyAll(
-                                  Theme.of(context).colorScheme.onPrimary,
-                                ),
+                              Row(
+                                children: [
+                                  Icon(
+                                    hasNumbersOrSpecialChars
+                                        ? Icons.check
+                                        : Icons.panorama_fish_eye,
+                                    size: 12,
+                                  ),
+                                  SizedBox(width: 10),
+                                  Text(
+                                    passwordRules[1],
+                                    style: OurnegoTextStyles.body.copyWith(
+                                      color: !hasNumbersOrSpecialChars
+                                          ? Colors.red
+                                          : Theme.of(
+                                                  context,
+                                                ).textTheme.bodyLarge?.color ??
+                                                Theme.of(
+                                                  context,
+                                                ).colorScheme.onSurface,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              child: Text(text.primaryButton),
+                              Row(
+                                children: [
+                                  Icon(
+                                    minimumLenght
+                                        ? Icons.check
+                                        : Icons.panorama_fish_eye,
+                                    size: 12,
+                                  ),
+                                  SizedBox(width: 10),
+                                  Text(
+                                    passwordRules[2],
+                                    style: OurnegoTextStyles.body.copyWith(
+                                      color: !minimumLenght
+                                          ? Colors.red
+                                          : Theme.of(
+                                                  context,
+                                                ).textTheme.bodyLarge?.color ??
+                                                Theme.of(
+                                                  context,
+                                                ).colorScheme.onSurface,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 30),
+                          AutofillGroup(
+                            child: Column(
+                              children: [
+                                // Instrucción
+                                Text(
+                                  text.secondaryInstruction.toString(),
+                                  style: OurnegoTextStyles.body,
+                                ),
+                                SizedBox(height: 10),
+                                TextFormField(
+                                  validator: (value) {
+                                    if (value != _passwordController.text) {
+                                      return 'Las contraseñas no coinciden';
+                                    } else {
+                                      return null;
+                                    }
+                                  },
+                                  onChanged: (value) {
+                                    _formKey.currentState?.validate();
+                                  },
+                                  decoration: InputDecoration(
+                                    hint: Text(text.secondaryHint.toString()),
+                                    filled: true,
+                                    border: OutlineInputBorder(),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
+                          ),
+                          SizedBox(height: 30),
+                          // Botón Login
+                          ElevatedButton(
+                            onPressed: () async {
+                              final bool isValid =
+                                  hasCapitalLetter &&
+                                  hasNumbersOrSpecialChars &&
+                                  minimumLenght;
+                              if ((_formKey.currentState?.validate() ??
+                                      false) &&
+                                  isValid) {
+                                final usecase = SignUpWithEmailUsecase(
+                                  repository: repository,
+                                );
+
+                                final result = await usecase(
+                                  email,
+                                  _passwordController.text,
+                                );
+
+                                result.fold(
+                                  (failure) {
+                                    final message = errorMessages
+                                        .getErrorMessage(failure);
+                                    // Mostrar error
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          message,
+                                          style: OurnegoTextStyles.body
+                                              .copyWith(color: Colors.red),
+                                        ),
+                                        backgroundColor: Colors.transparent,
+                                      ),
+                                    );
+                                  },
+                                  (user) async {
+                                    // Navegar a la siguiente pantalla o mostrar éxito
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            CompleteProfileScreen(),
+                                      ),
+                                    );
+                                  },
+                                );
+                              }
+                            },
+                            style: ButtonStyle(
+                              minimumSize: WidgetStatePropertyAll(
+                                Size(double.infinity, 50),
+                              ),
+                              backgroundColor: WidgetStateProperty.resolveWith((
+                                states,
+                              ) {
+                                if (states.contains(WidgetState.pressed)) {
+                                  return OurnegoColors.azulVerde;
+                                } else {
+                                  return OurnegoColors.azulCielo;
+                                }
+                              }),
+                              foregroundColor: WidgetStatePropertyAll(
+                                Theme.of(context).colorScheme.onPrimary,
+                              ),
+                            ),
+                            child: Text(text.primaryButton),
+                          ),
+                        ],
                       ),
-                      Spacer(),
-                    ],
-                  ),
+                    ),
+                    Spacer(),
+                  ],
                 ),
               ),
-              Spacer(),
-            ],
+            ),
           ),
         ],
       ),
