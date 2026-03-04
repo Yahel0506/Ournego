@@ -246,6 +246,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final businessState = ref.watch(businessesStreamProvider);
     final businessFavorites = ref.watch(businessFavoritesUsecaseProvider);
 
+    final bool isWide = MediaQuery.of(context).size.width > 600;
+
     final bool isDarkModeOn =
         MediaQuery.of(context).platformBrightness == Brightness.dark;
 
@@ -608,43 +610,49 @@ class _MapScreenState extends ConsumerState<MapScreen>
               SizedBox(height: 60),
             ],
           ),
-          NotificationListener<DraggableScrollableNotification>(
-            onNotification: (notification) {
-              final double currentSize = notification.extent;
+          Align(
+            alignment: Alignment.center,
+            child: SizedBox(
+              width: isWide ? 600 : double.maxFinite,
+              child: NotificationListener<DraggableScrollableNotification>(
+                onNotification: (notification) {
+                  final double currentSize = notification.extent;
 
-              int newState;
+                  int newState;
 
-              if (currentSize == 0.95) {
-                newState = 2; // Está cerca de 0.9
-              } else if (currentSize > 0.25) {
-                newState = 1; // Está cerca de 0.5
-              } else {
-                newState = 0; // Está cerca de 0.2
-              }
+                  if (currentSize == 0.95) {
+                    newState = 2; // Está cerca de 0.9
+                  } else if (currentSize > 0.25) {
+                    newState = 1; // Está cerca de 0.5
+                  } else {
+                    newState = 0; // Está cerca de 0.2
+                  }
 
-              final int currentStateInProvider = ref.read(modalState);
+                  final int currentStateInProvider = ref.read(modalState);
 
-              if (newState != currentStateInProvider) {
-                ref.read(modalState.notifier).changeStateTo(newState);
-              }
+                  if (newState != currentStateInProvider) {
+                    ref.read(modalState.notifier).changeStateTo(newState);
+                  }
 
-              return true;
-            },
-            child: DraggableScrollableSheet(
-              controller: _modalController,
-              shouldCloseOnMinExtent: false,
-              snap: true,
-              snapSizes: [0.25, 0.6, 0.95],
-              initialChildSize: 0.0,
-              minChildSize: 0.0,
-              maxChildSize: 0.95,
-              builder: (context, scrollController) {
-                {
-                  return BusinessInformationWidget(
-                    scrollController: scrollController,
-                  );
-                }
-              },
+                  return true;
+                },
+                child: DraggableScrollableSheet(
+                  controller: _modalController,
+                  shouldCloseOnMinExtent: false,
+                  snap: true,
+                  snapSizes: [0.25, 0.6, 0.95],
+                  initialChildSize: 0.0,
+                  minChildSize: 0.0,
+                  maxChildSize: 0.95,
+                  builder: (context, scrollController) {
+                    {
+                      return BusinessInformationWidget(
+                        scrollController: scrollController,
+                      );
+                    }
+                  },
+                ),
+              ),
             ),
           ),
         ],
