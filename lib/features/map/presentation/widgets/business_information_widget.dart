@@ -31,6 +31,10 @@ class BusinessInformationWidget extends ConsumerWidget {
     final _modalState = ref.watch(modalState);
     final business = ref.watch(selectedBusiness);
 
+    final bool isWide = MediaQuery.of(context).size.width > 600;
+
+    final double screenWidth = MediaQuery.of(context).size.width;
+
     if (business == null) {
       return Container(
         decoration: BoxDecoration(
@@ -90,6 +94,11 @@ class BusinessInformationWidget extends ConsumerWidget {
             // ------------------------------- General Opinion Button ------------------------------------//
             ElevatedButton(
               style: ButtonStyle(
+                fixedSize: isWide
+                    ? WidgetStatePropertyAll(Size((0.2 * 600) - 20, 40))
+                    : WidgetStatePropertyAll(
+                        Size((0.2 * screenWidth) - 20, 40),
+                      ),
                 shadowColor: WidgetStatePropertyAll(Colors.transparent),
                 backgroundColor: WidgetStatePropertyAll(
                   Colors.grey.withAlpha(80),
@@ -105,6 +114,11 @@ class BusinessInformationWidget extends ConsumerWidget {
             // ------------------------------- Search Products Button ------------------------------------//
             ElevatedButton(
               style: ButtonStyle(
+                fixedSize: isWide
+                    ? WidgetStatePropertyAll(Size((0.6 * 600) - 20, 40))
+                    : WidgetStatePropertyAll(
+                        Size((0.6 * screenWidth) - 20, 40),
+                      ),
                 shadowColor: WidgetStatePropertyAll(Colors.transparent),
                 backgroundColor: WidgetStatePropertyAll(
                   Colors.grey.withAlpha(80),
@@ -115,6 +129,7 @@ class BusinessInformationWidget extends ConsumerWidget {
               ),
               onPressed: () {},
               child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Icon(Icons.search),
                   Text('Buscar Productos', style: OurnegoTextStyles.body),
@@ -125,6 +140,9 @@ class BusinessInformationWidget extends ConsumerWidget {
             // ------------------------------- Message Button ------------------------------------//
             ElevatedButton(
               style: ButtonStyle(
+                fixedSize: isWide
+                    ? WidgetStatePropertyAll(Size((0.2 * 600) - 20, 40))
+                    : WidgetStatePropertyAll(Size((0.2 * screenWidth), 40)),
                 shadowColor: WidgetStatePropertyAll(Colors.transparent),
                 backgroundColor: WidgetStatePropertyAll(
                   Colors.grey.withAlpha(80),
