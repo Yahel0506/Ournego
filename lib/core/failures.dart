@@ -45,5 +45,21 @@ class LocationUnavailableFailure extends Failure {}
 // Si la operación requiere autenticación pero no hay usuario loggeado
 class AuthenticationRequiredFailure extends Failure {}
 
+// |---------------------------------| \\
+// |----- FAILURES DE BUSINESS ------| \\
+// |---------------------------------| \\
+
+class BusinessRegistrationUnauthorizedFailure extends Failure {}
+
+class BusinessRegistrationValidationFailure extends Failure {}
+
+class BusinessRegistrationDuplicateFailure extends Failure {}
+
+class BusinessRegistrationImageUploadFailure extends Failure {}
+
+class BusinessRegistrationNetworkFailure extends Failure {}
+
+class BusinessRegistrationUnknownFailure extends Failure {}
+
 // TODO: Add mapping helpers (e.g. `Failure.fromException`) to centralize
 // translation from platform / third-party errors to domain failures.

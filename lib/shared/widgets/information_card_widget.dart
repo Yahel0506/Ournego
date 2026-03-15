@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/ournego_text_styles.dart';
@@ -22,7 +21,12 @@ class InformationCardWidget extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Image(image: AssetImage(imagePath), height: 250),
+          Image.asset(
+            imagePath,
+            height: 250,
+            errorBuilder: (_, error, stackTrace) =>
+                const Icon(Icons.info_outline, size: 96),
+          ),
           SizedBox(height: 16.0),
           Text(
             title,
