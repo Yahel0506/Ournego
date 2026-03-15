@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:ournego/core/failures.dart';
 import 'package:ournego/features/business/data/datasources/business_geocoding_datasource.dart';
 import 'package:ournego/features/business/data/datasources/business_supabase_datasource.dart';
+import 'package:ournego/features/business/data/errors/business_registration_exceptions.dart';
 import 'package:ournego/features/business/domain/entitites/app_schedule.dart';
 
 import '../../../map/domain/entities/app_position.dart';
@@ -84,6 +85,18 @@ class BusinessRepositoryImpl implements BusinessRepository {
       //await businessDatasource.setBusinessHours(businessId, hours);
 
       return Right(null);
+    } on BusinessRegistrationUnauthorizedException {
+      return Left(BusinessRegistrationUnauthorizedFailure());
+    } on BusinessRegistrationValidationException {
+      return Left(BusinessRegistrationValidationFailure());
+    } on BusinessRegistrationDuplicateException {
+      return Left(BusinessRegistrationDuplicateFailure());
+    } on BusinessRegistrationImageUploadException {
+      return Left(BusinessRegistrationImageUploadFailure());
+    } on BusinessRegistrationNetworkException {
+      return Left(BusinessRegistrationNetworkFailure());
+    } on BusinessRegistrationUnknownException {
+      return Left(BusinessRegistrationUnknownFailure());
     } catch (e) {
       debugPrint('Error registering business: ${e.toString()}');
       return Left(ServerFailure());

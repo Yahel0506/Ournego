@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:io';
 
+import 'package:ournego/features/business/data/errors/business_registration_exceptions.dart';
 import 'package:ournego/features/business/domain/entitites/app_schedule.dart';
 import 'package:path/path.dart' as p;
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -16,32 +18,71 @@ class BusinessSupabaseDatasource {
   }
 
   Future<String> registerBusiness(Map<String, dynamic> businessData) async {
-    final response = await _supabase
-        .from('businesses')
-        .insert(businessData)
-        .select('business_id')
-        .single();
-    return response['business_id'] as String;
+    try {
+      final response = await _supabase
+          .from('businesses')
+          .insert(businessData)
+          .select('business_id')
+          .single();
+      return response['business_id'] as String;
+    } on TimeoutException {
+      throw BusinessRegistrationNetworkException();
+    } on SocketException {
+      throw BusinessRegistrationNetworkException();
+    } on PostgrestException catch (e) {
+      final code = (e.code ?? '').toLowerCase();
+      final message = e.message.toLowerCase();
+
+      if (code == '42501' || message.contains('permission denied')) {
+        throw BusinessRegistrationUnauthorizedException();
+      }
+
+      if (code == '23505' || message.contains('duplicate')) {
+        throw BusinessRegistrationDuplicateException();
+      }
+
+      if (code == '23514' ||
+          message.contains('violates') ||
+          message.contains('invalid')) {
+        throw BusinessRegistrationValidationException();
+      }
+
+      throw BusinessRegistrationUnknownException();
+    } catch (_) {
+      throw BusinessRegistrationUnknownException();
+    }
   }
 
   Future<void> uploadBusinessImage(File image, String business) async {
-    await _supabase.storage
-        .from('businesses_pictures')
-        .upload(
-          '${p.basename(image.path)}',
-          image,
-          fileOptions: const FileOptions(cacheControl: '3600', upsert: true),
-        );
-    final imageUrl = _supabase.storage
-        .from('businesses_pictures')
-        .getPublicUrl('${p.basename(image.path)}');
+    try {
+      await _supabase.storage
+          .from('businesses_pictures')
+          .upload(
+            p.basename(image.path),
+            image,
+            fileOptions: const FileOptions(cacheControl: '3600', upsert: true),
+          );
+      final imageUrl = _supabase.storage
+          .from('businesses_pictures')
+          .getPublicUrl(p.basename(image.path));
 
-    await _supabase
-        .from('businesses')
-        .update({
-          'images': [imageUrl],
-        })
-        .eq('business_id', business);
+      await _supabase
+          .from('businesses')
+          .update({
+            'images': [imageUrl],
+          })
+          .eq('business_id', business);
+    } on TimeoutException {
+      throw BusinessRegistrationNetworkException();
+    } on SocketException {
+      throw BusinessRegistrationNetworkException();
+    } on StorageException {
+      throw BusinessRegistrationImageUploadException();
+    } on PostgrestException {
+      throw BusinessRegistrationImageUploadException();
+    } catch (_) {
+      throw BusinessRegistrationUnknownException();
+    }
   }
 
   // TODO: Improve this method

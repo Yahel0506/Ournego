@@ -1,18 +1,22 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:ournego/core/failures.dart';
+import 'package:ournego/core/feedback/presentation/widgets/feedback_dialog_widget.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/features/business/domain/usecases/get_addresses_suggestions_usecase.dart';
 import 'package:ournego/features/business/presentation/pages/components/business_hours_picker.dart';
 import 'package:ournego/features/map/domain/entities/app_position.dart';
+import 'package:ournego/features/navigation/presentation/providers/navigation_provider.dart';
 import 'package:ournego/shared/widgets/animated_background.dart';
+import 'package:ournego/shared/widgets/information_card_widget.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../map/presentation/providers/map_providers.dart';
 import '../../domain/entitites/app_schedule.dart';
@@ -27,6 +31,16 @@ class BusinessFormScreen extends ConsumerStatefulWidget {
 
 class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
     with TickerProviderStateMixin {
+  static const _genericBusinessErrorImage = 'assets/images/generic_error.png';
+  static const _draftNameKey = 'business_form_draft_name';
+  static const _draftDescriptionKey = 'business_form_draft_description';
+  static const _draftAddressKey = 'business_form_draft_address';
+  static const _draftPhoneKey = 'business_form_draft_phone';
+  static const _draftCategoryKey = 'business_form_draft_category';
+  static const _draftImagePathKey = 'business_form_draft_image_path';
+  static const _draftLatitudeKey = 'business_form_draft_latitude';
+  static const _draftLongitudeKey = 'business_form_draft_longitude';
+
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -45,6 +59,213 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
   final _isSending = ValueNotifier<bool>(false);
 
   final ScrollController _scrollController = ScrollController();
+  bool _isHydratingDraft = false;
+
+  Future<void> _persistDraft() async {
+    if (_isHydratingDraft) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_draftNameKey, _nameController.text);
+    await prefs.setString(_draftDescriptionKey, _descriptionController.text);
+    await prefs.setString(_draftAddressKey, _addressController.text);
+    await prefs.setString(_draftPhoneKey, _phoneController.text);
+    await prefs.setInt(_draftCategoryKey, _selectedCategory ?? 0);
+    await prefs.setString(_draftImagePathKey, _pickedImage.path);
+
+    final camera = _animatedMapController.mapController.camera;
+    if (camera.zoom > 0) {
+      await prefs.setDouble(_draftLatitudeKey, camera.center.latitude);
+      await prefs.setDouble(_draftLongitudeKey, camera.center.longitude);
+    }
+  }
+
+  Future<void> _clearDraft() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_draftNameKey);
+    await prefs.remove(_draftDescriptionKey);
+    await prefs.remove(_draftAddressKey);
+    await prefs.remove(_draftPhoneKey);
+    await prefs.remove(_draftCategoryKey);
+    await prefs.remove(_draftImagePathKey);
+    await prefs.remove(_draftLatitudeKey);
+    await prefs.remove(_draftLongitudeKey);
+  }
+
+  Future<void> _loadDraft() async {
+    _isHydratingDraft = true;
+
+    final prefs = await SharedPreferences.getInstance();
+    final draftName = prefs.getString(_draftNameKey) ?? '';
+    final draftDescription = prefs.getString(_draftDescriptionKey) ?? '';
+    final draftAddress = prefs.getString(_draftAddressKey) ?? '';
+    final draftPhone = prefs.getString(_draftPhoneKey) ?? '';
+    final draftCategory = prefs.getInt(_draftCategoryKey);
+    final draftImagePath = prefs.getString(_draftImagePathKey) ?? '';
+    final draftLatitude = prefs.getDouble(_draftLatitudeKey);
+    final draftLongitude = prefs.getDouble(_draftLongitudeKey);
+
+    if (!mounted) {
+      _isHydratingDraft = false;
+      return;
+    }
+
+    _nameController.text = draftName;
+    _descriptionController.text = draftDescription;
+    _addressController.text = draftAddress;
+    _phoneController.text = draftPhone;
+
+    if (draftCategory != null) {
+      _selectedCategory = draftCategory;
+    }
+
+    if (draftImagePath.isNotEmpty) {
+      final imageFile = File(draftImagePath);
+      if (await imageFile.exists()) {
+        _pickedImage = imageFile;
+      }
+    }
+
+    setState(() {});
+
+    if (draftLatitude != null && draftLongitude != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _animatedMapController.animateTo(
+          dest: LatLng(draftLatitude, draftLongitude),
+          zoom: 16,
+        );
+      });
+    }
+
+    _isHydratingDraft = false;
+  }
+
+  void _attachDraftListeners() {
+    _nameController.addListener(_persistDraft);
+    _descriptionController.addListener(_persistDraft);
+    _addressController.addListener(_persistDraft);
+    _phoneController.addListener(_persistDraft);
+  }
+
+  _BusinessRegistrationErrorContent _mapFailureToDialog(Failure failure) {
+    if (failure is BusinessRegistrationUnauthorizedFailure) {
+      return const _BusinessRegistrationErrorContent(
+        title: 'No tienes permisos para registrar un negocio',
+        description:
+            'Inicia sesion nuevamente y vuelve a intentarlo. Si el problema continua, envianos feedback.',
+      );
+    }
+
+    if (failure is BusinessRegistrationValidationFailure) {
+      return const _BusinessRegistrationErrorContent(
+        title: 'Hay datos invalidos en el registro',
+        description:
+            'Revisa nombre, direccion, categoria e imagen. Luego vuelve a intentar.',
+      );
+    }
+
+    if (failure is BusinessRegistrationDuplicateFailure) {
+      return const _BusinessRegistrationErrorContent(
+        title: 'Este negocio ya existe',
+        description:
+            'Parece que ya hay un registro similar. Verifica la informacion o usa otro nombre.',
+      );
+    }
+
+    if (failure is BusinessRegistrationImageUploadFailure) {
+      return const _BusinessRegistrationErrorContent(
+        title: 'No se pudo subir la imagen del negocio',
+        description:
+            'Intenta con otra imagen o verifica tu conexion y vuelve a intentar.',
+      );
+    }
+
+    if (failure is BusinessRegistrationNetworkFailure) {
+      return const _BusinessRegistrationErrorContent(
+        title: 'No hay conexion para registrar el negocio',
+        description:
+            'Verifica tu internet y vuelve a intentarlo. Tu formulario se mantuvo guardado.',
+      );
+    }
+
+    if (failure is BusinessRegistrationUnknownFailure ||
+        failure is ServerFailure) {
+      return const _BusinessRegistrationErrorContent(
+        title: 'Ocurrio un error al registrar el negocio',
+        description:
+            'Intenta nuevamente. Si sigue ocurriendo, usa el boton de feedback para reportarlo.',
+      );
+    }
+
+    return const _BusinessRegistrationErrorContent(
+      title: 'No fue posible completar el registro',
+      description:
+          'Intenta de nuevo en unos minutos. Puedes enviar feedback si el error persiste.',
+    );
+  }
+
+  Future<void> _openFeedbackDialogFromErrorDialog(BuildContext context) async {
+    if (ref.read(isFeedbackDialogOpenProvider)) {
+      return;
+    }
+
+    ref.read(isFeedbackDialogOpenProvider.notifier).setIsOpen();
+    await showDialog<void>(
+      context: context,
+      builder: (_) => const FeedbackDialogWidget(),
+    );
+    ref.read(isFeedbackDialogOpenProvider.notifier).setIsClosed();
+  }
+
+  Future<void> _showBusinessRegistrationErrorDialog(Failure failure) async {
+    if (!mounted) return;
+
+    final content = _mapFailureToDialog(failure);
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        return Dialog(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 460),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                InformationCardWidget(
+                  title: content.title,
+                  description: content.description,
+                  imagePath: _genericBusinessErrorImage,
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () async {
+                            Navigator.of(dialogContext).pop();
+                            await _openFeedbackDialogFromErrorDialog(context);
+                          },
+                          child: const Text('Feedback'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: () => Navigator.of(dialogContext).pop(),
+                          child: const Text('Entiendo'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 
   Future<File> pickBusinessImage() async {
     return _picker.pickImage(source: ImageSource.gallery).then((pickedFile) {
@@ -59,6 +280,9 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
   @override
   void initState() {
     super.initState();
+
+    _attachDraftListeners();
+    _loadDraft();
 
     ProviderSubscription<AsyncValue<AppPosition>> updateLocation() {
       return ref.listenManual<AsyncValue<AppPosition>>(mapProvider, (
@@ -94,6 +318,13 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
   void dispose() {
     _nameController.dispose();
     _descriptionController.dispose();
+    _addressController.dispose();
+    _addressFocusNode.dispose();
+    _phoneController.dispose();
+    _isSending.dispose();
+    _scrollController.dispose();
+    _providerSubscription.close();
+    _animatedMapController.dispose();
     super.dispose();
   }
 
@@ -173,6 +404,7 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
                         setState(() {
                           _pickedImage = pickedImage;
                         });
+                        _persistDraft();
                         debugPrint(_pickedImage.path);
                       },
                       child: Row(
@@ -238,6 +470,7 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
                     myUsername: myUsername,
                     currentStyleId: currentStyleId,
                     myAccessToken: myAccessToken,
+                    onCenterChanged: (_) => _persistDraft(),
                   ),
                   SizedBox(height: 24),
                   Text(
@@ -246,7 +479,8 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
                     textAlign: TextAlign.center,
                   ),
                   SizedBox(height: 16),
-                  DropdownButtonFormField(
+                  DropdownButtonFormField<int>(
+                    initialValue: _selectedCategory,
                     validator: (category) {
                       if (category == null) {
                         return 'Por favor selecciona una categoría';
@@ -296,6 +530,7 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
                       setState(() {
                         _selectedCategory = category ?? 12;
                       });
+                      _persistDraft();
                     },
                     decoration: InputDecoration(
                       labelText: 'Categoría del negocio',
@@ -343,6 +578,7 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
 
                         if (_formKey.currentState!.validate() && hasImage) {
                           _isSending.value = true;
+                          setState(() {});
 
                           debugPrint('${_isSending.value}');
 
@@ -376,18 +612,17 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
                             hours: hours,
                           );
 
-                          response.fold(
-                            (failure) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    'Error al registrar el negocio. Intenta de nuevo.',
-                                  ),
-                                ),
-                              );
+                          await response.fold(
+                            (failure) async {
                               _isSending.value = false;
+                              setState(() {});
+                              await _showBusinessRegistrationErrorDialog(
+                                failure,
+                              );
                             },
                             (success) {
+                              _clearDraft();
+                              if (!mounted) return Future<void>.value();
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
@@ -397,6 +632,7 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
                               );
                               ref.invalidate(isOwnerProvider);
                               Navigator.of(context).pop();
+                              return Future<void>.value();
                             },
                           );
                         } else {
@@ -453,12 +689,14 @@ class BusinessPositionSelector extends StatelessWidget {
     required this.myUsername,
     required this.currentStyleId,
     required this.myAccessToken,
+    required this.onCenterChanged,
   }) : _animatedMapController = animatedMapController;
 
   final AnimatedMapController _animatedMapController;
   final String myUsername;
   final String currentStyleId;
   final String myAccessToken;
+  final ValueChanged<LatLng> onCenterChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -491,6 +729,9 @@ class BusinessPositionSelector extends StatelessWidget {
                   initialZoom: 12,
                   maxZoom: 18,
                   minZoom: 3,
+                  onPositionChanged: (camera, hasGesture) {
+                    onCenterChanged(camera.center);
+                  },
                 ),
                 mapController: _animatedMapController.mapController,
                 children: [
@@ -648,7 +889,7 @@ class BusinessDescriptionInput extends StatelessWidget {
 class BusinessNameInput extends StatelessWidget {
   final TextEditingController controller;
 
-  BusinessNameInput({super.key, required this.controller});
+  const BusinessNameInput({super.key, required this.controller});
 
   @override
   Widget build(BuildContext context) {
@@ -668,4 +909,14 @@ class BusinessNameInput extends StatelessWidget {
       ),
     );
   }
+}
+
+class _BusinessRegistrationErrorContent {
+  final String title;
+  final String description;
+
+  const _BusinessRegistrationErrorContent({
+    required this.title,
+    required this.description,
+  });
 }
