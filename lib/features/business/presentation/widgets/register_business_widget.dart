@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ournego/core/feedback/presentation/widgets/feedback_dialog_widget.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/features/auth/presentation/pages/auth_selection_screen.dart';
+import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
 import 'package:ournego/features/business/presentation/pages/business_form_screen.dart';
-import 'package:ournego/features/business/presentation/providers/business_providers.dart';
 import 'package:ournego/features/navigation/presentation/providers/navigation_provider.dart';
 import 'package:ournego/shared/widgets/information_card_widget.dart';
 
@@ -92,7 +92,7 @@ class RegisterBusinessWidget extends ConsumerWidget {
           ElevatedButton(
             onPressed: () async {
               try {
-                final isLogged = await ref.read(isLoggedProvider.future);
+                final isLogged = await ref.read(authSessionProvider.future);
                 if (!context.mounted) return;
 
                 if (isLogged) {

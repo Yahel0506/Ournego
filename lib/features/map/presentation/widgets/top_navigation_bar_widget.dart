@@ -1,21 +1,17 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ournego/features/auth/presentation/pages/auth_selection_screen.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
-
-import '../../../business/presentation/providers/business_providers.dart';
 
 class TopNavigationBarWidget extends ConsumerWidget {
   const TopNavigationBarWidget({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final asyncUser = ref.watch(profileStreamProvider);
-    final imageUrl = asyncUser.value?.profilePicture ?? '';
-
-    final isLoggedAsync = ref.watch(isLoggedProvider);
+    final isLoggedAsync = ref.watch(authSessionProvider);
+    final isLogged = isLoggedAsync.asData?.value ?? false;
+    final asyncUser = isLogged ? ref.watch(profileStreamProvider) : null;
+    final imageUrl = asyncUser?.value?.profilePicture ?? '';
     final logOutUsecase = ref.watch(logOutUsecaseProvider);
 
     return Padding(
@@ -56,49 +52,57 @@ class TopNavigationBarWidget extends ConsumerWidget {
           Spacer(),
           // -------------------- User Profile Button --------------------
           ElevatedButton(
-            onPressed: () {
-              isLoggedAsync.when(
-                data: (isLogged) {
-                  if (isLogged) {
-                    showDialog(
-                      context: context,
-                      builder: (context) {
-                        return AlertDialog(
-                          title: Text('Cerrar sesión'),
-                          content: Text(
-                            '¿Estás seguro de que quieres cerrar sesión?',
+            onPressed: () async {
+              try {
+                final isLogged = await ref.read(authSessionProvider.future);
+                if (!context.mounted) return;
+
+                if (isLogged) {
+                  showDialog(
+                    context: context,
+                    builder: (context) {
+                      return AlertDialog(
+                        title: Text('Cerrar sesión'),
+                        content: Text(
+                          '¿Estás seguro de que quieres cerrar sesión?',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                            child: Text('Cancelar'),
                           ),
-                          actions: [
-                            TextButton(
-                              onPressed: () {
+                          TextButton(
+                            onPressed: () async {
+                              await logOutUsecase();
+                              if (context.mounted) {
                                 Navigator.of(context).pop();
-                              },
-                              child: Text('Cancelar'),
-                            ),
-                            TextButton(
-                              onPressed: () async {
-                                await logOutUsecase();
-                                Navigator.of(context).pop();
-                              },
-                              child: Text('Cerrar sesión'),
-                            ),
-                          ],
-                        );
-                      },
-                    );
-                  } else {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => AuthSelectionScreen(),
-                        settings: RouteSettings(name: '/authSelection'),
-                      ),
-                    );
-                  }
-                },
-                error: (error, stackTrace) {},
-                loading: () {},
-              );
+                              }
+                            },
+                            child: Text('Cerrar sesión'),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                } else {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AuthSelectionScreen(),
+                      settings: RouteSettings(name: '/authSelection'),
+                    ),
+                  );
+                }
+              } catch (_) {
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('No se pudo verificar tu sesion.'),
+                  ),
+                );
+              }
             },
             style: ElevatedButton.styleFrom(
               shape: const CircleBorder(),
@@ -115,13 +119,7 @@ class TopNavigationBarWidget extends ConsumerWidget {
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
                     return Icon(
-                      isLoggedAsync.when(
-                        data: (isLogged) => isLogged
-                            ? Icons.account_circle
-                            : Icons.login_rounded,
-                        error: (error, stackTrace) => Icons.account_circle,
-                        loading: () => Icons.account_circle,
-                      ),
+                      isLogged ? Icons.account_circle : Icons.login_rounded,
                       size: 44,
                       color: Colors.grey,
                     );

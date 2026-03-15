@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+import 'package:supabase_flutter/supabase_flutter.dart';
 //import 'package:ournego/features/auth/data/datasources/firebase_auth_datasource.dart';
 //import 'package:ournego/features/auth/data/datasources/firestore_auth_datasource.dart';
 import 'package:ournego/features/auth/data/datasources/local_auth_screen_text_datasource.dart';
@@ -74,3 +74,15 @@ final signInWithGoogleUsecaseProvider = Provider<SignInWithGoogleUsecase>((
   final repository = ref.watch(authRepositoryProvider);
   return SignInWithGoogleUsecase(repository);
 });
+
+final authSessionProvider = StreamProvider<bool>((ref) async* {
+  final auth = Supabase.instance.client.auth;
+
+  // First value avoids transient loading/error UI on web.
+  yield auth.currentSession != null;
+
+  yield* auth.onAuthStateChange
+      .map((event) => event.session != null)
+      .distinct();
+});
+
