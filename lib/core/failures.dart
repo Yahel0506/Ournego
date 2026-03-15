@@ -36,6 +36,12 @@ class LocationPermissionDeniedFailure extends Failure {}
 
 class LocationPermissionDeniedForeverFailure extends Failure {}
 
+// Si el servicio de ubicacion del dispositivo esta apagado
+class LocationServiceDisabledFailure extends Failure {}
+
+// Si no se pudo resolver una posicion valida
+class LocationUnavailableFailure extends Failure {}
+
 // Si la operación requiere autenticación pero no hay usuario loggeado
 class AuthenticationRequiredFailure extends Failure {}
 

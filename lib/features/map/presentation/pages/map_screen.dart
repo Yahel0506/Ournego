@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:ournego/core/failures.dart';
 import 'package:ournego/core/ournego_colors.dart';
@@ -13,7 +14,6 @@ import 'package:ournego/features/map/presentation/providers/map_providers.dart';
 import 'package:ournego/features/map/presentation/widgets/business_information_widget.dart';
 import 'package:ournego/features/map/presentation/widgets/top_navigation_bar_widget.dart';
 import 'package:ournego/shared/widgets/information_card_widget.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -33,6 +33,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
   LatLng? _initialCenter;
   double? _initialZoom;
+  bool _isLocationModalOpen = false;
 
   Future<void> _restoreCamera() async {
     final prefs = await SharedPreferences.getInstance();
@@ -76,18 +77,115 @@ class _MapScreenState extends ConsumerState<MapScreen>
     }
   }
 
+  Future<void> _retryLocationRequest({
+    bool requestPermissionIfNeeded = true,
+  }) async {
+    await ref
+        .read(mapProvider.notifier)
+        .refreshLocation(requestPermissionIfNeeded: requestPermissionIfNeeded);
+  }
+
+  Future<void> _showLocationErrorSheet(Object error) async {
+    if (_isLocationModalOpen || !mounted) {
+      return;
+    }
+
+    _isLocationModalOpen = true;
+
+    final isDenied = error is LocationPermissionDeniedFailure;
+    final isDeniedForever = error is LocationPermissionDeniedForeverFailure;
+    final isServiceDisabled = error is LocationServiceDisabledFailure;
+
+    final title = isDenied
+        ? 'El permiso de ubicacion fue denegado'
+        : isDeniedForever
+        ? 'El permiso de ubicacion fue negado permanentemente'
+        : isServiceDisabled
+        ? 'Los servicios de ubicacion estan desactivados'
+        : 'No se pudo obtener tu ubicacion';
+
+    final description = isDenied
+        ? 'Otorga el permiso para usar la funcion de mapa.'
+        : isDeniedForever
+        ? 'Habilitalo manualmente desde ajustes para usar el mapa.'
+        : isServiceDisabled
+        ? 'Activa el GPS o los servicios de ubicacion del dispositivo.'
+        : 'Verifica el permiso y la señal GPS, luego intenta de nuevo.';
+
+    final actionLabel = isDeniedForever
+        ? 'Abrir ajustes'
+        : isServiceDisabled
+        ? 'Activar ubicacion'
+        : 'Reintentar';
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isDismissible: true,
+      builder: (modalContext) {
+        return SafeArea(
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                InformationCardWidget(
+                  title: title,
+                  description: description,
+                  imagePath: 'assets/images/location_error.png',
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.of(modalContext).pop(),
+                          child: const Text('Cerrar'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: () async {
+                            Navigator.of(modalContext).pop();
+
+                            if (isDeniedForever) {
+                              await Geolocator.openAppSettings();
+                              return;
+                            }
+
+                            if (isServiceDisabled) {
+                              await Geolocator.openLocationSettings();
+                              return;
+                            }
+
+                            await _retryLocationRequest(
+                              requestPermissionIfNeeded: true,
+                            );
+                          },
+                          child: Text(actionLabel),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    _isLocationModalOpen = false;
+  }
+
   @override
   void initState() {
     super.initState();
 
-    bool permissionModalAlreadyShown = false;
-
-    ProviderSubscription<AsyncValue<AppPosition>> updateLocation() {
-      return ref.listenManual<AsyncValue<AppPosition>>(mapProvider, (
-        previous,
-        next,
-      ) {
-        next.when(
+    _providerSubscription = ref.listenManual<AsyncValue<AppPosition>>(
+      mapProvider,
+      (previous, next) {
+        next.whenOrNull(
           data: (data) {
             if (_initialCenter == null) {
               _animatedMapController.animateTo(
@@ -96,138 +194,14 @@ class _MapScreenState extends ConsumerState<MapScreen>
               );
             }
           },
-          loading: () {
-            Future.delayed(Duration(seconds: 5)).then((_) {
-              if (next.isLoading && !permissionModalAlreadyShown) {
-                permissionModalAlreadyShown = true;
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  showModalBottomSheet(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return Container(
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surface,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: InformationCardWidget(
-                          title: "Ha ocurrido un error al obtener la ubicación",
-                          description: "",
-                          imagePath: "assets/images/location_error.png",
-                        ),
-                      );
-                    },
-                  );
-                });
-              }
-            });
-          },
-          error: (error, stackTrace) {
-            if (permissionModalAlreadyShown) return;
-            permissionModalAlreadyShown = true;
+          error: (error, _) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              switch (error) {
-                case LocationPermissionDeniedFailure():
-                  showModalBottomSheet(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return Center(
-                        child: Column(
-                          children: [
-                            InformationCardWidget(
-                              title: "El permiso de ubicación fue denegado",
-                              description:
-                                  "Por favor, habilítalo para usar la función de mapa.",
-                              imagePath: "assets/images/location_error.png",
-                            ),
-                            SizedBox(height: 10),
-                            ElevatedButton(
-                              style: ButtonStyle(
-                                backgroundColor: WidgetStatePropertyAll(
-                                  Theme.of(context).colorScheme.primary,
-                                ),
-                              ),
-                              onPressed: () async {
-                                final status = await Permission.location
-                                    .request();
-                                if (status.isGranted) {
-                                  // ignore: unused_result
-                                  ref.refresh(mapProvider);
-                                  Navigator.of(context).pop();
-                                }
-                              },
-                              child: Text(
-                                'Solicitar permiso de ubicación',
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.surface,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  );
-                case LocationPermissionDeniedForeverFailure():
-                  showModalBottomSheet(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return Center(
-                        child: Column(
-                          children: [
-                            InformationCardWidget(
-                              title:
-                                  "El permiso de ubicación fue negado permanentemente",
-                              description:
-                                  "Por favor, habilítalo manualmente desde la configuración de tu dispositivo para usar la función de mapa.",
-                              imagePath: "assets/images/location_error.png",
-                            ),
-                            SizedBox(height: 10),
-                            ElevatedButton(
-                              style: ButtonStyle(
-                                backgroundColor: WidgetStatePropertyAll(
-                                  Theme.of(context).colorScheme.primary,
-                                ),
-                              ),
-                              onPressed: () async {
-                                await openAppSettings();
-                              },
-                              child: Text(
-                                'Solicitar permiso de ubicación',
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.surface,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  );
-                default:
-                  showModalBottomSheet(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return Center(
-                        child: Container(
-                          height: MediaQuery.heightOf(context) / 2,
-                          padding: const EdgeInsets.all(16.0),
-                          child: Text(
-                            'Ha ocurrido un error al obtener la ubicación.',
-                            style: OurnegoTextStyles.errorText,
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      );
-                    },
-                  );
-              }
+              _showLocationErrorSheet(error);
             });
           },
         );
-      });
-    }
-
-    _providerSubscription = updateLocation();
+      },
+    );
     _restoreCamera();
   }
 
@@ -241,10 +215,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
   @override
   Widget build(BuildContext context) {
-    final location =
-        ref.watch(mapProvider).value ?? AppPosition(latitude: 0, longitude: 0);
+    final mapState = ref.watch(mapProvider);
+    final location = mapState.asData?.value;
     final businessState = ref.watch(businessesStreamProvider);
-    final businessFavorites = ref.watch(businessFavoritesUsecaseProvider);
 
     final bool isWide = MediaQuery.of(context).size.width > 600;
 
@@ -300,43 +273,44 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 key: Key(currentStyleId),
               ),
 
-              MarkerLayer(
-                markers: [
-                  Marker(
-                    width: 20,
-                    height: 20,
-                    point: LatLng(location.latitude, location.longitude),
-                    child: GestureDetector(
-                      onTap: () {
-                        _animatedMapController.animateTo(
-                          dest: LatLng(location.latitude, location.longitude),
-                          curve: Curves.easeIn,
-                          zoom: 18,
-                        );
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: OurnegoColors.verdeCastleton,
-                          border: Border.all(
-                            color: OurnegoColors.verdeMenta,
-                            width: 2,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: OurnegoColors.verdeCastleton.withAlpha(
-                                150,
-                              ),
-                              spreadRadius: 1,
-                              blurRadius: 5,
+              if (location != null)
+                MarkerLayer(
+                  markers: [
+                    Marker(
+                      width: 20,
+                      height: 20,
+                      point: LatLng(location.latitude, location.longitude),
+                      child: GestureDetector(
+                        onTap: () {
+                          _animatedMapController.animateTo(
+                            dest: LatLng(location.latitude, location.longitude),
+                            curve: Curves.easeIn,
+                            zoom: 18,
+                          );
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: OurnegoColors.verdeCastleton,
+                            border: Border.all(
+                              color: OurnegoColors.verdeMenta,
+                              width: 2,
                             ),
-                          ],
-                          shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: OurnegoColors.verdeCastleton.withAlpha(
+                                  150,
+                                ),
+                                spreadRadius: 1,
+                                blurRadius: 5,
+                              ),
+                            ],
+                            shape: BoxShape.circle,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
               businessState.when(
                 data: (businessesList) {
                   return MarkerLayer(
@@ -587,12 +561,48 @@ class _MapScreenState extends ConsumerState<MapScreen>
                       SizedBox(height: 12),
                       FloatingActionButton(
                         heroTag: 'btnLocation',
-                        onPressed: () {
-                          _animatedMapController.animateTo(
-                            dest: LatLng(location.latitude, location.longitude),
-                            zoom: 15,
-                            rotation: 0,
+                        onPressed: () async {
+                          final currentLocation = ref
+                              .read(mapProvider)
+                              .asData
+                              ?.value;
+
+                          if (currentLocation != null) {
+                            _animatedMapController.animateTo(
+                              dest: LatLng(
+                                currentLocation.latitude,
+                                currentLocation.longitude,
+                              ),
+                              zoom: 15,
+                              rotation: 0,
+                            );
+                            return;
+                          }
+
+                          await _retryLocationRequest(
+                            requestPermissionIfNeeded: true,
                           );
+
+                          final refreshedState = ref.read(mapProvider);
+                          final refreshedLocation =
+                              refreshedState.asData?.value;
+
+                          if (refreshedLocation != null) {
+                            _animatedMapController.animateTo(
+                              dest: LatLng(
+                                refreshedLocation.latitude,
+                                refreshedLocation.longitude,
+                              ),
+                              zoom: 15,
+                              rotation: 0,
+                            );
+                            return;
+                          }
+
+                          final locationError = refreshedState.asError?.error;
+                          if (locationError != null) {
+                            await _showLocationErrorSheet(locationError);
+                          }
                         },
                         backgroundColor: Theme.of(
                           context,
