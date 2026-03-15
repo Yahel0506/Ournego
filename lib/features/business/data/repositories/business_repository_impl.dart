@@ -22,9 +22,7 @@ class BusinessRepositoryImpl implements BusinessRepository {
 
   @override
   Stream<bool> isLoggedIn() {
-    final session = businessDatasource.isLoggedIn();
-    final isLogged = session.map((currentSession) => currentSession != null);
-    return isLogged;
+    return businessDatasource.isLoggedIn();
   }
 
   @override

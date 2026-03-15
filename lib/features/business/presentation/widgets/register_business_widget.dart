@@ -1,19 +1,77 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ournego/core/feedback/presentation/widgets/feedback_dialog_widget.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/features/auth/presentation/pages/auth_selection_screen.dart';
-import 'package:ournego/features/auth/presentation/widgets/auth_selection_widget.dart';
-import 'package:ournego/features/business/domain/usecases/check_if_logged_usecase.dart';
 import 'package:ournego/features/business/presentation/pages/business_form_screen.dart';
 import 'package:ournego/features/business/presentation/providers/business_providers.dart';
+import 'package:ournego/features/navigation/presentation/providers/navigation_provider.dart';
+import 'package:ournego/shared/widgets/information_card_widget.dart';
 
 class RegisterBusinessWidget extends ConsumerWidget {
   const RegisterBusinessWidget({super.key});
 
+  Future<void> _showSessionErrorDialog(BuildContext context, WidgetRef ref) {
+    return showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return Dialog(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 460),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const InformationCardWidget(
+                  title: 'No se pudo verificar tu sesion',
+                  description:
+                      'Intenta de nuevo en unos segundos. Si el problema continua, envianos feedback.',
+                  imagePath: 'assets/images/generic_error.png',
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () async {
+                            Navigator.of(dialogContext).pop();
+                            if (ref.read(isFeedbackDialogOpenProvider)) {
+                              return;
+                            }
+                            ref
+                                .read(isFeedbackDialogOpenProvider.notifier)
+                                .setIsOpen();
+                            await showDialog<void>(
+                              context: context,
+                              builder: (_) => const FeedbackDialogWidget(),
+                            );
+                            ref
+                                .read(isFeedbackDialogOpenProvider.notifier)
+                                .setIsClosed();
+                          },
+                          child: const Text('Feedback'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: () => Navigator.of(dialogContext).pop(),
+                          child: const Text('Entiendo'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final repository = ref.watch(businessRepositoryProvider);
-
     return Padding(
       padding: const EdgeInsets.all(32.0),
       child: Column(
@@ -33,39 +91,28 @@ class RegisterBusinessWidget extends ConsumerWidget {
           SizedBox(height: 32),
           ElevatedButton(
             onPressed: () async {
-              final isLoggedStream = ref.watch(isLoggedProvider);
+              try {
+                final isLogged = await ref.read(isLoggedProvider.future);
+                if (!context.mounted) return;
 
-              isLoggedStream.when(
-                data: (isLogged) {
-                  if (isLogged) {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => BusinessFormScreen(),
-                      ),
-                    );
-                  } else {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => AuthSelectionScreen(),
-                        settings: RouteSettings(name: '/authSelection'),
-                      ),
-                    );
-                  }
-                },
-                loading: () {
-                  // Optionally show a loading indicator
-                },
-                error: (error, stack) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'Ha habido un error. Por favor, inténtalo de nuevo.',
-                        style: OurnegoTextStyles.errorText,
-                      ),
+                if (isLogged) {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const BusinessFormScreen(),
                     ),
                   );
-                },
-              );
+                } else {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const AuthSelectionScreen(),
+                      settings: const RouteSettings(name: '/authSelection'),
+                    ),
+                  );
+                }
+              } catch (_) {
+                if (!context.mounted) return;
+                await _showSessionErrorDialog(context, ref);
+              }
               /*final isLoggedInResult = await CheckIfLoggedUsecase(repository)();
 
               isLoggedInResult.fold(
