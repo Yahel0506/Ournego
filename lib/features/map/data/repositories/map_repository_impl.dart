@@ -1,6 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:ournego/core/failures.dart';
 import 'package:ournego/features/map/data/datasources/geolocator_datasource.dart';
 import 'package:ournego/features/map/data/datasources/supabase_map_datasource.dart';
@@ -19,14 +17,24 @@ class MapRepositoryImpl implements MapRepository {
   });
 
   @override
-  Future<Either<Failure, AppPosition>> getCurrentLocation() async {
+  Future<Either<Failure, AppPosition>> getCurrentLocation({
+    bool requestPermissionIfNeeded = true,
+  }) async {
     try {
-      final position = await geolocationDatasource.getCurrentLocation();
+      final position = await geolocationDatasource.getCurrentLocation(
+        requestPermissionIfNeeded: requestPermissionIfNeeded,
+      );
       return Right(
         AppPosition(latitude: position.latitude, longitude: position.longitude),
       );
-    } on Exception {
+    } on LocationPermissionDeniedForeverException {
+      return Left(LocationPermissionDeniedForeverFailure());
+    } on LocationPermissionDeniedException {
       return Left(LocationPermissionDeniedFailure());
+    } on LocationServiceDisabledException {
+      return Left(LocationServiceDisabledFailure());
+    } on LocationUnavailableException {
+      return Left(LocationUnavailableFailure());
     } catch (_) {
       return Left(ServerFailure());
     }

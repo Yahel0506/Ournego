@@ -8,7 +8,11 @@ class GetCurrentLocationUsecase {
 
   GetCurrentLocationUsecase({required this.repository});
 
-  Future<Either<Failure, AppPosition>> call() async {
-    return repository.getCurrentLocation();
+  Future<Either<Failure, AppPosition>> call({
+    bool requestPermissionIfNeeded = true,
+  }) async {
+    return repository.getCurrentLocation(
+      requestPermissionIfNeeded: requestPermissionIfNeeded,
+    );
   }
 }

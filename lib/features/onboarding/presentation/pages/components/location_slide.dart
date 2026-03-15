@@ -7,6 +7,7 @@ class LocationSlide extends StatefulWidget {
   final String description;
   final String imagePath;
   final String? buttonText;
+  final ValueChanged<PermissionStatus>? onPermissionStatusChanged;
 
   const LocationSlide({
     super.key,
@@ -14,6 +15,7 @@ class LocationSlide extends StatefulWidget {
     required this.description,
     required this.imagePath,
     required this.buttonText,
+    this.onPermissionStatusChanged,
   });
 
   @override
@@ -21,6 +23,42 @@ class LocationSlide extends StatefulWidget {
 }
 
 class _LocationSlideState extends State<LocationSlide> {
+  PermissionStatus _permissionStatus = PermissionStatus.denied;
+
+  bool get _isPermissionGranted => _permissionStatus.isGranted;
+
+  @override
+  void initState() {
+    super.initState();
+    _syncPermissionStatus();
+  }
+
+  Future<void> _syncPermissionStatus() async {
+    final status = await Permission.location.status;
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _permissionStatus = status;
+    });
+    widget.onPermissionStatusChanged?.call(status);
+  }
+
+  Future<void> _requestLocationPermission() async {
+    final status = await Permission.location.request();
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _permissionStatus = status;
+    });
+    widget.onPermissionStatusChanged?.call(status);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -51,20 +89,26 @@ class _LocationSlideState extends State<LocationSlide> {
         ),
         SizedBox(height: 20),
         OutlinedButton(
-          onPressed: () async {
-            var status = await Permission.location.request();
-            if (status.isDenied) {
-              await Permission.location.request();
-            }
-          },
+          onPressed: _requestLocationPermission,
           style: OutlinedButton.styleFrom(
             foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
             side: BorderSide(
               color: Theme.of(context).colorScheme.onPrimaryContainer,
             ),
           ),
-          child: Text('ACTIVAR UBICACIÓN', style: OurnegoTextStyles.body),
+          child: Text(
+            _isPermissionGranted ? 'UBICACION ACTIVADA' : 'ACTIVAR UBICACION',
+            style: OurnegoTextStyles.body,
+          ),
         ),
+        if (!_isPermissionGranted)
+          const Padding(
+            padding: EdgeInsets.only(top: 12),
+            child: Text(
+              'Debes habilitar la ubicacion para continuar.',
+              textAlign: TextAlign.center,
+            ),
+          ),
       ],
     );
   }
