@@ -92,7 +92,7 @@ class RegisterBusinessWidget extends ConsumerWidget {
           ElevatedButton(
             onPressed: () async {
               try {
-                final isLogged = await ref.read(authSessionProvider.future);
+                final isLogged = ref.read(authSessionStatusProvider);
                 if (!context.mounted) return;
 
                 if (isLogged) {
