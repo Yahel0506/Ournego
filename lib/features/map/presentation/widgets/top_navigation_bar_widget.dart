@@ -8,8 +8,7 @@ class TopNavigationBarWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isLoggedAsync = ref.watch(authSessionProvider);
-    final isLogged = isLoggedAsync.asData?.value ?? false;
+    final isLogged = ref.watch(authSessionStatusProvider);
     final asyncUser = isLogged ? ref.watch(profileStreamProvider) : null;
     final imageUrl = asyncUser?.value?.profilePicture ?? '';
     final logOutUsecase = ref.watch(logOutUsecaseProvider);
@@ -53,53 +52,41 @@ class TopNavigationBarWidget extends ConsumerWidget {
           // -------------------- User Profile Button --------------------
           ElevatedButton(
             onPressed: () async {
-              try {
-                final isLogged = await ref.read(authSessionProvider.future);
-                if (!context.mounted) return;
+              if (!context.mounted) return;
 
-                if (isLogged) {
-                  showDialog(
-                    context: context,
-                    builder: (context) {
-                      return AlertDialog(
-                        title: Text('Cerrar sesión'),
-                        content: Text(
-                          '¿Estás seguro de que quieres cerrar sesión?',
+              if (isLogged) {
+                showDialog(
+                  context: context,
+                  builder: (context) {
+                    return AlertDialog(
+                      title: Text('Cerrar sesión'),
+                      content: Text('¿Estás seguro de que quieres cerrar sesión?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                          child: Text('Cancelar'),
                         ),
-                        actions: [
-                          TextButton(
-                            onPressed: () {
+                        TextButton(
+                          onPressed: () async {
+                            await logOutUsecase();
+                            if (context.mounted) {
                               Navigator.of(context).pop();
-                            },
-                            child: Text('Cancelar'),
-                          ),
-                          TextButton(
-                            onPressed: () async {
-                              await logOutUsecase();
-                              if (context.mounted) {
-                                Navigator.of(context).pop();
-                              }
-                            },
-                            child: Text('Cerrar sesión'),
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                } else {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => AuthSelectionScreen(),
-                      settings: RouteSettings(name: '/authSelection'),
-                    ),
-                  );
-                }
-              } catch (_) {
-                if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('No se pudo verificar tu sesion.'),
+                            }
+                          },
+                          child: Text('Cerrar sesión'),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              } else {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AuthSelectionScreen(),
+                    settings: RouteSettings(name: '/authSelection'),
                   ),
                 );
               }
