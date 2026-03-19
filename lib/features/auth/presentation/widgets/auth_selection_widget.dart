@@ -257,6 +257,8 @@ class GoogleLoginButton extends ConsumerWidget {
       height: 50,
       child: ElevatedButton(
         onPressed: () async {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setBool('hasSeenOnboarding', true);
           final googleSignIn = await ref.read(
             signInWithGoogleUsecaseProvider,
           )();
@@ -267,9 +269,6 @@ class GoogleLoginButton extends ConsumerWidget {
               );
             },
             (_) async {
-              final prefs = await SharedPreferences.getInstance();
-              await prefs.setBool('hasSeenOnboarding', true);
-
               if (config.onSuccess != null) {
                 config.onSuccess!();
               }
