@@ -3,26 +3,15 @@ import 'dart:io';
 import 'package:dartz/dartz.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:ournego/core/failures.dart';
-import 'package:ournego/features/auth/data/datasources/local_auth_selection_datasource.dart';
 import 'package:ournego/features/auth/data/datasources/supabase_auth_datasource.dart';
 import 'package:ournego/features/auth/domain/entities/app_user.dart';
-import 'package:ournego/features/auth/domain/entities/auth_selection.dart';
 import 'package:ournego/features/auth/domain/repositories/auth_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
-  final LocalAuthSelectionDatasource authSelectionDatasource;
   final SupabaseAuthDatasource authDatasource;
 
-  AuthRepositoryImpl({
-    required this.authSelectionDatasource,
-    required this.authDatasource,
-  });
-
-  @override
-  AuthSelection getAuthSelectionView() {
-    return authSelectionDatasource.getHardcodedAuthSelection();
-  }
+  AuthRepositoryImpl({required this.authDatasource});
 
   @override
   Future<Either<Failure, AppUser>> signUpWithEmail(

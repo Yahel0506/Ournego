@@ -8,41 +8,18 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AuthSelectionWidget extends ConsumerWidget {
-  final String title;
-  final String imagePath;
-  final String darkImagePath;
-  final String googleLogin;
-  final String emailLogin;
-  final String phoneLogin;
-  final String guestAccess;
-  final String termsText1;
-  final String termsText2;
-  final String termsText3;
-  final String termsText4;
   final VoidCallback? onSuccess;
 
-  const AuthSelectionWidget({
-    super.key,
-    required this.title,
-    required this.imagePath,
-    required this.darkImagePath,
-    required this.googleLogin,
-    required this.emailLogin,
-    required this.phoneLogin,
-    required this.guestAccess,
-    required this.termsText1,
-    required this.termsText2,
-    required this.termsText3,
-    required this.termsText4,
-    required this.onSuccess,
-  });
+  const AuthSelectionWidget({super.key, required this.onSuccess});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final Brightness brightness = MediaQuery.of(context).platformBrightness;
     final bool isDarkMode = brightness == Brightness.dark;
 
-    final String themedImagePath = isDarkMode ? darkImagePath : imagePath;
+    final String themedImagePath = isDarkMode
+        ? 'assets/images/ournego_white.png'
+        : 'assets/images/ournego.png';
 
     return Column(
       children: [
@@ -55,7 +32,7 @@ class AuthSelectionWidget extends ConsumerWidget {
         ),
         const SizedBox(height: 50),
         // Título de la Sección
-        Text(title, style: OurnegoTextStyles.header),
+        Text('Empieza a crecer.', style: OurnegoTextStyles.header),
         const SizedBox(height: 30),
         // Columna de botones
         SizedBox(
@@ -105,27 +82,26 @@ class TermsRichText extends StatelessWidget {
       child: RichText(
         textAlign: TextAlign.center,
         text: TextSpan(
-          text: config.termsText1,
+          text: 'Al continuar, aceptas nuestros',
           style: OurnegoTextStyles.body.merge(
             TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
           ),
           children: [
             TextSpan(
-              text: config.termsText2,
+              text: 'Términos y Condiciones',
               style: OurnegoTextStyles.link,
               recognizer: TapGestureRecognizer()
                 ..onTap = () => launchTermsUrl(
-                  'https://ournego.framer.website/terms-and-conditions',
+                  'https://www.ournego.com/terms-and-conditions',
                 ),
             ),
-            TextSpan(text: config.termsText3),
+            TextSpan(text: 'y'),
             TextSpan(
-              text: config.termsText4,
+              text: 'Política de Privacidad',
               style: OurnegoTextStyles.link,
               recognizer: TapGestureRecognizer()
-                ..onTap = () => launchTermsUrl(
-                  'https://ournego.framer.website/privacy-policy',
-                ),
+                ..onTap = () =>
+                    launchTermsUrl('https://www.ournego.com/privacy-policy'),
             ),
           ],
         ),
@@ -165,7 +141,7 @@ class GuestAccessButton extends ConsumerWidget {
           children: [
             const Icon(Icons.person, size: 25),
             const Spacer(),
-            Text(config.guestAccess),
+            Text('Continuar como invitado'),
             const Spacer(),
           ],
         ),
@@ -198,7 +174,7 @@ class PhoneLoginButton extends ConsumerWidget {
           children: [
             const Icon(Icons.phone, size: 25),
             const Spacer(),
-            Text(config.phoneLogin),
+            Text('Continuar con número telefónico'),
             const Spacer(),
           ],
         ),
@@ -236,7 +212,7 @@ class MailLoginButton extends ConsumerWidget {
           children: [
             const Icon(Icons.email, size: 25),
             const Spacer(),
-            Text(config.emailLogin),
+            Text('Continuar con correo electrónico'),
             const Spacer(),
           ],
         ),
@@ -284,7 +260,7 @@ class GoogleLoginButton extends ConsumerWidget {
             // Asegúrate de que esta imagen exista
             Image.asset('assets/images/google.png', width: 25),
             const Spacer(),
-            Text(config.googleLogin),
+            Text('Continuar con Google'),
             const Spacer(),
           ],
         ),
