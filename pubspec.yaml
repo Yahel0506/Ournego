@@ -50,6 +50,7 @@ dependencies:
   device_info_plus: ^12.3.0
   feedback: ^3.2.0
   uuid: ^4.5.2
+  go_router: ^17.1.0
 
 dev_dependencies:
   flutter_test:

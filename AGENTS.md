@@ -72,7 +72,10 @@ lib/
 ├── core/                          # Shared utilities, themes, failures
 │   ├── failures.dart             # Domain failure classes
 │   ├── ournego_colors.dart       # Theme definitions
-│   └── ournego_text_styles.dart  # Text styles
+│   ├── ournego_text_styles.dart  # Text styles
+│   └── routing/                  # Centralized routing
+│       ├── app_router.dart       # GoRouter configuration
+│       └── route_names.dart      # Route constants
 │
 ├── features/                      # Feature modules
 │   └── [feature_name]/
@@ -301,3 +304,132 @@ Configured in `analysis_options.yaml`:
 - Keep commits focused and atomic
 - Write clear commit messages in English
 - Don't commit `.env` files or secrets
+
+## Navigation with GoRouter
+
+The app uses GoRouter for declarative routing. All routes are defined in `lib/core/routing/`.
+
+### Adding a New Route
+
+1. **Define route constant** in `route_names.dart`:
+```dart
+class MyFeatureRoutes {
+  MyFeatureRoutes._();
+  
+  static const myScreen = '/my-screen';
+  static const myDetailScreen = '/my-detail/:id';
+}
+```
+
+2. **Add route to router** in `app_router.dart`:
+```dart
+GoRoute(
+  path: MyFeatureRoutes.myScreen,
+  name: 'my-screen',
+  builder: (context, state) => const MyScreen(),
+),
+```
+
+### Navigation Patterns
+
+```dart
+// Navigate to a route
+context.go(MapRoutes.map);
+
+// Push a route (adds to stack)
+context.push(BusinessRoutes.register);
+
+// Navigate with parameters
+context.go('/business/${businessId}');
+
+// Navigate with extra data
+context.go(
+  AuthRoutes.createPassword,
+  extra: email,  // Pass data to next screen
+);
+
+// Pop back
+context.pop();
+```
+
+### DO NOT directly import screens from other features for navigation
+```dart
+// ❌ BAD - Don't do this
+import 'package:ournego/features/auth/presentation/pages/auth_selection_screen.dart';
+Navigator.push(context, MaterialPageRoute(builder: (_) => AuthSelectionScreen()));
+
+// ✅ GOOD - Use routes instead
+import 'package:ournego/core/routing/route_names.dart';
+context.go(AuthRoutes.authSelection);
+```
+
+## Models vs Entities
+
+### Entities (Domain Layer)
+- Pure business objects with no serialization
+- Located in `lib/features/[feature]/domain/entities/`
+- Contain only business logic and validation
+- No knowledge of JSON, databases, or APIs
+
+```dart
+class Business {
+  final String id;
+  final String name;
+  final double latitude;
+  final double longitude;
+
+  Business({
+    required this.id,
+    required this.name,
+    required this.latitude,
+    required this.longitude,
+  });
+}
+```
+
+### Models (Data Layer)
+- Extend entities and add serialization
+- Located in `lib/features/[feature]/data/models/`
+- Handle JSON conversion and data transformation
+- Know about specific data source formats
+
+```dart
+class BusinessModel extends Business {
+  BusinessModel({
+    required super.id,
+    required super.name,
+    required super.latitude,
+    required super.longitude,
+  });
+
+  factory BusinessModel.fromJson(Map<String, dynamic> json) {
+    return BusinessModel(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      latitude: json['latitude'] as double,
+      longitude: json['longitude'] as double,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'latitude': latitude,
+    'longitude': longitude,
+  };
+}
+```
+
+### When to Create Models
+
+**Always create models** for:
+- Entities that are serialized (API, database)
+- Entities with data transformation logic
+- Entities from external data sources
+
+**Skip models** for:
+- Pure in-memory entities
+- Simple configuration objects
+- Entities that never leave the app
+
+See `MODELS_TEMPLATE.md` for detailed model creation guidelines.

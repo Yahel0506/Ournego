@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:dartz/dartz.dart';
 
-import '../../../failures.dart';
+import '../../../../core/failures.dart';
 
 abstract class FeedbackRepository {
   Future<Either<Failure, bool>> sendFeedback({
