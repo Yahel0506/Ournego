@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ournego/core/feedback/presentation/widgets/feedback_dialog_widget.dart';
+import 'package:ournego/features/feedback/presentation/widgets/feedback_dialog_widget.dart';
 import 'package:ournego/features/auth/domain/usecases/has_profile_usecase.dart';
 import 'package:ournego/features/auth/presentation/pages/complete_profile_screen.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';

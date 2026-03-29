@@ -2,10 +2,10 @@ import 'dart:io';
 
 import 'package:dartz/dartz.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:ournego/core/feedback/data/datasources/feedback_datasource.dart';
-import 'package:ournego/core/feedback/domain/repositories/feedback_repository.dart';
 
-import '../../../failures.dart';
+import 'package:ournego/core/failures.dart';
+import 'package:ournego/features/feedback/data/datasources/feedback_datasource.dart';
+import 'package:ournego/features/feedback/domain/repositories/feedback_repository.dart';
 
 class FeedbackRepositoryImpl implements FeedbackRepository {
   final FeedbackDatasource datasource;

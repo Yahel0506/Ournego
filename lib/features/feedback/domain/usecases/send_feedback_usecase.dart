@@ -1,9 +1,9 @@
 import 'dart:io';
 
 import 'package:dartz/dartz.dart';
-import 'package:ournego/core/feedback/domain/repositories/feedback_repository.dart';
 
-import '../../../failures.dart';
+import 'package:ournego/core/failures.dart';
+import 'package:ournego/features/feedback/domain/repositories/feedback_repository.dart';
 
 class SendFeedbackUsecase {
   final FeedbackRepository repository;

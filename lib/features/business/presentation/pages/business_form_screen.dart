@@ -8,7 +8,7 @@ import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:ournego/core/failures.dart';
-import 'package:ournego/core/feedback/presentation/widgets/feedback_dialog_widget.dart';
+import 'package:ournego/features/feedback/presentation/widgets/feedback_dialog_widget.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/features/business/domain/usecases/get_addresses_suggestions_usecase.dart';
 import 'package:ournego/features/business/presentation/pages/components/business_hours_picker.dart';
