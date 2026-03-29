@@ -1,11 +1,13 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ournego/core/ournego_text_styles.dart';
-import 'package:ournego/features/auth/presentation/pages/login_email_screen.dart';
-import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import 'package:ournego/core/ournego_text_styles.dart';
+import 'package:ournego/core/routing/route_names.dart';
+import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
 
 class AuthSelectionWidget extends ConsumerWidget {
   final VoidCallback? onSuccess;
@@ -195,10 +197,7 @@ class MailLoginButton extends ConsumerWidget {
       height: 50,
       child: OutlinedButton(
         onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute<void>(builder: (context) => LoginEmailScreen()),
-          );
+          context.push(AuthRoutes.loginEmail);
         },
         style: OutlinedButton.styleFrom(
           side: BorderSide(

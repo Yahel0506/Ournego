@@ -1,13 +1,20 @@
 import 'dart:io';
 
 import 'package:dartz/dartz.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
+
 import 'package:ournego/core/failures.dart';
 import 'package:ournego/features/auth/data/datasources/supabase_auth_datasource.dart';
 import 'package:ournego/features/auth/domain/entities/app_user.dart';
 import 'package:ournego/features/auth/domain/repositories/auth_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+/// Implementation of [AuthRepository] using Supabase.
+///
+/// This repository:
+/// - Receives [UserModel] from the datasource (data layer)
+/// - Returns [AppUser] entities to the domain layer
+/// - Handles error mapping to domain [Failure] types
 class AuthRepositoryImpl implements AuthRepository {
   final SupabaseAuthDatasource authDatasource;
 
@@ -19,21 +26,21 @@ class AuthRepositoryImpl implements AuthRepository {
     String password,
   ) async {
     try {
-      final rawUser = await authDatasource.signUpWithEmail(email, password);
-
-      AppUser user = AppUser(uid: rawUser.id, email: rawUser.email);
-
-      return Right(user);
+      // Datasource returns UserModel (extends AppUser)
+      final userModel = await authDatasource.signUpWithEmail(email, password);
+      // Return as AppUser (model IS-A entity)
+      return Right(userModel);
     } on AuthException catch (e) {
       if (e.message.contains('already registered')) {
         return Left(EmailAlreadyInUseFailure());
       }
-      debugPrint(e.message);
+      debugPrint('AuthException in signUpWithEmail: ${e.message}');
       return Left(ServerFailure());
-    } on Exception catch (e) {
-      debugPrint(e.toString());
+    } on SignupException catch (e) {
+      debugPrint('SignupException: ${e.message}');
       return Left(ServerFailure());
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Unknown error in signUpWithEmail: $e');
       return Left(ServerFailure());
     }
   }
@@ -44,41 +51,46 @@ class AuthRepositoryImpl implements AuthRepository {
     String password,
   ) async {
     try {
-      final rawUser = await authDatasource.logInWithEmail(email, password);
+      // Datasource returns UserModel
+      final userModel = await authDatasource.logInWithEmail(email, password);
 
-      AppUser user = AppUser(uid: rawUser.id, email: rawUser.email);
-
+      // Check if user has completed profile
       final bool hasProfile = await authDatasource.checkHasProfile();
 
       if (!hasProfile) {
-        debugPrint('No tiene perfil');
+        debugPrint('User has no profile');
         return Left(UserProfileNotFound());
       }
 
-      debugPrint('Login exitoso para usuario: ${user.email}');
-      return Right(user);
+      debugPrint('Login successful for user: ${userModel.email}');
+      return Right(userModel);
     } on AuthException catch (e) {
       if (e.message.contains('Invalid login credentials')) {
         return Left(InvalidCredentialsFailure());
       }
-      debugPrint(e.message);
+      debugPrint('AuthException in logInWithEmail: ${e.message}');
       return Left(ServerFailure());
-    } on Exception catch (e) {
-      debugPrint('Exception en logInWithEmail: ${e.toString()}');
-      return Left(ServerFailure());
+    } on LoginException catch (e) {
+      debugPrint('LoginException: ${e.message}');
+      return Left(InvalidCredentialsFailure());
+    } on NoAuthenticatedUserException {
+      return Left(AuthenticationRequiredFailure());
     } catch (e) {
-      debugPrint('Error desconocido en logInWithEmail: ${e.toString()}');
+      debugPrint('Unknown error in logInWithEmail: $e');
       return Left(ServerFailure());
     }
   }
 
+  @override
   Future<Either<Failure, void>> signInWithGoogle() async {
     try {
-      return Right(await authDatasource.signInWithGoogle());
-    } on Exception catch (e) {
-      debugPrint(e.toString());
+      await authDatasource.signInWithGoogle();
+      return const Right(null);
+    } on GoogleSignInException catch (e) {
+      debugPrint('GoogleSignInException: ${e.message}');
       return Left(ServerFailure());
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Unknown error in signInWithGoogle: $e');
       return Left(ServerFailure());
     }
   }
@@ -88,11 +100,12 @@ class AuthRepositoryImpl implements AuthRepository {
     File profilePicture,
   ) async {
     try {
-      return Right(await authDatasource.updateProfilePicture(profilePicture));
-    } on Exception catch (e) {
-      debugPrint(e.toString());
-      return Left(ServerFailure());
-    } catch (_) {
+      await authDatasource.updateProfilePicture(profilePicture);
+      return const Right(null);
+    } on NoAuthenticatedUserException {
+      return Left(AuthenticationRequiredFailure());
+    } catch (e) {
+      debugPrint('Error in updateProfilePicture: $e');
       return Left(ServerFailure());
     }
   }
@@ -100,50 +113,32 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, void>> updateUserName(String name) async {
     try {
-      return Right(await authDatasource.updateUserName(name));
-    } on Exception catch (e) {
-      debugPrint(e.toString());
-      return Left(ServerFailure());
-    } catch (_) {
+      await authDatasource.updateUserName(name);
+      return const Right(null);
+    } on NoAuthenticatedUserException {
+      return Left(AuthenticationRequiredFailure());
+    } catch (e) {
+      debugPrint('Error in updateUserName: $e');
       return Left(ServerFailure());
     }
   }
 
   @override
   Stream<AppUser> getProfile({String? userId}) {
-    if (userId != null) {
-      final user = authDatasource.getProfile(id: userId).map((data) {
-        return data.map((user) {
-          return AppUser(
-            uid: user['id'],
-            name: user['name'],
-            profilePicture: user['avatar_url'],
-          );
-        }).toList()[0];
-      });
-      return user;
-    } else {
-      final user = authDatasource.getProfile().map((data) {
-        return data.map((user) {
-          return AppUser(
-            uid: user['id'],
-            name: user['name'],
-            profilePicture: user['avatar_url'],
-          );
-        }).toList()[0];
-      });
-      return user;
-    }
+    // Datasource returns Stream<UserModel>, which IS-A Stream<AppUser>
+    // due to inheritance, so we can return it directly
+    return authDatasource.getProfileStream(id: userId);
   }
 
   @override
   Future<Either<Failure, void>> confirmHasProfile() async {
     try {
-      return Right(await authDatasource.confirmHasProfile());
-    } on Exception catch (e) {
-      debugPrint(e.toString());
-      return Left(ServerFailure());
-    } catch (_) {
+      await authDatasource.confirmHasProfile();
+      return const Right(null);
+    } on NoAuthenticatedUserException {
+      return Left(AuthenticationRequiredFailure());
+    } catch (e) {
+      debugPrint('Error in confirmHasProfile: $e');
       return Left(ServerFailure());
     }
   }
@@ -151,11 +146,12 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, bool>> checkHasProfile() async {
     try {
-      return Right(await authDatasource.checkHasProfile());
-    } on Exception catch (e) {
-      debugPrint(e.toString());
-      return Left(ServerFailure());
-    } catch (_) {
+      final hasProfile = await authDatasource.checkHasProfile();
+      return Right(hasProfile);
+    } on NoAuthenticatedUserException {
+      return Left(AuthenticationRequiredFailure());
+    } catch (e) {
+      debugPrint('Error in checkHasProfile: $e');
       return Left(ServerFailure());
     }
   }
@@ -163,11 +159,10 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, void>> logOut() async {
     try {
-      return Right(await authDatasource.logOut());
-    } on Exception catch (e) {
-      debugPrint(e.toString());
-      return Left(ServerFailure());
-    } catch (_) {
+      await authDatasource.logOut();
+      return const Right(null);
+    } catch (e) {
+      debugPrint('Error in logOut: $e');
       return Left(ServerFailure());
     }
   }

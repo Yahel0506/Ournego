@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
 import 'package:ournego/core/ournego_colors.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
+import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/features/auth/domain/usecases/sign_up_with_email_usecase.dart';
-import 'package:ournego/features/auth/presentation/pages/complete_profile_screen.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
 import 'package:ournego/shared/widgets/animated_background.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class CreatePasswordScreen extends ConsumerStatefulWidget {
   final String email;
@@ -254,13 +255,7 @@ class _CreatePasswordScreen extends ConsumerState<CreatePasswordScreen> {
                                   },
                                   (user) async {
                                     // Navegar a la siguiente pantalla o mostrar éxito
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            CompleteProfileScreen(),
-                                      ),
-                                    );
+                                    context.push(AuthRoutes.completeProfile);
                                   },
                                 );
                               }

@@ -1,22 +1,33 @@
 import 'dart:io';
 
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:path/path.dart' as p;
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:ournego/features/auth/data/models/user_model.dart';
+
+/// Datasource for authentication operations using Supabase.
+///
+/// Handles all direct communication with Supabase Auth and the 'users' table.
+/// Returns [UserModel] instances for use by the repository layer.
 class SupabaseAuthDatasource {
   final _supabase = Supabase.instance.client;
 
+  /// Gets the current authenticated user's ID.
+  /// Throws if no user is authenticated.
   String _requireUserId() {
     final user = _supabase.auth.currentUser;
     if (user == null) {
-      throw Exception('no-authenticated-user');
+      throw NoAuthenticatedUserException();
     }
     return user.id;
   }
 
-  Future<User> signUpWithEmail(String email, String password) async {
+  /// Signs up a new user with email and password.
+  /// Creates an entry in the 'users' table with has_profile = false.
+  /// Returns [UserModel] on success.
+  Future<UserModel> signUpWithEmail(String email, String password) async {
     final AuthResponse res = await _supabase.auth.signUp(
       email: email,
       password: password,
@@ -29,13 +40,15 @@ class SupabaseAuthDatasource {
         'id': rawUser.id,
         'has_profile': false,
       });
-      return rawUser;
+      return UserModel.fromSupabaseUser(rawUser);
     } else {
-      throw Exception('signup-error');
+      throw SignupException('signup-error');
     }
   }
 
-  Future<User> logInWithEmail(String email, String password) async {
+  /// Logs in an existing user with email and password.
+  /// Returns [UserModel] on success.
+  Future<UserModel> logInWithEmail(String email, String password) async {
     final AuthResponse res = await _supabase.auth.signInWithPassword(
       email: email,
       password: password,
@@ -44,12 +57,13 @@ class SupabaseAuthDatasource {
     final User? rawUser = res.user;
 
     if (rawUser != null) {
-      return rawUser;
+      return UserModel.fromSupabaseUser(rawUser);
     } else {
-      throw Exception('login-error');
+      throw LoginException('login-error');
     }
   }
 
+  /// Checks if the current user has completed their profile.
   Future<bool> checkHasProfile() async {
     final String userId = _requireUserId();
     final data = await _supabase
@@ -61,26 +75,26 @@ class SupabaseAuthDatasource {
     return data['has_profile'] as bool;
   }
 
-  Stream<List<Map<String, dynamic>>> getProfile({String? id}) {
-    if (id != null) {
-      final data = _supabase
-          .from('users')
-          .stream(primaryKey: ['id'])
-          .eq('id', id);
+  /// Gets a stream of user profile data.
+  /// If [id] is provided, gets that user's profile.
+  /// Otherwise, gets the current user's profile.
+  /// Returns a stream of [UserModel].
+  Stream<UserModel> getProfileStream({String? id}) {
+    final targetId = id ?? _requireUserId();
 
-      return data;
-    } else {
-      final String userId = _requireUserId();
-
-      final data = _supabase
-          .from('users')
-          .stream(primaryKey: ['id'])
-          .eq('id', userId);
-
-      return data;
-    }
+    return _supabase
+        .from('users')
+        .stream(primaryKey: ['id'])
+        .eq('id', targetId)
+        .map((data) {
+          if (data.isEmpty) {
+            throw ProfileNotFoundException();
+          }
+          return UserModel.fromJson(data.first);
+        });
   }
 
+  /// Updates the profile picture for the current user.
   Future<void> updateProfilePicture(File profilePicture) async {
     final String userId = _requireUserId();
     await _supabase.storage
@@ -92,11 +106,13 @@ class SupabaseAuthDatasource {
         );
   }
 
+  /// Updates the user's display name.
   Future<void> updateUserName(String name) async {
     final userId = _requireUserId();
     await _supabase.from('users').update({'name': name}).eq('id', userId);
   }
 
+  /// Marks the current user's profile as complete.
   Future<void> confirmHasProfile() async {
     final userId = _requireUserId();
     await _supabase
@@ -105,40 +121,37 @@ class SupabaseAuthDatasource {
         .eq('id', userId);
   }
 
+  /// Signs out the current user.
   Future<void> logOut() async {
     await _supabase.auth.signOut();
   }
 
+  /// Signs in with Google.
+  /// On web, uses OAuth redirect flow.
+  /// On mobile, uses google_sign_in package.
   Future<void> signInWithGoogle() async {
     if (kIsWeb) {
-      // Para web, usar el flujo OAuth nativo de Supabase
+      // For web, use Supabase's native OAuth flow
       await _supabase.auth.signInWithOAuth(
         OAuthProvider.google,
-        redirectTo: kIsWeb
-            ? null
-            : 'io.supabase.flutterquickstart://login-callback/',
+        redirectTo: null,
       );
-
-      // En web, el flujo OAuth redirige, así que el código siguiente no se ejecuta
-      // hasta que el usuario regrese. La verificación del perfil se debe hacer después
-      // del redirect en la app
+      // On web, OAuth redirects so code below won't execute
+      // Profile verification should happen after redirect in the app
     } else {
-      // Para móvil (Android/iOS), usar google_sign_in
+      // For mobile (Android/iOS), use google_sign_in
       const webClientId =
           '544311850300-ajutqk3e1djlccqiqs0o7a1qsuck5arl.apps.googleusercontent.com';
 
       final GoogleSignIn googleSignIn = GoogleSignIn.instance;
-
       googleSignIn.initialize(serverClientId: webClientId);
 
       final googleUser = await googleSignIn.authenticate();
-
       final googleAuth = googleUser.authentication;
-
       final idToken = googleAuth.idToken;
 
       if (idToken == null) {
-        throw 'No se encontró ID Token';
+        throw GoogleSignInException('No ID Token found');
       }
 
       await _supabase.auth.signInWithIdToken(
@@ -146,29 +159,95 @@ class SupabaseAuthDatasource {
         idToken: idToken,
       );
 
-      // Verificar y crear perfil si es necesario
+      // Verify and create profile if necessary
       await _ensureUserProfile(googleUser.displayName, googleUser.photoUrl);
     }
   }
 
+  /// Ensures the user has a profile entry in the database.
+  /// Creates one if it doesn't exist.
   Future<void> _ensureUserProfile(String? displayName, String? photoUrl) async {
-    final hasProfile = await checkHasProfile();
+    try {
+      final hasProfile = await checkHasProfile();
 
-    if (!hasProfile) {
+      if (!hasProfile) {
+        await _supabase.from('users').insert({
+          'id': _supabase.auth.currentUser!.id,
+          'name': displayName,
+          'has_profile': true,
+        });
+
+        // Only try to update profile picture on mobile
+        if (!kIsWeb && photoUrl != null) {
+          try {
+            updateProfilePicture(File.fromUri(Uri.parse(photoUrl)));
+          } catch (e) {
+            debugPrint('Error updating profile picture: $e');
+          }
+        }
+      }
+    } catch (e) {
+      // User doesn't exist in table, create them
       await _supabase.from('users').insert({
         'id': _supabase.auth.currentUser!.id,
         'name': displayName,
         'has_profile': true,
       });
-
-      // Solo intentar actualizar foto de perfil en móvil
-      if (!kIsWeb && photoUrl != null) {
-        try {
-          updateProfilePicture(File.fromUri(Uri.parse(photoUrl)));
-        } catch (e) {
-          print('Error al actualizar foto de perfil: $e');
-        }
-      }
     }
   }
+
+  /// Gets the current user's ID if authenticated, null otherwise.
+  String? get currentUserId => _supabase.auth.currentUser?.id;
+
+  /// Checks if a user is currently authenticated.
+  bool get isAuthenticated => _supabase.auth.currentUser != null;
+}
+
+// |---------------------------------| \\
+// |------- CUSTOM EXCEPTIONS -------| \\
+// |---------------------------------| \\
+
+/// Thrown when an operation requires authentication but no user is logged in.
+class NoAuthenticatedUserException implements Exception {
+  final String message;
+  NoAuthenticatedUserException([this.message = 'No authenticated user']);
+
+  @override
+  String toString() => message;
+}
+
+/// Thrown when signup fails.
+class SignupException implements Exception {
+  final String message;
+  SignupException(this.message);
+
+  @override
+  String toString() => message;
+}
+
+/// Thrown when login fails.
+class LoginException implements Exception {
+  final String message;
+  LoginException(this.message);
+
+  @override
+  String toString() => message;
+}
+
+/// Thrown when a user's profile is not found.
+class ProfileNotFoundException implements Exception {
+  final String message;
+  ProfileNotFoundException([this.message = 'Profile not found']);
+
+  @override
+  String toString() => message;
+}
+
+/// Thrown when Google Sign-In fails.
+class GoogleSignInException implements Exception {
+  final String message;
+  GoogleSignInException(this.message);
+
+  @override
+  String toString() => message;
 }
