@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ournego/features/auth/domain/entities/app_user.dart';
 import 'package:ournego/features/auth/domain/usecases/get_profile_usecase.dart';
@@ -20,10 +19,6 @@ final geolocationDatasourceProvider = Provider((ref) {
   return GeolocatorDatasource();
 });
 
-/*final firestoreDatasourceProvider = Provider((ref) {
-  return FirebaseFirestore.instance;
-});*/
-
 final businessesDatasourceProvider = Provider((ref) {
   return SupabaseMapDatasource();
 });
@@ -31,7 +26,6 @@ final businessesDatasourceProvider = Provider((ref) {
 final mapRepositoryProvider = Provider<MapRepositoryImpl>((ref) {
   final businessesDatasource = ref.read(businessesDatasourceProvider);
   final geolocationDatasource = ref.read(geolocationDatasourceProvider);
-  //final firestore = ref.read(firestoreDatasourceProvider);
   return MapRepositoryImpl(
     geolocationDatasource: geolocationDatasource,
     businessesDatasource: businessesDatasource,
