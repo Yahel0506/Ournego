@@ -10,11 +10,11 @@ import 'package:ournego/features/auth/domain/entities/auth_selection.dart';
 import 'package:ournego/features/auth/domain/repositories/auth_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class SupabaseAuthRepositoryImpl implements AuthRepository {
+class AuthRepositoryImpl implements AuthRepository {
   final LocalAuthSelectionDatasource authSelectionDatasource;
   final SupabaseAuthDatasource authDatasource;
 
-  SupabaseAuthRepositoryImpl({
+  AuthRepositoryImpl({
     required this.authSelectionDatasource,
     required this.authDatasource,
   });

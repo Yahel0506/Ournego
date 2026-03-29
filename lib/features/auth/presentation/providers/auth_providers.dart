@@ -1,11 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-//import 'package:ournego/features/auth/data/datasources/firebase_auth_datasource.dart';
-//import 'package:ournego/features/auth/data/datasources/firestore_auth_datasource.dart';
 import 'package:ournego/features/auth/data/datasources/local_auth_screen_text_datasource.dart';
 import 'package:ournego/features/auth/data/datasources/local_auth_selection_datasource.dart';
 import 'package:ournego/features/auth/data/datasources/local_error_messages_datasource.dart';
 import 'package:ournego/features/auth/data/datasources/supabase_auth_datasource.dart';
-//import 'package:ournego/features/auth/data/repositories/firebase_auth_repository_impl.dart';
 import 'package:ournego/features/auth/data/repositories/supabase_auth_repository_impl.dart';
 import 'package:ournego/features/auth/domain/entities/app_user.dart';
 import 'package:ournego/features/auth/domain/entities/auth_selection.dart';
@@ -16,30 +13,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../domain/usecases/sign_in_with_google_usecase.dart';
 
-/*final firebaseAuthRepositoryProvider = Provider<AuthRepository>((ref) {
-  final localAuthSelectionDatasource = LocalAuthSelectionDatasource();
-  final firebaseAuthDatasource = FirebaseAuthDatasource();
-  final firestoreAuthDatasource = FirestoreAuthDatasource();
-  return FirebaseAuthRepositoryImpl(
-    authSelectionDatasource: localAuthSelectionDatasource,
-    authDatasource: firebaseAuthDatasource,
-    databaseDatasource: firestoreAuthDatasource,
-  );
-});*/
-
-final supabaseAuthRepositoryProvider = Provider<AuthRepository>((ref) {
+final authRepositoryProvider = Provider<AuthRepository>((ref) {
   final localAuthSelectionDatasource = LocalAuthSelectionDatasource();
   final supabaseAuthDatasource = SupabaseAuthDatasource();
-  return SupabaseAuthRepositoryImpl(
+  return AuthRepositoryImpl(
     authSelectionDatasource: localAuthSelectionDatasource,
     authDatasource: supabaseAuthDatasource,
   );
-});
-
-final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  //final repository = ref.watch(firebaseAuthRepositoryProvider);
-  final repository = ref.watch(supabaseAuthRepositoryProvider);
-  return repository;
 });
 
 final authSelectionProvider = Provider<AuthSelection>((ref) {
