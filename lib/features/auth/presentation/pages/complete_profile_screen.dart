@@ -2,16 +2,18 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import 'package:ournego/core/ournego_colors.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
+import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/features/auth/domain/usecases/has_profile_usecase.dart';
 import 'package:ournego/features/auth/domain/usecases/update_profile_usecase.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
-import 'package:ournego/features/navigation/presentation/pages/main_layout_screen.dart';
 import 'package:ournego/shared/widgets/animated_background.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class CompleteProfileScreen extends ConsumerWidget {
   CompleteProfileScreen({super.key});
@@ -228,32 +230,20 @@ class CompleteProfileScreen extends ConsumerWidget {
                                               'hasSeenOnboarding',
                                             ) ??
                                             false) {
-                                          Navigator.of(context).popUntil(
-                                            (route) =>
-                                                route.settings.name ==
-                                                '/authSelection',
-                                          );
-                                          WidgetsBinding.instance
-                                              .addPostFrameCallback((_) {
-                                                if (context.mounted) {
-                                                  Navigator.of(context).pop();
-                                                }
-                                              });
+                                          // User has seen onboarding, just pop back
+                                          context.pop();
                                         } else {
+                                          await prefs.setBool(
+                                            'hasSeenOnboarding',
+                                            true,
+                                          );
+
                                           // Pequeña pausa para asegurar que las operaciones anteriores se completen
                                           await Future.delayed(
                                             Duration(milliseconds: 100),
                                           );
 
-                                          Navigator.of(
-                                            context,
-                                          ).pushAndRemoveUntil(
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  MainLayoutScreen(),
-                                            ),
-                                            (route) => false,
-                                          );
+                                          context.go(MapRoutes.map);
                                         }
                                       },
                                     );

@@ -3,22 +3,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:string_validator/string_validator.dart';
+
 import 'package:ournego/core/failures.dart';
 import 'package:ournego/core/ournego_colors.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
+import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/features/auth/data/datasources/local_auth_screen_text_datasource.dart';
 import 'package:ournego/features/auth/data/datasources/local_error_messages_datasource.dart';
 import 'package:ournego/features/auth/domain/entities/auth_screen_text.dart';
 import 'package:ournego/features/auth/domain/repositories/auth_repository.dart';
 import 'package:ournego/features/auth/domain/usecases/log_in_with_email_usecase.dart';
-import 'package:ournego/features/auth/presentation/pages/auth_selection_screen.dart';
-import 'package:ournego/features/auth/presentation/pages/complete_profile_screen.dart';
-import 'package:ournego/features/auth/presentation/pages/signup_email_screen.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
-import 'package:ournego/features/navigation/presentation/pages/main_layout_screen.dart';
 import 'package:ournego/shared/widgets/animated_background.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:string_validator/string_validator.dart';
 
 class LoginEmailScreen extends ConsumerStatefulWidget {
   const LoginEmailScreen({super.key});
@@ -112,12 +111,7 @@ class _LoginEmailScreenState extends ConsumerState<LoginEmailScreen> {
                     // Texto para hacer SignUp
                     InkWell(
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => SignupEmailScreen(),
-                          ),
-                        );
+                        context.push(AuthRoutes.signupEmail);
                       },
                       child: Text(
                         text.signUp.toString(),
@@ -186,12 +180,7 @@ class PrimaryButton extends StatelessWidget {
                 ),
               );
               if (failure is UserProfileNotFound) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => CompleteProfileScreen(),
-                  ),
-                );
+                context.push(AuthRoutes.completeProfile);
               }
             },
             (user) async {
@@ -199,24 +188,15 @@ class PrimaryButton extends StatelessWidget {
               final prefs = await SharedPreferences.getInstance();
 
               if (prefs.getBool('hasSeenOnboarding') ?? false) {
-                Navigator.of(
-                  context,
-                ).popUntil((route) => route.settings.name == '/authSelection');
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (context.mounted) {
-                    Navigator.of(context).pop();
-                  }
-                });
+                // User has seen onboarding, just pop back
+                context.pop();
               } else {
                 await prefs.setBool('hasSeenOnboarding', true);
 
                 // Pequeña pausa para asegurar que las operaciones anteriores se completen
                 await Future.delayed(Duration(milliseconds: 100));
 
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (context) => MainLayoutScreen()),
-                  (route) => false,
-                );
+                context.go(MapRoutes.map);
               }
             },
           );

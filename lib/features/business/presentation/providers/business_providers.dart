@@ -1,26 +1,29 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'package:ournego/features/business/data/datasources/business_geocoding_datasource.dart';
 import 'package:ournego/features/business/data/datasources/business_supabase_datasource.dart';
-import 'package:ournego/features/business/domain/repositories/business_repository.dart'
-    show BusinessRepository;
+import 'package:ournego/features/business/data/repositories/business_repository_impl.dart';
+import 'package:ournego/features/business/domain/repositories/business_repository.dart';
+import 'package:ournego/features/business/domain/usecases/check_if_owner_usecase.dart';
+import 'package:ournego/features/business/domain/usecases/get_addresses_suggestions_usecase.dart';
 import 'package:ournego/features/business/domain/usecases/register_business_usecase.dart';
-import 'package:riverpod/src/framework.dart';
 
-import '../../data/repositories/business_repository_impl.dart';
-import '../../domain/usecases/check_if_logged_usecase.dart';
-import '../../domain/usecases/check_if_owner_usecase.dart';
-import '../../domain/usecases/get_addresses_suggestions_usecase.dart';
+// |---------------------------------| \\
+// |------- LAYER 1: DATASOURCES ---| \\
+// |---------------------------------| \\
 
 final businessSupabaseDatasourceProvider = Provider<BusinessSupabaseDatasource>(
-  (ref) {
-    return BusinessSupabaseDatasource();
-  },
+  (ref) => BusinessSupabaseDatasource(),
 );
 
 final businessGeocodingDatasourceProvider =
-    Provider<BusinessGeocodingDatasource>((ref) {
-      return BusinessGeocodingDatasource();
-    });
+    Provider<BusinessGeocodingDatasource>(
+      (ref) => BusinessGeocodingDatasource(),
+    );
+
+// |---------------------------------| \\
+// |------- LAYER 2: REPOSITORIES --| \\
+// |---------------------------------| \\
 
 final businessRepositoryProvider = Provider<BusinessRepository>((ref) {
   final businessDatasource = ref.watch(businessSupabaseDatasourceProvider);
@@ -31,16 +34,12 @@ final businessRepositoryProvider = Provider<BusinessRepository>((ref) {
   );
 });
 
-final checkIfLoggedUsecaseProvider = Provider<CheckIfLoggedUsecase>((ref) {
-  final repository = ref.watch(businessRepositoryProvider);
-  return CheckIfLoggedUsecase(repository);
-});
+// |---------------------------------| \\
+// |------- LAYER 3: USECASES ------| \\
+// |---------------------------------| \\
 
-final isLoggedProvider = StreamProvider<bool>((ref) {
-  final usecase = ref.watch(checkIfLoggedUsecaseProvider);
-  final result = usecase();
-  return result;
-});
+// NOTE: For auth state (isLoggedIn), use authSessionProvider from
+// 'package:ournego/features/auth/presentation/providers/auth_providers.dart'
 
 final getAdressesSuggestionsUsecaseProvider =
     Provider<GetAddressesSuggestionsUsecase>((ref) {

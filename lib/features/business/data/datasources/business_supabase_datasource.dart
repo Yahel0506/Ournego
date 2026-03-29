@@ -9,17 +9,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class BusinessSupabaseDatasource {
   final _supabase = Supabase.instance.client;
 
-  // TODO: Move to Auth Datasource
-  Stream<bool> isLoggedIn() async* {
-    // Emit current auth state immediately (important on web where
-    // onAuthStateChange may not emit right away).
-    yield _supabase.auth.currentSession != null;
-
-    yield* _supabase.auth.onAuthStateChange
-        .map((event) => event.session != null)
-        .distinct();
-  }
-
   Future<String> registerBusiness(Map<String, dynamic> businessData) async {
     try {
       final response = await _supabase

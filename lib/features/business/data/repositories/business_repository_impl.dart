@@ -21,11 +21,6 @@ class BusinessRepositoryImpl implements BusinessRepository {
   });
 
   @override
-  Stream<bool> isLoggedIn() {
-    return businessDatasource.isLoggedIn();
-  }
-
-  @override
   Future<Either<Failure, List<AppPosition>>> getAddressesSuggestions(
     String query,
   ) async {

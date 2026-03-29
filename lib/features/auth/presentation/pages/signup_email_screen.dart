@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:string_validator/string_validator.dart';
+
 import 'package:ournego/core/ournego_colors.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
-import 'package:ournego/features/auth/presentation/pages/create_password_screen.dart';
+import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
 import 'package:ournego/shared/widgets/animated_background.dart';
-import 'package:string_validator/string_validator.dart';
 
 class SignupEmailScreen extends ConsumerStatefulWidget {
   const SignupEmailScreen({super.key});
@@ -102,13 +104,9 @@ class _SignupEmailScreenState extends ConsumerState<SignupEmailScreen> {
                           ElevatedButton(
                             onPressed: () {
                               if (_formKey.currentState?.validate() ?? false) {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => CreatePasswordScreen(
-                                      email: _emailController.text,
-                                    ),
-                                  ),
+                                context.push(
+                                  AuthRoutes.createPassword,
+                                  extra: _emailController.text,
                                 );
                               }
                             },

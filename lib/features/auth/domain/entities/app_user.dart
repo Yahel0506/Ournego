@@ -1,11 +1,15 @@
+/// Domain entity representing an authenticated user.
+///
+/// This is a pure business object with no serialization logic.
+/// For serialization, see [UserModel] in the data layer.
 class AppUser {
   final String uid;
-  String? name;
-  String? email;
-  String? phoneNum;
-  String? profilePicture;
+  final String? name;
+  final String? email;
+  final String? phoneNum;
+  final String? profilePicture;
 
-  AppUser({
+  const AppUser({
     required this.uid,
     this.name,
     this.email,
