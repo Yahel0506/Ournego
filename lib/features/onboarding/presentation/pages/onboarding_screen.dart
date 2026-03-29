@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
 import 'package:ournego/features/onboarding/presentation/pages/components/generic_slide.dart';
 import 'package:ournego/features/onboarding/presentation/pages/components/location_slide.dart';
-import 'package:ournego/features/onboarding/presentation/pages/components/login_slide.dart';
 import 'package:ournego/features/onboarding/presentation/providers/onboarding_providers.dart';
 import 'package:ournego/shared/widgets/animated_background.dart';
 import 'package:ournego/shared/widgets/information_card_widget.dart';
 import 'package:permission_handler/permission_handler.dart';
+
+import '../../../auth/presentation/widgets/auth_selection_widget.dart';
+import '../../../navigation/presentation/pages/main_layout_screen.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -130,7 +131,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     final slides = ref.watch(slidesListProvider);
-    final authSelection = ref.watch(authSelectionProvider);
 
     final pages = [
       // Slide 0: Bienvenida
@@ -172,18 +172,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         },
       ),
       // Slide 3: Inicio de sesion
-      LoginSlide(
-        title: authSelection.title,
-        imagePath: authSelection.imagePath.toString(),
-        darkImagePath: authSelection.darkImagePath.toString(),
-        googleLogin: authSelection.googleLogin.toString(),
-        emailLogin: authSelection.emailLogin.toString(),
-        phoneLogin: authSelection.phoneLogin.toString(),
-        guestAccess: authSelection.guestAccess.toString(),
-        termsText1: authSelection.termsText1.toString(),
-        termsText2: authSelection.termsText2.toString(),
-        termsText3: authSelection.termsText3.toString(),
-        termsText4: authSelection.termsText4.toString(),
+      AuthSelectionWidget(
+        onSuccess: () {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const MainLayoutScreen()),
+          );
+        },
       ),
     ];
 
