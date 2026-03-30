@@ -4,17 +4,14 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 // Conditional import for web-specific environment configuration
 import 'package:ournego/core/env_config_stub.dart'
     if (dart.library.js_interop) 'package:ournego/core/env_config_web.dart';
 import 'package:ournego/core/ournego_colors.dart';
-import 'package:ournego/features/navigation/presentation/pages/main_layout_screen.dart';
-import 'package:ournego/features/onboarding/presentation/pages/onboarding_screen.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
-final RouteObserver<ModalRoute<void>> routeObserver =
-    RouteObserver<ModalRoute<void>>();
+import 'package:ournego/core/routing/app_router.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -57,7 +54,11 @@ Future<void> main() async {
 
   runApp(
     BetterFeedback(
-      child: ProviderScope(child: MyApp(startOnMap: hasSeenOnboarding)),
+      child: ProviderScope(
+        child: kIsWeb
+            ? AuthStateListener(child: MyApp(startOnMap: hasSeenOnboarding))
+            : MyApp(startOnMap: hasSeenOnboarding),
+      ),
     ),
   );
 }
@@ -69,16 +70,12 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget homeWidget = startOnMap
-        ? const MainLayoutScreen()
-        : const OnboardingScreen();
-    return MaterialApp(
-      navigatorObservers: [routeObserver],
+    return MaterialApp.router(
+      routerConfig: createAppRouter(startOnMap: startOnMap),
       scrollBehavior: MyCustomScrollBehavior(),
       title: 'Ournego',
       theme: OurnegoColors.lightTheme,
       darkTheme: OurnegoColors.darkTheme,
-      home: kIsWeb ? AuthStateListener(child: homeWidget) : homeWidget,
     );
   }
 }
