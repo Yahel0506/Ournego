@@ -125,38 +125,6 @@ GoRouter createAppRouter({required bool startOnMap}) {
               child: const MainLayoutScreen(),
             ),
           ),
-
-          // Business Panel
-          GoRoute(
-            path: BusinessRoutes.panel,
-            name: 'business-panel',
-            pageBuilder: (context, state) =>
-                const NoTransitionPage(child: MainLayoutScreen()),
-          ),
-
-          // Community
-          GoRoute(
-            path: AppRoutes.community,
-            name: 'community',
-            pageBuilder: (context, state) =>
-                const NoTransitionPage(child: MainLayoutScreen()),
-          ),
-
-          // Business Panel
-          GoRoute(
-            path: BusinessRoutes.panel,
-            name: 'business-panel',
-            pageBuilder: (context, state) =>
-                NoTransitionPage(child: const MainLayoutScreen()),
-          ),
-
-          // Community
-          GoRoute(
-            path: AppRoutes.community,
-            name: 'community',
-            pageBuilder: (context, state) =>
-                NoTransitionPage(child: const MainLayoutScreen()),
-          ),
         ],
       ),
 

@@ -1,13 +1,12 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+import 'package:ournego/core/ournego_text_styles.dart';
+import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'package:ournego/core/ournego_text_styles.dart';
-import 'package:ournego/core/routing/route_names.dart';
-import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
+import '../pages/login_email_screen.dart';
 
 class AuthSelectionWidget extends ConsumerWidget {
   final VoidCallback? onSuccess;
@@ -97,7 +96,7 @@ class TermsRichText extends StatelessWidget {
                   'https://www.ournego.com/terms-and-conditions',
                 ),
             ),
-            TextSpan(text: 'y'),
+            TextSpan(text: ' y '),
             TextSpan(
               text: 'Política de Privacidad',
               style: OurnegoTextStyles.link,
@@ -197,7 +196,11 @@ class MailLoginButton extends ConsumerWidget {
       height: 50,
       child: OutlinedButton(
         onPressed: () {
-          context.push(AuthRoutes.loginEmail);
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const LoginEmailScreen()),
+          );
+          // context.push(AuthRoutes.loginEmail);
         },
         style: OutlinedButton.styleFrom(
           side: BorderSide(
