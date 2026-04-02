@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:ournego/core/routing/route_names.dart';
+import 'package:ournego/core/routing/route_observer.dart';
 import 'package:ournego/features/auth/presentation/pages/auth_selection_screen.dart';
 import 'package:ournego/features/auth/presentation/pages/complete_profile_screen.dart';
 import 'package:ournego/features/auth/presentation/pages/create_password_screen.dart';
@@ -35,6 +36,9 @@ GoRouter createAppRouter({required bool startOnMap}) {
 
     // Enable debug logging in development
     debugLogDiagnostics: true,
+
+    // Track navigation stack for flow-specific behavior.
+    observers: [AppRouteObserver.instance],
 
     routes: [
       // |---------------------------------| \\

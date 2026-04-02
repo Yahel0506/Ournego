@@ -3,8 +3,9 @@ import 'dart:math';
 import 'dart:ui' as imageUrl;
 
 import 'package:flutter/material.dart';
-import 'package:ournego/main.dart';
+
 import 'package:ournego/core/ournego_colors.dart';
+import 'package:ournego/core/routing/route_observer.dart';
 
 class AnimatedBackground extends StatefulWidget {
   const AnimatedBackground({super.key});
@@ -45,7 +46,7 @@ class _AnimatedBackgroundState extends State<AnimatedBackground>
     super.didChangeDependencies();
     final modalRoute = ModalRoute.of(context);
     if (modalRoute is PageRoute) {
-      routeObserver.subscribe(this, modalRoute);
+      AppRouteObserver.instance.subscribe(this, modalRoute);
     }
   }
 
@@ -105,7 +106,7 @@ class _AnimatedBackgroundState extends State<AnimatedBackground>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    routeObserver.unsubscribe(this);
+    AppRouteObserver.instance.unsubscribe(this);
     _stopTimer();
     super.dispose();
   }

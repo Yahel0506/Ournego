@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ournego/core/ournego_colors.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/core/routing/route_names.dart';
+import 'package:ournego/core/routing/route_observer.dart';
 import 'package:ournego/features/auth/domain/usecases/has_profile_usecase.dart';
 import 'package:ournego/features/auth/domain/usecases/update_profile_usecase.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
@@ -226,24 +227,30 @@ class CompleteProfileScreen extends ConsumerWidget {
                                         final prefs =
                                             await SharedPreferences.getInstance();
 
-                                        if (prefs.getBool(
-                                              'hasSeenOnboarding',
-                                            ) ??
-                                            false) {
-                                          // User has seen onboarding, just pop back
-                                          context.pop();
-                                        } else {
+                                        final firstRouteName = AppRouteObserver
+                                            .instance
+                                            .firstRoute
+                                            ?.settings
+                                            .name;
+                                        final isFirstRouteOnboarding =
+                                            firstRouteName ==
+                                                AppRoutes.onboarding ||
+                                            firstRouteName == 'onboarding';
+
+                                        if (isFirstRouteOnboarding) {
                                           await prefs.setBool(
                                             'hasSeenOnboarding',
                                             true,
                                           );
-
-                                          // Pequeña pausa para asegurar que las operaciones anteriores se completen
                                           await Future.delayed(
                                             Duration(milliseconds: 100),
                                           );
-
                                           context.go(MapRoutes.map);
+                                          return;
+                                        }
+
+                                        while (context.canPop()) {
+                                          context.pop();
                                         }
                                       },
                                     );
