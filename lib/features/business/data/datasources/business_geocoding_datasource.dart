@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-
 import 'package:ournego/core/app_env.dart';
 
 class BusinessGeocodingDatasource {
@@ -50,10 +49,19 @@ class BusinessGeocodingDatasource {
     if (apiKey.isEmpty) {
       throw Exception('Missing LOCATIONIQ_API_KEY');
     }
-    final url =
-        'https://api.locationiq.com/v1/autocomplete.php?key=$apiKey&q=$query&countrycodes=mx&limit=5&accept-language=es&format=json';
+    final url = Uri.https('api.locationiq.com', '/v1/autocomplete.php', {
+      'key': apiKey,
+      'q': query,
+      'countrycodes': 'mx',
+      'limit': '5',
+      'accept-language': 'es',
+      'format': 'json',
+    });
 
-    final response = await http.get(Uri.parse(url));
+    final response = await http.get(
+      url,
+      headers: const {'Accept': 'application/json'},
+    );
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
