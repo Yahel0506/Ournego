@@ -12,12 +12,12 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
+import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/features/map/domain/entities/business.dart';
 import 'package:ournego/features/map/domain/entities/product.dart';
-import 'package:ournego/features/map/domain/usecases/get_business_marker_usecase.dart';
 import 'package:ournego/features/map/presentation/providers/map_providers.dart';
-import 'package:ournego/features/auth/presentation/pages/auth_selection_screen.dart';
 import 'package:ournego/core/failures.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -28,7 +28,7 @@ class BusinessInformationWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final _modalState = ref.watch(modalState);
+    final modalStateValue = ref.watch(modalState);
     final business = ref.watch(selectedBusiness);
 
     final bool isWide = MediaQuery.of(context).size.width > 600;
@@ -47,9 +47,10 @@ class BusinessInformationWidget extends ConsumerWidget {
       );
     }
 
-    final IconData icon = GetBusinessMarkerUsecase(business: business)().icon;
+    // TODO: Use business type to show an icon in this widget if needed.
+    // Perspective: marker mapping moved to presentation layer.
 
-    final bool isCollapsed = _modalState == 0;
+    final bool isCollapsed = modalStateValue == 0;
 
     final ScrollPhysics scrollPhysics = isCollapsed
         ? const ClampingScrollPhysics()
@@ -335,12 +336,7 @@ class _BusinessFavoriteButton extends ConsumerWidget {
         result.fold(
           (failure) {
             if (failure is AuthenticationRequiredFailure) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const AuthSelectionScreen(),
-                ),
-              );
+              context.push(AuthRoutes.authSelection);
             } else {
               // TODO: Provide user-friendly messages based on `Failure`
               // and localize strings. Consider a centralized `ErrorMapper`

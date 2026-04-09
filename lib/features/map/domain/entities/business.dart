@@ -11,7 +11,6 @@ class Business {
   final double longitude;
   final BusinessType type;
   final List<String> images;
-  final bool isFavorite = false;
 
   Business({
     required this.id,

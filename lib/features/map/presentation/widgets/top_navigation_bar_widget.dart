@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ournego/features/auth/presentation/pages/auth_selection_screen.dart';
+import 'package:go_router/go_router.dart';
+import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
 
 class TopNavigationBarWidget extends ConsumerWidget {
@@ -60,7 +61,9 @@ class TopNavigationBarWidget extends ConsumerWidget {
                   builder: (context) {
                     return AlertDialog(
                       title: Text('Cerrar sesión'),
-                      content: Text('¿Estás seguro de que quieres cerrar sesión?'),
+                      content: Text(
+                        '¿Estás seguro de que quieres cerrar sesión?',
+                      ),
                       actions: [
                         TextButton(
                           onPressed: () {
@@ -82,13 +85,7 @@ class TopNavigationBarWidget extends ConsumerWidget {
                   },
                 );
               } else {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => AuthSelectionScreen(),
-                    settings: RouteSettings(name: '/authSelection'),
-                  ),
-                );
+                context.push(AuthRoutes.authSelection);
               }
             },
             style: ElevatedButton.styleFrom(

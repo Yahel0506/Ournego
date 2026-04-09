@@ -7,6 +7,7 @@ import 'package:ournego/features/map/data/datasources/supabase_map_datasource.da
 import 'package:ournego/features/map/data/repositories/map_repository_impl.dart';
 import 'package:ournego/features/map/domain/entities/app_position.dart';
 import 'package:ournego/features/map/domain/entities/business.dart';
+import 'package:ournego/features/map/domain/repositories/map_repository.dart';
 import 'package:ournego/features/map/domain/usecases/get_businesses_usecase.dart';
 import 'package:ournego/features/map/domain/usecases/get_current_location_usecase.dart';
 import 'package:ournego/features/map/presentation/providers/notifiers/map_notifier.dart';
@@ -23,7 +24,7 @@ final businessesDatasourceProvider = Provider((ref) {
   return SupabaseMapDatasource();
 });
 
-final mapRepositoryProvider = Provider<MapRepositoryImpl>((ref) {
+final mapRepositoryProvider = Provider<MapRepository>((ref) {
   final businessesDatasource = ref.read(businessesDatasourceProvider);
   final geolocationDatasource = ref.read(geolocationDatasourceProvider);
   return MapRepositoryImpl(

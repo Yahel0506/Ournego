@@ -8,8 +8,8 @@ import 'package:ournego/core/failures.dart';
 import 'package:ournego/core/ournego_colors.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/features/map/domain/entities/app_position.dart';
-import 'package:ournego/features/map/domain/entities/business_marker.dart';
-import 'package:ournego/features/map/domain/usecases/get_business_marker_usecase.dart';
+import 'package:ournego/features/map/presentation/mappers/business_marker_ui_mapper.dart';
+import 'package:ournego/features/map/presentation/models/business_marker_ui_model.dart';
 import 'package:ournego/features/map/presentation/providers/map_providers.dart';
 import 'package:ournego/features/map/presentation/widgets/business_information_widget.dart';
 import 'package:ournego/features/map/presentation/widgets/top_navigation_bar_widget.dart';
@@ -28,6 +28,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
     with TickerProviderStateMixin {
   late final _animatedMapController = AnimatedMapController(vsync: this);
   late ProviderSubscription<AsyncValue<AppPosition>> _providerSubscription;
+
+  final _businessMarkerUiMapper = BusinessMarkerUiMapper();
 
   final _modalController = DraggableScrollableController();
 
@@ -315,9 +317,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 data: (businessesList) {
                   return MarkerLayer(
                     markers: businessesList.map((business) {
-                      final BusinessMarker marker = GetBusinessMarkerUsecase(
-                        business: business,
-                      )();
+                      final BusinessMarkerUiModel marker =
+                          _businessMarkerUiMapper(business);
 
                       if (_isMarkerVisible) {
                         return Marker(
