@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ournego/features/map/domain/entities/app_position.dart';
+import 'package:ournego/core/location/app_position.dart';
 import 'package:ournego/features/map/presentation/providers/map_providers.dart';
 
 class MapNotifier extends AsyncNotifier<AppPosition> {

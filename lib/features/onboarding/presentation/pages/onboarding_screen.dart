@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/features/onboarding/presentation/pages/components/generic_slide.dart';
 import 'package:ournego/features/onboarding/presentation/pages/components/location_slide.dart';
 import 'package:ournego/features/onboarding/presentation/providers/onboarding_providers.dart';
@@ -8,7 +10,6 @@ import 'package:ournego/shared/widgets/information_card_widget.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../../auth/presentation/widgets/auth_selection_widget.dart';
-import '../../../navigation/presentation/pages/main_layout_screen.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -174,10 +175,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       // Slide 3: Inicio de sesion
       AuthSelectionWidget(
         onSuccess: () {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const MainLayoutScreen()),
-          );
+          context.go(MapRoutes.map);
         },
       ),
     ];

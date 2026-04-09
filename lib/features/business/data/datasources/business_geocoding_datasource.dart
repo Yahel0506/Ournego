@@ -1,5 +1,8 @@
 import 'dart:convert';
+
 import 'package:http/http.dart' as http;
+
+import 'package:ournego/core/app_env.dart';
 
 class BusinessGeocodingDatasource {
   Future<List<Map<String, dynamic>>> getAddressSuggestions(String query) async {
@@ -43,7 +46,10 @@ class BusinessGeocodingDatasource {
     // ignore: dead_code
     return [];*/
 
-    final String apiKey = 'pk.276923b81a5b05b99adc374e2164b240';
+    final String apiKey = AppEnv.getString('LOCATIONIQ_API_KEY');
+    if (apiKey.isEmpty) {
+      throw Exception('Missing LOCATIONIQ_API_KEY');
+    }
     final url =
         'https://api.locationiq.com/v1/autocomplete.php?key=$apiKey&q=$query&countrycodes=mx&limit=5&accept-language=es&format=json';
 

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
-import 'package:ournego/features/auth/presentation/pages/auth_selection_screen.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
-import 'package:ournego/features/business/presentation/pages/business_form_screen.dart';
 import 'package:ournego/features/navigation/presentation/providers/navigation_provider.dart';
 import 'package:ournego/shared/widgets/information_card_widget.dart';
 
@@ -97,53 +97,14 @@ class RegisterBusinessWidget extends ConsumerWidget {
                 if (!context.mounted) return;
 
                 if (isLogged) {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const BusinessFormScreen(),
-                    ),
-                  );
+                  context.push(BusinessRoutes.form);
                 } else {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const AuthSelectionScreen(),
-                      settings: const RouteSettings(name: '/authSelection'),
-                    ),
-                  );
+                  context.push(AuthRoutes.authSelection);
                 }
               } catch (_) {
                 if (!context.mounted) return;
                 await _showSessionErrorDialog(context, ref);
               }
-              /*final isLoggedInResult = await CheckIfLoggedUsecase(repository)();
-
-              isLoggedInResult.fold(
-                (failure) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'Ha habido un error. Por favor, inténtalo de nuevo.',
-                        style: OurnegoTextStyles.errorText,
-                      ),
-                    ),
-                  );
-                },
-                (isLoggedIn) {
-                  if (isLoggedIn) {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => BusinessFormScreen(),
-                      ),
-                    );
-                  } else {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => AuthSelectionScreen(),
-                        settings: RouteSettings(name: '/authSelection'),
-                      ),
-                    );
-                  }
-                },
-              );*/
             },
             style: ButtonStyle(
               backgroundColor: WidgetStatePropertyAll(

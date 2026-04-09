@@ -1,6 +1,6 @@
 import 'package:dartz/dartz.dart';
+import 'package:ournego/core/location/app_position.dart';
 import 'package:ournego/features/business/domain/repositories/business_repository.dart';
-import 'package:ournego/features/map/domain/entities/app_position.dart';
 
 import '../../../../core/failures.dart';
 

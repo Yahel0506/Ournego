@@ -1,8 +1,8 @@
 import 'dart:io';
 
 import 'package:dartz/dartz.dart';
-import 'package:ournego/features/business/domain/entitites/app_schedule.dart';
-import 'package:ournego/features/map/domain/entities/app_position.dart';
+import 'package:ournego/core/location/app_position.dart';
+import 'package:ournego/features/business/domain/entities/app_schedule.dart';
 
 import '../../../../core/failures.dart';
 
