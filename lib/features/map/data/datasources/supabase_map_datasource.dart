@@ -1,12 +1,14 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:ournego/features/map/data/datasources/map_exceptions.dart';
+
 class SupabaseMapDatasource {
   final _supabase = Supabase.instance.client;
 
   String _requireUserId() {
     final user = _supabase.auth.currentUser;
     if (user == null) {
-      throw Exception('no-authenticated-user');
+      throw const MapAuthenticationRequiredException();
     }
     return user.id;
   }
