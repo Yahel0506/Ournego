@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
@@ -7,15 +8,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:ournego/core/mapbox_config.dart';
 import 'package:ournego/core/failures.dart';
 import 'package:ournego/core/location/app_position.dart';
 import 'package:ournego/core/location/geolocator_location_datasource.dart';
 import 'package:ournego/core/location/location_datasource.dart';
-import 'package:ournego/features/feedback/presentation/widgets/feedback_dialog_widget.dart';
+import 'package:ournego/core/mapbox_config.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/features/business/domain/usecases/get_addresses_suggestions_usecase.dart';
 import 'package:ournego/features/business/presentation/pages/components/business_hours_picker.dart';
+import 'package:ournego/features/feedback/presentation/widgets/feedback_dialog_widget.dart';
 import 'package:ournego/features/navigation/presentation/providers/navigation_provider.dart';
 import 'package:ournego/shared/widgets/animated_background.dart';
 import 'package:ournego/shared/widgets/information_card_widget.dart';
@@ -793,16 +794,14 @@ class BusinessPositionSelector extends StatelessWidget {
                     urlTemplate:
                         'https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/512/{z}/{x}/{y}@2x?access_token=$myAccessToken',
                     userAgentPackageName: 'com.ournego.app',
-                    tileProvider: NetworkTileProvider(
-                      headers: {
-                        'User-Agent': 'com.ournego.app',
-                        'Referer': 'com.ournego.app',
-                      },
-                      cachingProvider:
-                          BuiltInMapCachingProvider.getOrCreateInstance(
-                            maxCacheSize: 1_000_000_000,
+                    tileProvider: kIsWeb
+                        ? NetworkTileProvider()
+                        : NetworkTileProvider(
+                            cachingProvider:
+                                BuiltInMapCachingProvider.getOrCreateInstance(
+                                  maxCacheSize: 1_000_000_000,
+                                ),
                           ),
-                    ),
                     key: Key(currentStyleId),
                   ),
                   Center(
