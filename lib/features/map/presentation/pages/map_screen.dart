@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
@@ -262,16 +263,14 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 urlTemplate:
                     'https://api.mapbox.com/styles/v1/$myUsername/$currentStyleId/tiles/256/{z}/{x}/{y}@2x?access_token=$myAccessToken',
                 userAgentPackageName: 'com.ournego.app',
-                tileProvider: NetworkTileProvider(
-                  headers: {
-                    'User-Agent': 'com.ournego.app', // Mismo nombre que arriba
-                    'Referer': 'com.ournego.app',
-                  },
-                  cachingProvider:
-                      BuiltInMapCachingProvider.getOrCreateInstance(
-                        maxCacheSize: 1_000_000_000,
+                tileProvider: kIsWeb
+                    ? NetworkTileProvider()
+                    : NetworkTileProvider(
+                        cachingProvider:
+                            BuiltInMapCachingProvider.getOrCreateInstance(
+                              maxCacheSize: 1_000_000_000,
+                            ),
                       ),
-                ),
                 key: Key(currentStyleId),
               ),
 
