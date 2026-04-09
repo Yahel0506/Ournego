@@ -7,4 +7,5 @@ window.ENV = {
     MAPBOX_USERNAME: 'yahel0506',
     MAPBOX_STYLE_ID_DARK: 'cmke90wyw005w01qqgz7k6av3',
     MAPBOX_STYLE_ID_LIGHT: 'cmke8zt80000v01rx067dbgpr',
+    LOCATIONIQ_API_KEY: 'pk.276923b81a5b05b99adc374e2164b240',
 };
