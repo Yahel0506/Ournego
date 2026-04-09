@@ -1,13 +1,14 @@
 import 'dart:io';
 
 import 'package:dartz/dartz.dart';
-import 'package:ournego/core/location/app_position.dart';
+import 'package:flutter/foundation.dart';
 import 'package:ournego/core/failures.dart';
+import 'package:ournego/core/location/app_position.dart';
 import 'package:ournego/features/business/data/datasources/business_geocoding_datasource.dart';
 import 'package:ournego/features/business/data/datasources/business_supabase_datasource.dart';
 import 'package:ournego/features/business/data/errors/business_registration_exceptions.dart';
 import 'package:ournego/features/business/domain/entities/app_schedule.dart';
-import '../../domain/repositories/business_repository.dart';
+import 'package:ournego/features/business/domain/repositories/business_repository.dart';
 
 class BusinessRepositoryImpl implements BusinessRepository {
   final BusinessSupabaseDatasource businessDatasource;
@@ -23,15 +24,10 @@ class BusinessRepositoryImpl implements BusinessRepository {
     String query,
   ) async {
     try {
-      final isSignedIn = await businessDatasource.isSignedIn();
-      if (!isSignedIn) {
-        return Left(AuthenticationRequiredFailure());
-      }
-
       final suggestions = await geocodingDatasource.getAddressSuggestions(
         query,
       );
-      final locations = suggestions.map((suggestion) {
+      final List<AppPosition> locations = suggestions.map((suggestion) {
         final name = suggestion['name'] ?? '';
         final city = suggestion['city'] ?? '';
         final state = suggestion['state'] ?? '';
@@ -48,7 +44,9 @@ class BusinessRepositoryImpl implements BusinessRepository {
         return AppPosition(latitude: lat, longitude: lon, address: address);
       }).toList();
       return Right(locations);
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('Error getting address suggestions: $e');
+      debugPrint('$stackTrace');
       return Left(ServerFailure());
     }
   }
