@@ -7,20 +7,32 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:ournego/core/mapbox_config.dart';
 import 'package:ournego/core/failures.dart';
+import 'package:ournego/core/location/app_position.dart';
+import 'package:ournego/core/location/geolocator_location_datasource.dart';
+import 'package:ournego/core/location/location_datasource.dart';
 import 'package:ournego/features/feedback/presentation/widgets/feedback_dialog_widget.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/features/business/domain/usecases/get_addresses_suggestions_usecase.dart';
 import 'package:ournego/features/business/presentation/pages/components/business_hours_picker.dart';
-import 'package:ournego/features/map/domain/entities/app_position.dart';
 import 'package:ournego/features/navigation/presentation/providers/navigation_provider.dart';
 import 'package:ournego/shared/widgets/animated_background.dart';
 import 'package:ournego/shared/widgets/information_card_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-import '../../../map/presentation/providers/map_providers.dart';
-import '../../domain/entitites/app_schedule.dart';
+import '../../domain/entities/app_schedule.dart';
 import '../providers/business_providers.dart';
+
+final _businessLocationDatasourceProvider = Provider<LocationDatasource>(
+  (ref) => GeolocatorLocationDatasource(),
+);
+
+final _businessCurrentLocationProvider = FutureProvider<AppPosition>((
+  ref,
+) async {
+  final datasource = ref.watch(_businessLocationDatasourceProvider);
+  return datasource.getCurrentLocation();
+});
 
 class BusinessFormScreen extends ConsumerStatefulWidget {
   const BusinessFormScreen({super.key});
@@ -50,13 +62,13 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
   late ProviderSubscription<AsyncValue<AppPosition>> _providerSubscription;
   final _picker = ImagePicker();
   File _pickedImage = File('');
-  final List<BusinessHoursPicker> _hoursPickers = List.generate(
-    7,
-    (index) => BusinessHoursPicker(day: index),
-  );
+  // TODO: re-enable business hours picker and collect schedules via callbacks
+  // or a Riverpod notifier instead of querying child widget state.
   int? _selectedCategory = 0; // 0 - 12
   final _phoneController = TextEditingController();
   final _isSending = ValueNotifier<bool>(false);
+
+  final Map<int, AppSchedule?> _hoursByDay = <int, AppSchedule?>{};
 
   final ScrollController _scrollController = ScrollController();
   bool _isHydratingDraft = false;
@@ -77,6 +89,10 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
       await prefs.setDouble(_draftLatitudeKey, camera.center.latitude);
       await prefs.setDouble(_draftLongitudeKey, camera.center.longitude);
     }
+  }
+
+  void _onBusinessScheduleChanged(int dayOfWeek, AppSchedule? schedule) {
+    _hoursByDay[dayOfWeek] = schedule;
   }
 
   Future<void> _clearDraft() async {
@@ -147,6 +163,14 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
   }
 
   _BusinessRegistrationErrorContent _mapFailureToDialog(Failure failure) {
+    if (failure is AuthenticationRequiredFailure) {
+      return const _BusinessRegistrationErrorContent(
+        title: 'Necesitas iniciar sesion',
+        description:
+            'Inicia sesion para poder registrar un negocio o usar autocompletado de direccion.',
+      );
+    }
+
     if (failure is BusinessRegistrationUnauthorizedFailure) {
       return const _BusinessRegistrationErrorContent(
         title: 'No tienes permisos para registrar un negocio',
@@ -267,6 +291,17 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
     );
   }
 
+  void _showMissingMapboxConfigSnackBar() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Mapa deshabilitado: falta configurar Mapbox en variables de entorno.',
+        ),
+      ),
+    );
+  }
+
   Future<File> pickBusinessImage() async {
     return _picker.pickImage(source: ImageSource.gallery).then((pickedFile) {
       if (pickedFile != null) {
@@ -281,14 +316,21 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
   void initState() {
     super.initState();
 
+    for (var day = 0; day < 7; day++) {
+      _hoursByDay[day] = AppSchedule(
+        dayOfWeek: day,
+        openMinutes: BusinessHoursPicker.defaultOpenMinutes,
+        closeMinutes: BusinessHoursPicker.defaultCloseMinutes,
+      );
+    }
+
     _attachDraftListeners();
     _loadDraft();
 
     ProviderSubscription<AsyncValue<AppPosition>> updateLocation() {
-      return ref.listenManual<AsyncValue<AppPosition>>(mapProvider, (
-        previous,
-        next,
-      ) {
+      return ref.listenManual<
+        AsyncValue<AppPosition>
+      >(_businessCurrentLocationProvider, (previous, next) {
         next.whenOrNull(
           data: (data) {
             _animatedMapController.animateTo(
@@ -339,16 +381,17 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
     final bool isDarkModeOn =
         MediaQuery.of(context).platformBrightness == Brightness.dark;
 
-    // TODO: Acces to .env file for tokens
-
-    const String myAccessToken =
-        'pk.eyJ1IjoieWFoZWwwNTA2IiwiYSI6ImNta2Q5a3l2aTBhMnczZXB3dXVpM29kd2cifQ.7EkrO3IQj-HfS2bR7tKPcg';
-    const String myUsername = 'yahel0506';
-
-    const String styleIdDark = 'cmke90wyw005w01qqgz7k6av3';
-    const String styleIdLight = 'cmke8zt80000v01rx067dbgpr';
+    final String myAccessToken = MapboxConfig.accessToken;
+    final String myUsername = MapboxConfig.username;
+    final String styleIdDark = MapboxConfig.styleIdDark;
+    final String styleIdLight = MapboxConfig.styleIdLight;
 
     final String currentStyleId = isDarkModeOn ? styleIdLight : styleIdDark;
+
+    final bool hasMapboxConfig =
+        myAccessToken.isNotEmpty &&
+        myUsername.isNotEmpty &&
+        currentStyleId.isNotEmpty;
 
     return Scaffold(
       body: Stack(
@@ -465,13 +508,21 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
                     scrollController: _scrollController,
                   ),
                   SizedBox(height: 16),
-                  BusinessPositionSelector(
-                    animatedMapController: _animatedMapController,
-                    myUsername: myUsername,
-                    currentStyleId: currentStyleId,
-                    myAccessToken: myAccessToken,
-                    onCenterChanged: (_) => _persistDraft(),
-                  ),
+                  if (!hasMapboxConfig)
+                    InformationCardWidget(
+                      title: 'Mapa deshabilitado',
+                      description:
+                          'Falta configurar Mapbox (MAPBOX_ACCESS_TOKEN, MAPBOX_USERNAME y style ids). Aun puedes registrar el negocio seleccionando la ubicacion manualmente mas tarde.',
+                      imagePath: _genericBusinessErrorImage,
+                    )
+                  else
+                    BusinessPositionSelector(
+                      animatedMapController: _animatedMapController,
+                      myUsername: myUsername,
+                      currentStyleId: currentStyleId,
+                      myAccessToken: myAccessToken,
+                      onCenterChanged: (_) => _persistDraft(),
+                    ),
                   SizedBox(height: 24),
                   Text(
                     '¿En qué categoría se encuentra tu negocio?',
@@ -558,14 +609,24 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
                     ),
                   ),
                   SizedBox(height: 24),
-                  /*Text(
+                  Text(
                     '¿En qué horarios abre tu negocio?',
                     style: OurnegoTextStyles.body,
                     textAlign: TextAlign.center,
                   ),
                   SizedBox(height: 16),
-                  Column(children: [..._hoursPickers]),
-                  SizedBox(height: 24),*/
+                  Column(
+                    children: List.generate(
+                      7,
+                      (index) => BusinessHoursPicker(
+                        day: index,
+                        initialSchedule: _hoursByDay[index],
+                        onChanged: (schedule) =>
+                            _onBusinessScheduleChanged(index, schedule),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 24),
                   Divider(),
                   SizedBox(height: 24),
                   SizedBox(
@@ -582,16 +643,9 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
 
                           debugPrint('${_isSending.value}');
 
-                          final hours = _hoursPickers
-                              .map((picker) {
-                                final schedule = picker.getSchedule();
-                                if (schedule != null) {
-                                  return schedule;
-                                }
-                                return null;
-                              })
+                          final hours = _hoursByDay.values
                               .whereType<AppSchedule>()
-                              .toList();
+                              .toList(growable: false);
                           final response = await registerBusinessUsecase(
                             name: _nameController.text,
                             description: _descriptionController.text,
@@ -842,7 +896,17 @@ class BusinessAddressInput extends StatelessWidget {
         }
         final result = await getAddressesSuggestionsUsecase(query);
         return result.fold((failure) {
-          debugPrint('Error fetching suggestions');
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  failure is AuthenticationRequiredFailure
+                      ? 'Inicia sesion para usar sugerencias de direccion.'
+                      : 'No se pudieron cargar sugerencias de direccion.',
+                ),
+              ),
+            );
+          });
           return <AppPosition>[];
         }, (suggestions) => suggestions);
       },

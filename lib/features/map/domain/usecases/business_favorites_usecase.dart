@@ -8,7 +8,10 @@ class BusinessFavoritesUsecase {
 
   BusinessFavoritesUsecase({required this.repository});
 
-  Future<Either<Failure, void>> toggleFavorite(String businessId, bool isFavorite) async {
+  Future<Either<Failure, void>> toggleFavorite(
+    String businessId,
+    bool isFavorite,
+  ) async {
     if (isFavorite) {
       return repository.removeBusinessFromFavorites(businessId);
     } else {

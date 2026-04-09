@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/features/feedback/presentation/widgets/feedback_dialog_widget.dart';
 import 'package:ournego/features/auth/domain/usecases/has_profile_usecase.dart';
-import 'package:ournego/features/auth/presentation/pages/complete_profile_screen.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
 import 'package:ournego/features/business/presentation/pages/business_panel_screen.dart';
 import 'package:ournego/features/business/presentation/providers/business_providers.dart';
@@ -38,11 +39,7 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen>
     hasProfile.then((result) {
       result.fold((failure) {}, (hasProfile) {
         if (!hasProfile) {
-          Navigator.popUntil(context, (route) => route.isFirst);
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => CompleteProfileScreen()),
-          );
+          context.go(AuthRoutes.completeProfile);
         }
       });
     });

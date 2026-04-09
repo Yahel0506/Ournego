@@ -5,9 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:ournego/core/failures.dart';
+import 'package:ournego/core/mapbox_config.dart';
+import 'package:ournego/core/location/app_position.dart';
 import 'package:ournego/core/ournego_colors.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
-import 'package:ournego/features/map/domain/entities/app_position.dart';
 import 'package:ournego/features/map/presentation/mappers/business_marker_ui_mapper.dart';
 import 'package:ournego/features/map/presentation/models/business_marker_ui_model.dart';
 import 'package:ournego/features/map/presentation/providers/map_providers.dart';
@@ -226,12 +227,11 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final bool isDarkModeOn =
         MediaQuery.of(context).platformBrightness == Brightness.dark;
 
-    const String myAccessToken =
-        'pk.eyJ1IjoieWFoZWwwNTA2IiwiYSI6ImNta2Q5a3l2aTBhMnczZXB3dXVpM29kd2cifQ.7EkrO3IQj-HfS2bR7tKPcg';
-    const String myUsername = 'yahel0506';
+    final String myAccessToken = MapboxConfig.accessToken;
+    final String myUsername = MapboxConfig.username;
 
-    const String styleIdDark = 'cmke90wyw005w01qqgz7k6av3';
-    const String styleIdLight = 'cmke8zt80000v01rx067dbgpr';
+    final String styleIdDark = MapboxConfig.styleIdDark;
+    final String styleIdLight = MapboxConfig.styleIdLight;
 
     final String currentStyleId = isDarkModeOn ? styleIdDark : styleIdLight;
 

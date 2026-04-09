@@ -1,15 +1,16 @@
 import 'package:dartz/dartz.dart';
+import 'package:ournego/core/location/app_position.dart';
+import 'package:ournego/core/location/location_datasource.dart';
+import 'package:ournego/core/location/location_exceptions.dart';
 import 'package:ournego/core/failures.dart';
-import 'package:ournego/features/map/data/datasources/geolocator_datasource.dart';
 import 'package:ournego/features/map/data/datasources/map_exceptions.dart';
 import 'package:ournego/features/map/data/datasources/supabase_map_datasource.dart';
 import 'package:ournego/features/map/data/models/business_model.dart';
-import 'package:ournego/features/map/domain/entities/app_position.dart';
 import 'package:ournego/features/map/domain/entities/business.dart';
 import 'package:ournego/features/map/domain/repositories/map_repository.dart';
 
 class MapRepositoryImpl implements MapRepository {
-  final GeolocatorDatasource geolocationDatasource;
+  final LocationDatasource geolocationDatasource;
   final SupabaseMapDatasource businessesDatasource;
 
   MapRepositoryImpl({
@@ -25,9 +26,7 @@ class MapRepositoryImpl implements MapRepository {
       final position = await geolocationDatasource.getCurrentLocation(
         requestPermissionIfNeeded: requestPermissionIfNeeded,
       );
-      return Right(
-        AppPosition(latitude: position.latitude, longitude: position.longitude),
-      );
+      return Right(position);
     } on LocationPermissionDeniedForeverException {
       return Left(LocationPermissionDeniedForeverFailure());
     } on LocationPermissionDeniedException {

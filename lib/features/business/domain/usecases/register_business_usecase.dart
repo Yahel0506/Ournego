@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:dartz/dartz.dart';
 
 import '../../../../core/failures.dart';
-import '../entitites/app_schedule.dart';
+import '../entities/app_schedule.dart';
 import '../repositories/business_repository.dart';
 
 class RegisterBusinessUsecase {

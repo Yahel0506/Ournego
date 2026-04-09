@@ -1,38 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ournego/features/business/domain/entitites/app_schedule.dart';
+import 'package:ournego/features/business/domain/entities/app_schedule.dart';
 
 import '../../../../../core/ournego_text_styles.dart';
 
 class BusinessHoursPicker extends ConsumerStatefulWidget {
   final int day;
 
-  BusinessHoursPicker({super.key, required this.day});
+  final AppSchedule? initialSchedule;
+  final ValueChanged<AppSchedule?>? onChanged;
 
-  bool _isOpen = true;
-  TimeOfDay _openingTime = TimeOfDay(hour: 9, minute: 0);
-  TimeOfDay _closingTime = TimeOfDay(hour: 18, minute: 0);
+  const BusinessHoursPicker({
+    super.key,
+    required this.day,
+    this.initialSchedule,
+    this.onChanged,
+  });
 
-  AppSchedule? getSchedule() {
-    if (!_isOpen) {
-      return null;
-    } else {
-      return AppSchedule(
-        dayOfWeek: day,
-        openTime: _openingTime,
-        closeTime: _closingTime,
-      );
-    }
-  }
-
-  void setDefaults(AppSchedule? schedule) {
-    if (schedule == null) {
-      return;
-    } else {
-      _openingTime = schedule.openTime;
-      _closingTime = schedule.closeTime;
-    }
-  }
+  static const int defaultOpenMinutes = 9 * 60;
+  static const int defaultCloseMinutes = 18 * 60;
 
   @override
   ConsumerState<BusinessHoursPicker> createState() =>
@@ -40,6 +26,56 @@ class BusinessHoursPicker extends ConsumerStatefulWidget {
 }
 
 class _BusinessHoursPickerState extends ConsumerState<BusinessHoursPicker> {
+  bool _isOpen = true;
+  int _openMinutes = BusinessHoursPicker.defaultOpenMinutes;
+  int _closeMinutes = BusinessHoursPicker.defaultCloseMinutes;
+
+  @override
+  void initState() {
+    super.initState();
+
+    final schedule = widget.initialSchedule;
+    if (schedule != null) {
+      _openMinutes = schedule.openMinutes;
+      _closeMinutes = schedule.closeMinutes;
+      _isOpen = true;
+    }
+  }
+
+  AppSchedule? getSchedule() {
+    if (!_isOpen) return null;
+
+    return AppSchedule(
+      dayOfWeek: widget.day,
+      openMinutes: _openMinutes,
+      closeMinutes: _closeMinutes,
+    );
+  }
+
+  void setDefaults(AppSchedule? schedule) {
+    if (schedule == null) return;
+
+    setState(() {
+      _openMinutes = schedule.openMinutes;
+      _closeMinutes = schedule.closeMinutes;
+      _isOpen = true;
+    });
+  }
+
+  TimeOfDay get _openTime {
+    return TimeOfDay(hour: _openMinutes ~/ 60, minute: _openMinutes % 60);
+  }
+
+  TimeOfDay get _closeTime {
+    return TimeOfDay(hour: _closeMinutes ~/ 60, minute: _closeMinutes % 60);
+  }
+
+  void _emitChange() {
+    final callback = widget.onChanged;
+    if (callback == null) return;
+    callback(getSchedule());
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -75,12 +111,15 @@ class _BusinessHoursPickerState extends ConsumerState<BusinessHoursPicker> {
                               onTap: () {
                                 showTimePicker(
                                   context: context,
-                                  initialTime: TimeOfDay.now(),
+                                  initialTime: _openTime,
                                 ).then((selectedTime) {
                                   if (selectedTime != null) {
                                     setState(() {
-                                      widget._openingTime = selectedTime;
+                                      _openMinutes =
+                                          (selectedTime.hour * 60) +
+                                          selectedTime.minute;
                                     });
+                                    _emitChange();
                                   }
                                 });
                               },
@@ -94,9 +133,7 @@ class _BusinessHoursPickerState extends ConsumerState<BusinessHoursPicker> {
                                 ),
                                 child: Padding(
                                   padding: EdgeInsets.all(8.0),
-                                  child: Text(
-                                    widget._openingTime.format(context),
-                                  ),
+                                  child: Text(_openTime.format(context)),
                                 ),
                               ),
                             ),
@@ -107,12 +144,15 @@ class _BusinessHoursPickerState extends ConsumerState<BusinessHoursPicker> {
                               onTap: () {
                                 showTimePicker(
                                   context: context,
-                                  initialTime: TimeOfDay.now(),
+                                  initialTime: _closeTime,
                                 ).then((selectedTime) {
                                   if (selectedTime != null) {
                                     setState(() {
-                                      widget._closingTime = selectedTime;
+                                      _closeMinutes =
+                                          (selectedTime.hour * 60) +
+                                          selectedTime.minute;
                                     });
+                                    _emitChange();
                                   }
                                 });
                               },
@@ -126,9 +166,7 @@ class _BusinessHoursPickerState extends ConsumerState<BusinessHoursPicker> {
                                 ),
                                 child: Padding(
                                   padding: EdgeInsets.all(8.0),
-                                  child: Text(
-                                    widget._closingTime.format(context),
-                                  ),
+                                  child: Text(_closeTime.format(context)),
                                 ),
                               ),
                             ),
@@ -138,7 +176,7 @@ class _BusinessHoursPickerState extends ConsumerState<BusinessHoursPicker> {
                       ],
                     ),
                   ),
-                  crossFadeState: widget._isOpen
+                  crossFadeState: _isOpen
                       ? CrossFadeState.showSecond
                       : CrossFadeState.showFirst,
                   duration: Duration(milliseconds: 200),
@@ -173,11 +211,12 @@ class _BusinessHoursPickerState extends ConsumerState<BusinessHoursPicker> {
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16),
                     child: Switch(
-                      value: widget._isOpen,
+                      value: _isOpen,
                       onChanged: (value) {
                         setState(() {
-                          widget._isOpen = value;
+                          _isOpen = value;
                         });
+                        _emitChange();
                       },
                     ),
                   ),

@@ -2,15 +2,29 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:ournego/features/business/data/errors/business_registration_exceptions.dart';
-import 'package:ournego/features/business/domain/entitites/app_schedule.dart';
+import 'package:ournego/features/business/domain/entities/app_schedule.dart';
 import 'package:path/path.dart' as p;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class BusinessSupabaseDatasource {
   final _supabase = Supabase.instance.client;
 
+  Future<bool> isSignedIn() async {
+    try {
+      final user = _supabase.auth.currentUser;
+      return user != null;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<String> registerBusiness(Map<String, dynamic> businessData) async {
     try {
+      final user = _supabase.auth.currentUser;
+      if (user == null) {
+        throw BusinessRegistrationUnauthorizedException();
+      }
+
       final response = await _supabase
           .from('businesses')
           .insert(businessData)
@@ -84,11 +98,16 @@ class BusinessSupabaseDatasource {
   ) async {
     await Future.wait(
       hours.map((schedule) async {
-        // Convert TimeOfDay to "HH:mm" format
+        // Convert minutes-from-midnight to "HH:mm" format
+        final openHour = schedule.openMinutes ~/ 60;
+        final openMinute = schedule.openMinutes % 60;
+        final closeHour = schedule.closeMinutes ~/ 60;
+        final closeMinute = schedule.closeMinutes % 60;
+
         final openTime =
-            '${schedule.openTime.hour.toString().padLeft(2, '0')}:${schedule.openTime.minute.toString().padLeft(2, '0')}';
+            '${openHour.toString().padLeft(2, '0')}:${openMinute.toString().padLeft(2, '0')}';
         final closeTime =
-            '${schedule.closeTime.hour.toString().padLeft(2, '0')}:${schedule.closeTime.minute.toString().padLeft(2, '0')}';
+            '${closeHour.toString().padLeft(2, '0')}:${closeMinute.toString().padLeft(2, '0')}';
 
         await _supabase.from('business_hours').insert({
           'business_id': businessId,

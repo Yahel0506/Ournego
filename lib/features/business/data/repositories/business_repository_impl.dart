@@ -1,14 +1,12 @@
 import 'dart:io';
 
 import 'package:dartz/dartz.dart';
-import 'package:flutter/material.dart';
+import 'package:ournego/core/location/app_position.dart';
 import 'package:ournego/core/failures.dart';
 import 'package:ournego/features/business/data/datasources/business_geocoding_datasource.dart';
 import 'package:ournego/features/business/data/datasources/business_supabase_datasource.dart';
 import 'package:ournego/features/business/data/errors/business_registration_exceptions.dart';
-import 'package:ournego/features/business/domain/entitites/app_schedule.dart';
-
-import '../../../map/domain/entities/app_position.dart';
+import 'package:ournego/features/business/domain/entities/app_schedule.dart';
 import '../../domain/repositories/business_repository.dart';
 
 class BusinessRepositoryImpl implements BusinessRepository {
@@ -25,6 +23,11 @@ class BusinessRepositoryImpl implements BusinessRepository {
     String query,
   ) async {
     try {
+      final isSignedIn = await businessDatasource.isSignedIn();
+      if (!isSignedIn) {
+        return Left(AuthenticationRequiredFailure());
+      }
+
       final suggestions = await geocodingDatasource.getAddressSuggestions(
         query,
       );
@@ -46,7 +49,6 @@ class BusinessRepositoryImpl implements BusinessRepository {
       }).toList();
       return Right(locations);
     } catch (e) {
-      debugPrint('Error fetching address suggestions: ${e.toString()}');
       return Left(ServerFailure());
     }
   }
@@ -91,7 +93,6 @@ class BusinessRepositoryImpl implements BusinessRepository {
     } on BusinessRegistrationUnknownException {
       return Left(BusinessRegistrationUnknownFailure());
     } catch (e) {
-      debugPrint('Error registering business: ${e.toString()}');
       return Left(ServerFailure());
     }
   }
@@ -102,7 +103,6 @@ class BusinessRepositoryImpl implements BusinessRepository {
       final isOwner = await businessDatasource.checkIfOwner();
       return Right(isOwner);
     } catch (e) {
-      debugPrint('Error checking if owner: ${e.toString()}');
       return Left(ServerFailure());
     }
   }

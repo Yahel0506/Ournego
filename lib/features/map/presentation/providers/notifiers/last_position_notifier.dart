@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ournego/features/map/domain/entities/app_position.dart';
+import 'package:ournego/core/location/app_position.dart';
 
 class LastPositionNotifier extends Notifier<AppPosition> {
   @override
