@@ -1,27 +1,69 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:ournego/core/routing/route_names.dart';
-import 'package:ournego/features/feedback/presentation/widgets/feedback_dialog_widget.dart';
-import 'package:ournego/features/auth/domain/usecases/has_profile_usecase.dart';
-import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
-import 'package:ournego/features/business/presentation/pages/business_panel_screen.dart';
-import 'package:ournego/features/business/presentation/providers/business_providers.dart';
-import 'package:ournego/features/community/presentation/pages/community_screen.dart';
-import 'package:ournego/features/map/presentation/pages/map_screen.dart';
-import 'package:ournego/features/business/presentation/pages/register_business_screen.dart';
-import 'package:ournego/features/navigation/presentation/providers/navigation_provider.dart';
-import 'package:ournego/features/navigation/presentation/widgets/navigation_bar_widget.dart';
 import 'package:shake/shake.dart';
 
-class MainLayoutScreen extends ConsumerStatefulWidget {
-  const MainLayoutScreen({super.key});
+import 'package:ournego/core/routing/route_names.dart';
+import 'package:ournego/features/feedback/presentation/widgets/feedback_dialog_widget.dart';
+import 'package:ournego/features/navigation/presentation/providers/navigation_provider.dart';
+import 'package:ournego/features/navigation/presentation/widgets/navigation_bar_widget.dart';
+
+class MainLayoutScreen extends ConsumerWidget {
+  final Widget child;
+
+  const MainLayoutScreen({super.key, required this.child});
 
   @override
-  ConsumerState<MainLayoutScreen> createState() => _MainLayoutScreenState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final location = GoRouterState.of(context).uri.path;
+    final currentIndex = _indexFromLocation(location);
+
+    return Scaffold(
+      resizeToAvoidBottomInset: false,
+      body: child,
+      bottomNavigationBar: AppNavigationBar(
+        currentIndex: currentIndex,
+        onTap: (index) {
+          switch (index) {
+            case 0:
+              context.go(AppRoutes.community);
+              return;
+            case 1:
+              context.go(MapRoutes.map);
+              return;
+            case 2:
+              context.go(BusinessRoutes.panel);
+              return;
+          }
+        },
+      ),
+    );
+  }
+
+  int _indexFromLocation(String location) {
+    if (location.startsWith(AppRoutes.community)) {
+      return 0;
+    }
+
+    if (location.startsWith(BusinessRoutes.panel)) {
+      return 2;
+    }
+
+    return 1;
+  }
 }
 
-class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen>
+class FeedbackShakeListener extends ConsumerStatefulWidget {
+  final Widget child;
+
+  const FeedbackShakeListener({super.key, required this.child});
+
+  @override
+  ConsumerState<FeedbackShakeListener> createState() =>
+      _FeedbackShakeListenerState();
+}
+
+class _FeedbackShakeListenerState extends ConsumerState<FeedbackShakeListener>
     with WidgetsBindingObserver {
   ShakeDetector? _detector;
   AppLifecycleState? _appLifecycleState;
@@ -30,19 +72,6 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-
-    final authRepository = ref.read(authRepositoryProvider);
-    final hasProfile = HasProfileUsecase(
-      repository: authRepository,
-    ).checkHasProfile();
-
-    hasProfile.then((result) {
-      result.fold((failure) {}, (hasProfile) {
-        if (!hasProfile) {
-          context.go(AuthRoutes.completeProfile);
-        }
-      });
-    });
 
     _detector = ShakeDetector.autoStart(
       onPhoneShake: (shakeEvent) {
@@ -53,12 +82,15 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen>
         if (ref.read(isFeedbackDialogOpenProvider)) {
           return;
         }
+
         ref.read(isFeedbackDialogOpenProvider.notifier).setIsOpen();
-        showDialog(
+        showDialog<void>(
           context: context,
-          builder: (context) => FeedbackDialogWidget(),
+          builder: (_) => const FeedbackDialogWidget(),
         ).then((_) {
-          ref.read(isFeedbackDialogOpenProvider.notifier).setIsClosed();
+          if (context.mounted) {
+            ref.read(isFeedbackDialogOpenProvider.notifier).setIsClosed();
+          }
         });
       },
       shakeThresholdGravity: 2.7,
@@ -80,48 +112,6 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen>
 
   @override
   Widget build(BuildContext context) {
-    final controller = ref.watch(pageControllerProvider);
-    final isOwnerAsync = ref.watch(isOwnerProvider);
-
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-      body: isOwnerAsync.when(
-        data: (isOwner) {
-          return Stack(
-            alignment: Alignment.bottomCenter,
-            children: [
-              Column(
-                children: [
-                  Expanded(
-                    child: PageView(
-                      physics: ScrollPhysics(
-                        parent: NeverScrollableScrollPhysics(),
-                      ),
-                      controller: controller,
-                      onPageChanged: (index) {
-                        ref
-                            .read(navigationIndexProvider.notifier)
-                            .setIndex(index);
-                      },
-                      children: [
-                        CommunityScreen(),
-                        MapScreen(),
-                        isOwner
-                            ? BusinessPanelScreen()
-                            : RegisterBusinessScreen(),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: 56),
-                ],
-              ),
-              AppNavigationBar(),
-            ],
-          );
-        },
-        loading: () => Center(child: CircularProgressIndicator()),
-        error: (_, __) => Center(child: Text('Error al cargar datos')),
-      ),
-    );
+    return widget.child;
   }
 }

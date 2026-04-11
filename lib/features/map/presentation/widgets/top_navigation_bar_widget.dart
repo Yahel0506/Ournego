@@ -76,6 +76,7 @@ class TopNavigationBarWidget extends ConsumerWidget {
                             await logOutUsecase();
                             if (context.mounted) {
                               Navigator.of(context).pop();
+                              context.go(MapRoutes.map);
                             }
                           },
                           child: Text('Cerrar sesión'),
