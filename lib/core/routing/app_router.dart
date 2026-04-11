@@ -129,9 +129,16 @@ GoRouter createAppRouter({required bool startOnMap}) {
           path == AuthRoutes.loginEmail ||
           path == AuthRoutes.signupEmail ||
           path == AuthRoutes.createPassword;
+      final isGuestAllowedRoute =
+          path == AppRoutes.onboarding ||
+          path == MapRoutes.map ||
+          path == AppRoutes.community ||
+          path == BusinessRoutes.panel ||
+          path == BusinessRoutes.register ||
+          path.startsWith('/business/');
 
       if (!isLoggedIn) {
-        if (!isAuthRoute) {
+        if (!isAuthRoute && !isGuestAllowedRoute) {
           return AuthRoutes.authSelection;
         }
 

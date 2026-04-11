@@ -234,6 +234,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final String styleIdLight = MapboxConfig.styleIdLight;
 
     final String currentStyleId = isDarkModeOn ? styleIdDark : styleIdLight;
+    final bool hasMapboxConfig =
+        myAccessToken.isNotEmpty &&
+        myUsername.isNotEmpty &&
+        currentStyleId.isNotEmpty;
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
@@ -258,22 +262,41 @@ class _MapScreenState extends ConsumerState<MapScreen>
               },
             ),
             children: [
-              TileLayer(
-                urlTemplate:
-                    'https://api.mapbox.com/styles/v1/$myUsername/$currentStyleId/tiles/256/{z}/{x}/{y}@2x?access_token=$myAccessToken',
-                userAgentPackageName: 'com.ournego.app',
-                tileProvider: NetworkTileProvider(
-                  headers: {
-                    'User-Agent': 'com.ournego.app', // Mismo nombre que arriba
-                    'Referer': 'com.ournego.app',
-                  },
-                  cachingProvider:
-                      BuiltInMapCachingProvider.getOrCreateInstance(
-                        maxCacheSize: 1_000_000_000,
-                      ),
+              if (hasMapboxConfig)
+                TileLayer(
+                  urlTemplate:
+                      'https://api.mapbox.com/styles/v1/$myUsername/$currentStyleId/tiles/256/{z}/{x}/{y}@2x?access_token=$myAccessToken',
+                  userAgentPackageName: 'com.ournego.app',
+                  tileProvider: NetworkTileProvider(
+                    silenceExceptions: true,
+                    headers: {
+                      'User-Agent': 'com.ournego.app',
+                      'Referer': 'com.ournego.app',
+                    },
+                    cachingProvider:
+                        BuiltInMapCachingProvider.getOrCreateInstance(
+                          maxCacheSize: 1_000_000_000,
+                        ),
+                  ),
+                  key: Key(currentStyleId),
+                )
+              else
+                TileLayer(
+                  urlTemplate:
+                      'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.ournego.app',
+                  tileProvider: NetworkTileProvider(
+                    silenceExceptions: true,
+                    headers: {
+                      'User-Agent': 'com.ournego.app',
+                    },
+                    cachingProvider:
+                        BuiltInMapCachingProvider.getOrCreateInstance(
+                          maxCacheSize: 1_000_000_000,
+                        ),
+                  ),
+                  key: const Key('osm-fallback'),
                 ),
-                key: Key(currentStyleId),
-              ),
 
               if (location != null)
                 MarkerLayer(
@@ -490,20 +513,35 @@ class _MapScreenState extends ConsumerState<MapScreen>
                           );
                         },
                       ),
+                      if (!hasMapboxConfig)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 8),
+                          child: Text(
+                            'OSM',
+                            style: OurnegoTextStyles.body.copyWith(
+                              fontSize: 12,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withAlpha(180),
+                            ),
+                          ),
+                        ),
                       Container(
-                        child: isDarkModeOn
-                            ? Image.asset(
-                                'assets/images/mapbox-logo-white.png',
-                                width: 100,
-                                height: 25,
-                                opacity: const AlwaysStoppedAnimation(.7),
-                              )
-                            : Image.asset(
-                                'assets/images/mapbox-logo-black.png',
-                                width: 80,
-                                height: 20,
-                                opacity: const AlwaysStoppedAnimation(.7),
-                              ),
+                        child: hasMapboxConfig
+                            ? isDarkModeOn
+                                  ? Image.asset(
+                                      'assets/images/mapbox-logo-white.png',
+                                      width: 100,
+                                      height: 25,
+                                      opacity: const AlwaysStoppedAnimation(.7),
+                                    )
+                                  : Image.asset(
+                                      'assets/images/mapbox-logo-black.png',
+                                      width: 80,
+                                      height: 20,
+                                      opacity: const AlwaysStoppedAnimation(.7),
+                                    )
+                            : const SizedBox.shrink(),
                       ),
                     ],
                   ),
