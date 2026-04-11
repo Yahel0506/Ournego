@@ -11,4 +11,14 @@ class OnboardingRepositoryImpl implements OnboardingRepository {
   List<Slide> getSlides() {
     return localDataSource.getHardcodedSlides();
   }
+
+  @override
+  Future<bool> hasSeenOnboarding() {
+    return localDataSource.hasSeenOnboarding();
+  }
+
+  @override
+  Future<void> setHasSeenOnboarding() {
+    return localDataSource.setHasSeenOnboarding();
+  }
 }
