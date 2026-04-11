@@ -433,3 +433,83 @@ class BusinessModel extends Business {
 - Entities that never leave the app
 
 See `MODELS_TEMPLATE.md` for detailed model creation guidelines.
+
+## Current Route Groups (Phase 4+)
+
+Routes are centralized in `lib/core/routing/app_router.dart` and constants in
+`lib/core/routing/route_names.dart`.
+
+- **Shell routes (with bottom nav):**
+  - `MapRoutes.map`
+  - `AppRoutes.community`
+  - `BusinessRoutes.panel`
+  - `MapRoutes.businessDetails`
+- **Standalone routes (outside shell):**
+  - `AppRoutes.onboarding`
+  - `AuthRoutes.*`
+  - `BusinessRoutes.register`
+  - `BusinessRoutes.form`
+
+### Auth/Profile Guard Rules
+
+- If user is logged out:
+  - Allow auth routes and guest-allowed routes
+  - Redirect protected routes to `AuthRoutes.authSelection`
+- If user is logged in and profile is incomplete:
+  - Redirect to `AuthRoutes.completeProfile`
+- If user is logged in and profile is complete:
+  - Redirect auth/onboarding routes to `MapRoutes.map`
+
+## Provider Layer Organization (Required Pattern)
+
+In every `*_providers.dart`, declare providers in this order:
+
+1. **Layer 1 - Datasources**
+2. **Layer 2 - Repositories**
+3. **Layer 3 - Usecases**
+4. **Layer 4 - State providers** (StreamProvider, FutureProvider, Notifiers)
+
+Example:
+
+```dart
+// LAYER 1: Datasources
+final myDatasourceProvider = Provider<MyDatasource>((ref) => MyDatasource());
+
+// LAYER 2: Repositories
+final myRepositoryProvider = Provider<MyRepository>((ref) {
+  final datasource = ref.watch(myDatasourceProvider);
+  return MyRepositoryImpl(datasource: datasource);
+});
+
+// LAYER 3: Usecases
+final myUsecaseProvider = Provider<MyUsecase>((ref) {
+  final repository = ref.watch(myRepositoryProvider);
+  return MyUsecase(repository: repository);
+});
+
+// LAYER 4: State
+final myStateProvider = FutureProvider<MyState>((ref) async {
+  final usecase = ref.watch(myUsecaseProvider);
+  return usecase();
+});
+```
+
+## Feature Documentation Standard
+
+Each feature folder under `lib/features/` should include a `README.md` with:
+
+- Responsibility
+- Dependencies
+- Key entities / usecases / providers
+- Routes (if any)
+- Notes / extension points
+
+Use `docs/templates/feature_readme_template.md` as baseline.
+
+## Architecture Documentation
+
+Keep these files aligned when architecture evolves:
+
+- `ARCHITECTURE.md` (high-level architecture and dependency rules)
+- `AGENTS.md` (coding instructions and conventions)
+- `README.md` (developer onboarding and quick start)
