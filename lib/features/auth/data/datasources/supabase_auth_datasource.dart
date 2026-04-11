@@ -144,7 +144,7 @@ class SupabaseAuthDatasource {
           '544311850300-ajutqk3e1djlccqiqs0o7a1qsuck5arl.apps.googleusercontent.com';
 
       final GoogleSignIn googleSignIn = GoogleSignIn.instance;
-      googleSignIn.initialize(serverClientId: webClientId);
+      await googleSignIn.initialize(serverClientId: webClientId);
 
       final googleUser = await googleSignIn.authenticate();
       final googleAuth = googleUser.authentication;
