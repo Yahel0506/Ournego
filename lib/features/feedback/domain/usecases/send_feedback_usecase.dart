@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dartz/dartz.dart';
 
 import 'package:ournego/core/failures.dart';
+import 'package:ournego/features/feedback/domain/entities/feedback_report.dart';
 import 'package:ournego/features/feedback/domain/repositories/feedback_repository.dart';
 
 class SendFeedbackUsecase {
@@ -16,11 +17,13 @@ class SendFeedbackUsecase {
     required String os,
     required File attachment,
   }) async {
-    return await repository.sendFeedback(
+    final report = FeedbackReport(
       message: message,
       model: model,
       os: os,
       attachment: attachment,
     );
+
+    return await repository.sendFeedback(report);
   }
 }

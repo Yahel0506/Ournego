@@ -1,10 +1,10 @@
-import 'dart:io';
-
 import 'package:dartz/dartz.dart';
 import 'package:flutter/cupertino.dart';
 
 import 'package:ournego/core/failures.dart';
 import 'package:ournego/features/feedback/data/datasources/feedback_datasource.dart';
+import 'package:ournego/features/feedback/data/models/feedback_report_model.dart';
+import 'package:ournego/features/feedback/domain/entities/feedback_report.dart';
 import 'package:ournego/features/feedback/domain/repositories/feedback_repository.dart';
 
 class FeedbackRepositoryImpl implements FeedbackRepository {
@@ -13,20 +13,11 @@ class FeedbackRepositoryImpl implements FeedbackRepository {
   FeedbackRepositoryImpl({required this.datasource});
 
   @override
-  Future<Either<Failure, bool>> sendFeedback({
-    required String message,
-    required String model,
-    required String os,
-    required File attachment,
-  }) async {
+  Future<Either<Failure, bool>> sendFeedback(FeedbackReport report) async {
     try {
-      await datasource.sendFeedback(
-        message: message,
-        model: model,
-        os: os,
-        attachment: attachment,
-      );
-      return Right(true);
+      final model = FeedbackReportModel.fromEntity(report);
+      await datasource.sendFeedback(model);
+      return const Right(true);
     } catch (e) {
       debugPrint('Error sending feedback: ${e.toString()}');
       return Left(ServerFailure());

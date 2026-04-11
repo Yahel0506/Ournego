@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:ournego/core/ournego_colors.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
@@ -14,6 +13,7 @@ import 'package:ournego/core/routing/route_observer.dart';
 import 'package:ournego/features/auth/domain/usecases/has_profile_usecase.dart';
 import 'package:ournego/features/auth/domain/usecases/update_profile_usecase.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
+import 'package:ournego/features/onboarding/presentation/providers/onboarding_providers.dart';
 import 'package:ournego/shared/widgets/animated_background.dart';
 
 class CompleteProfileScreen extends ConsumerWidget {
@@ -224,8 +224,9 @@ class CompleteProfileScreen extends ConsumerWidget {
                                         );
                                       },
                                       (_) async {
-                                        final prefs =
-                                            await SharedPreferences.getInstance();
+                                        final setHasSeenOnboarding = ref.read(
+                                          setHasSeenOnboardingUsecaseProvider,
+                                        );
 
                                         final firstRouteName = AppRouteObserver
                                             .instance
@@ -238,10 +239,7 @@ class CompleteProfileScreen extends ConsumerWidget {
                                             firstRouteName == 'onboarding';
 
                                         if (isFirstRouteOnboarding) {
-                                          await prefs.setBool(
-                                            'hasSeenOnboarding',
-                                            true,
-                                          );
+                                          await setHasSeenOnboarding();
                                           await Future.delayed(
                                             Duration(milliseconds: 100),
                                           );
