@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:string_validator/string_validator.dart';
 
 import 'package:ournego/core/failures.dart';
@@ -17,6 +16,9 @@ import 'package:ournego/features/auth/domain/entities/auth_screen_text.dart';
 import 'package:ournego/features/auth/domain/repositories/auth_repository.dart';
 import 'package:ournego/features/auth/domain/usecases/log_in_with_email_usecase.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
+import 'package:ournego/features/onboarding/domain/usecases/get_has_seen_onboarding_usecase.dart';
+import 'package:ournego/features/onboarding/domain/usecases/set_has_seen_onboarding_usecase.dart';
+import 'package:ournego/features/onboarding/presentation/providers/onboarding_providers.dart';
 import 'package:ournego/shared/widgets/animated_background.dart';
 
 class LoginEmailScreen extends ConsumerStatefulWidget {
@@ -55,6 +57,8 @@ class _LoginEmailScreenState extends ConsumerState<LoginEmailScreen> {
     final AuthScreenText text = datasource.loginEmail();
     final repository = ref.watch(authRepositoryProvider);
     final errorMessages = ref.watch(authErrorMessagesProvider);
+    final getHasSeenOnboarding = ref.watch(getHasSeenOnboardingUsecaseProvider);
+    final setHasSeenOnboarding = ref.watch(setHasSeenOnboardingUsecaseProvider);
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
@@ -103,6 +107,8 @@ class _LoginEmailScreenState extends ConsumerState<LoginEmailScreen> {
                             formKey: _formKey,
                             emailController: _emailController,
                             passwordController: _passwordController,
+                            getHasSeenOnboarding: getHasSeenOnboarding,
+                            setHasSeenOnboarding: setHasSeenOnboarding,
                           ),
                         ],
                       ),
@@ -138,6 +144,8 @@ class PrimaryButton extends StatelessWidget {
     required this.formKey,
     required this.emailController,
     required this.passwordController,
+    required this.getHasSeenOnboarding,
+    required this.setHasSeenOnboarding,
   });
 
   final AuthScreenText text;
@@ -146,6 +154,8 @@ class PrimaryButton extends StatelessWidget {
   final GlobalKey<FormState> formKey;
   final TextEditingController passwordController;
   final TextEditingController emailController;
+  final GetHasSeenOnboardingUsecase getHasSeenOnboarding;
+  final SetHasSeenOnboardingUsecase setHasSeenOnboarding;
 
   @override
   Widget build(BuildContext context) {
@@ -185,13 +195,13 @@ class PrimaryButton extends StatelessWidget {
             },
             (user) async {
               TextInput.finishAutofillContext();
-              final prefs = await SharedPreferences.getInstance();
+              final hasSeenOnboarding = await getHasSeenOnboarding();
 
-              if (prefs.getBool('hasSeenOnboarding') ?? false) {
+              if (hasSeenOnboarding) {
                 // User has seen onboarding, just pop back
                 context.pop();
               } else {
-                await prefs.setBool('hasSeenOnboarding', true);
+                await setHasSeenOnboarding();
 
                 // Pequeña pausa para asegurar que las operaciones anteriores se completen
                 await Future.delayed(Duration(milliseconds: 100));

@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:ournego/features/onboarding/presentation/providers/onboarding_providers.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AuthSelectionWidget extends ConsumerWidget {
@@ -118,13 +118,14 @@ class GuestAccessButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final setHasSeenOnboarding = ref.read(setHasSeenOnboardingUsecaseProvider);
+
     return SizedBox(
       width: double.infinity,
       height: 50,
       child: OutlinedButton(
         onPressed: () async {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setBool('hasSeenOnboarding', true);
+          await setHasSeenOnboarding();
 
           if (config.onSuccess != null) {
             config.onSuccess!();
@@ -226,13 +227,14 @@ class GoogleLoginButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final setHasSeenOnboarding = ref.read(setHasSeenOnboardingUsecaseProvider);
+
     return SizedBox(
       width: double.infinity,
       height: 50,
       child: ElevatedButton(
         onPressed: () async {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setBool('hasSeenOnboarding', true);
+          await setHasSeenOnboarding();
           final googleSignIn = await ref.read(
             signInWithGoogleUsecaseProvider,
           )();
