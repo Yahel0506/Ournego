@@ -4,7 +4,6 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 // Conditional import for web-specific environment configuration
@@ -12,6 +11,7 @@ import 'package:ournego/core/env_config_stub.dart'
     if (dart.library.js_interop) 'package:ournego/core/env_config_web.dart';
 import 'package:ournego/core/ournego_colors.dart';
 import 'package:ournego/core/routing/app_router.dart';
+import 'package:ournego/features/onboarding/data/datasources/local_onboarding_datasource.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -45,8 +45,8 @@ Future<void> main() async {
 
     await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
 
-    final prefs = await SharedPreferences.getInstance();
-    hasSeenOnboarding = prefs.getBool('hasSeenOnboarding') ?? false;
+    final onboardingDatasource = LocalOnboardingDatasource();
+    hasSeenOnboarding = await onboardingDatasource.hasSeenOnboarding();
   } catch (e) {
     print('Error loading environment variables: $e');
     // Continue with default value for hasSeenOnboarding
