@@ -249,8 +249,14 @@ class CompleteProfileScreen extends ConsumerWidget {
                                           return;
                                         }
 
+                                        var poppedAnyRoute = false;
                                         while (context.canPop()) {
+                                          poppedAnyRoute = true;
                                           context.pop();
+                                        }
+
+                                        if (!poppedAnyRoute) {
+                                          context.go(MapRoutes.map);
                                         }
                                       },
                                     );

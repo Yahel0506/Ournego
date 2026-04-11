@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/core/routing/route_observer.dart';
@@ -10,49 +14,28 @@ import 'package:ournego/features/auth/presentation/pages/create_password_screen.
 import 'package:ournego/features/auth/presentation/pages/login_email_screen.dart';
 import 'package:ournego/features/auth/presentation/pages/signup_email_screen.dart';
 import 'package:ournego/features/business/presentation/pages/business_form_screen.dart';
+import 'package:ournego/features/business/presentation/pages/business_panel_screen.dart';
 import 'package:ournego/features/business/presentation/pages/register_business_screen.dart';
+import 'package:ournego/features/business/presentation/providers/business_providers.dart';
+import 'package:ournego/features/community/presentation/pages/community_screen.dart';
+import 'package:ournego/features/map/presentation/pages/map_screen.dart';
 import 'package:ournego/features/navigation/presentation/pages/main_layout_screen.dart';
 import 'package:ournego/features/onboarding/presentation/pages/onboarding_screen.dart';
 
-/// Creates the app's GoRouter configuration.
-///
-/// This is the single source of truth for all navigation in the app.
-/// Routes are organized by feature and support:
-/// - Initial location based on onboarding state
-/// - Shell routes for persistent layouts
-/// - Auth guards (to be implemented in Phase 4)
-/// - Deep linking support
-///
-/// Usage in main.dart:
-/// ```dart
-/// MaterialApp.router(
-///   routerConfig: createAppRouter(startOnMap: hasSeenOnboarding),
-/// )
-/// ```
 GoRouter createAppRouter({required bool startOnMap}) {
+  final auth = Supabase.instance.client.auth;
+
   return GoRouter(
-    // Set initial location based on whether user has seen onboarding
     initialLocation: startOnMap ? MapRoutes.map : AppRoutes.onboarding,
-
-    // Enable debug logging in development
     debugLogDiagnostics: true,
-
-    // Track navigation stack for flow-specific behavior.
     observers: [AppRouteObserver.instance],
-
+    refreshListenable: GoRouterRefreshStream(auth.onAuthStateChange),
     routes: [
-      // |---------------------------------| \\
-      // |------- ONBOARDING -------------| \\
-      // |---------------------------------| \\
       GoRoute(
         path: AppRoutes.onboarding,
         name: 'onboarding',
         builder: (context, state) => const OnboardingScreen(),
       ),
-
-      // |---------------------------------| \\
-      // |------- AUTH ROUTES -------------| \\
-      // |---------------------------------| \\
       GoRoute(
         path: AuthRoutes.authSelection,
         name: 'auth-selection',
@@ -72,12 +55,12 @@ GoRouter createAppRouter({required bool startOnMap}) {
         path: AuthRoutes.createPassword,
         name: 'create-password',
         builder: (context, state) {
-          // Email should be passed as extra data when navigating
           final email = state.extra as String?;
+
           if (email == null) {
-            // If no email, redirect to signup
             return const SignupEmailScreen();
           }
+
           return CreatePasswordScreen(email: email);
         },
       ),
@@ -86,55 +69,47 @@ GoRouter createAppRouter({required bool startOnMap}) {
         name: 'complete-profile',
         builder: (context, state) => CompleteProfileScreen(),
       ),
-
-      // |---------------------------------| \\
-      // |------- MAIN APP SHELL ----------| \\
-      // |---------------------------------| \\
-
-      // ShellRoute provides persistent bottom navigation
-      // Will be fully implemented in Phase 4
       ShellRoute(
         builder: (context, state, child) {
-          // For now, just pass through to MainLayoutScreen
-          // In Phase 4, this will be refactored
-          return child;
+          return FeedbackShakeListener(
+            child: MainLayoutScreen(child: child),
+          );
         },
         routes: [
-          // Map Screen (Main)
-          GoRoute(
-            path: MapRoutes.map,
-            name: 'map',
-            pageBuilder: (context, state) => NoTransitionPage(
-              key: state.pageKey,
-              child: const MainLayoutScreen(),
-            ),
-          ),
-
-          // Business Panel
-          GoRoute(
-            path: BusinessRoutes.panel,
-            name: 'business-panel',
-            pageBuilder: (context, state) => NoTransitionPage(
-              key: state.pageKey,
-              child: const MainLayoutScreen(),
-            ),
-          ),
-
-          // Community
           GoRoute(
             path: AppRoutes.community,
             name: 'community',
             pageBuilder: (context, state) => NoTransitionPage(
               key: state.pageKey,
-              child: const MainLayoutScreen(),
+              child: const CommunityScreen(),
+            ),
+          ),
+          GoRoute(
+            path: MapRoutes.map,
+            name: 'map',
+            pageBuilder: (context, state) => NoTransitionPage(
+              key: state.pageKey,
+              child: const MapScreen(),
+            ),
+          ),
+          GoRoute(
+            path: BusinessRoutes.panel,
+            name: 'business-panel',
+            pageBuilder: (context, state) => NoTransitionPage(
+              key: state.pageKey,
+              child: const _BusinessShellScreen(),
+            ),
+          ),
+          GoRoute(
+            path: MapRoutes.businessDetails,
+            name: 'business-details',
+            pageBuilder: (context, state) => NoTransitionPage(
+              key: state.pageKey,
+              child: const MapScreen(),
             ),
           ),
         ],
       ),
-
-      // |---------------------------------| \\
-      // |------- BUSINESS ROUTES ---------| \\
-      // |---------------------------------| \\
       GoRoute(
         path: BusinessRoutes.register,
         name: 'register-business',
@@ -145,26 +120,39 @@ GoRouter createAppRouter({required bool startOnMap}) {
         name: 'business-form',
         builder: (context, state) => const BusinessFormScreen(),
       ),
-
-      // Business Details (with parameter)
-      GoRoute(
-        path: MapRoutes.businessDetails,
-        name: 'business-details',
-        builder: (context, state) {
-          final businessId = state.pathParameters['id'];
-          if (businessId == null) {
-            // Handle error - redirect to map
-            return const MainLayoutScreen();
-          }
-          // TODO: Create BusinessDetailsScreen in future phases
-          return const MainLayoutScreen();
-        },
-      ),
     ],
+    redirect: (context, state) async {
+      final path = state.uri.path;
+      final isLoggedIn = auth.currentUser != null;
+      final isAuthRoute =
+          path == AuthRoutes.authSelection ||
+          path == AuthRoutes.loginEmail ||
+          path == AuthRoutes.signupEmail ||
+          path == AuthRoutes.createPassword;
 
-    // |---------------------------------| \\
-    // |------- ERROR HANDLING ----------| \\
-    // |---------------------------------| \\
+      if (!isLoggedIn) {
+        if (!isAuthRoute) {
+          return AuthRoutes.authSelection;
+        }
+
+        return null;
+      }
+
+      final hasProfile = await _checkHasProfile();
+
+      if (!hasProfile && path != AuthRoutes.completeProfile) {
+        return AuthRoutes.completeProfile;
+      }
+
+      if (hasProfile &&
+          (isAuthRoute ||
+              path == AuthRoutes.completeProfile ||
+              path == AppRoutes.onboarding)) {
+        return MapRoutes.map;
+      }
+
+      return null;
+    },
     errorBuilder: (context, state) => Scaffold(
       body: Center(
         child: Column(
@@ -185,19 +173,68 @@ GoRouter createAppRouter({required bool startOnMap}) {
         ),
       ),
     ),
-
-    // |---------------------------------| \\
-    // |------- REDIRECTS / GUARDS ------| \\
-    // |---------------------------------| \\
-
-    // Auth guards will be implemented in Phase 4
-    // For now, allow all navigation
-    redirect: (context, state) {
-      // TODO Phase 4: Add auth guard logic
-      // - Check if logged in
-      // - Check if has profile
-      // - Redirect to appropriate screen
-      return null; // null = no redirect, allow navigation
-    },
   );
+}
+
+Future<bool> _checkHasProfile() async {
+  final client = Supabase.instance.client;
+  final userId = client.auth.currentUser?.id;
+
+  if (userId == null) {
+    return false;
+  }
+
+  try {
+    final data = await client
+        .from('users')
+        .select('has_profile')
+        .eq('id', userId)
+        .maybeSingle();
+
+    if (data == null) {
+      return false;
+    }
+
+    return data['has_profile'] as bool? ?? false;
+  } catch (_) {
+    return false;
+  }
+}
+
+class _BusinessShellScreen extends ConsumerWidget {
+  const _BusinessShellScreen();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isOwnerAsync = ref.watch(isOwnerProvider);
+
+    return isOwnerAsync.when(
+      data: (isOwner) {
+        if (isOwner) {
+          return const BusinessPanelScreen();
+        }
+
+        return const RegisterBusinessScreen();
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (_, _) => const RegisterBusinessScreen(),
+    );
+  }
+}
+
+class GoRouterRefreshStream extends ChangeNotifier {
+  late final StreamSubscription<dynamic> _subscription;
+
+  GoRouterRefreshStream(Stream<dynamic> stream) {
+    notifyListeners();
+    _subscription = stream.asBroadcastStream().listen((_) {
+      notifyListeners();
+    });
+  }
+
+  @override
+  void dispose() {
+    _subscription.cancel();
+    super.dispose();
+  }
 }

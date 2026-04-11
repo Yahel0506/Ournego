@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'package:ournego/features/navigation/presentation/providers/navigation_provider.dart';
 
-class AppNavigationBar extends ConsumerStatefulWidget {
-  const AppNavigationBar({super.key});
+class AppNavigationBar extends ConsumerWidget {
+  final int currentIndex;
+  final ValueChanged<int> onTap;
+
+  const AppNavigationBar({
+    super.key,
+    required this.currentIndex,
+    required this.onTap,
+  });
 
   @override
-  ConsumerState<ConsumerStatefulWidget> createState() =>
-      _AppNavigationBarState();
-}
-
-class _AppNavigationBarState extends ConsumerState<AppNavigationBar> {
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final datasource = ref.watch(appNavigationBarProvider);
-    final controller = ref.watch(pageControllerProvider);
-    final index = ref.watch(navigationIndexProvider);
 
     const buttonAnimationDuration = Duration(milliseconds: 250);
 
@@ -42,16 +42,13 @@ class _AppNavigationBarState extends ConsumerState<AppNavigationBar> {
             // ------------------ Community Button ------------------
             IconButton(
               padding: EdgeInsets.zero,
-              onPressed: () {
-                ref.read(navigationIndexProvider.notifier).setIndex(0);
-                controller.jumpToPage(0);
-              },
+              onPressed: () => onTap(0),
               icon: AnimatedContainer(
                 duration: buttonAnimationDuration,
                 width: 64,
                 height: 64,
                 decoration: BoxDecoration(
-                  color: index == 0
+                  color: currentIndex == 0
                       ? Theme.of(context).colorScheme.primary
                       : Colors.transparent,
                   shape: BoxShape.circle,
@@ -59,7 +56,7 @@ class _AppNavigationBarState extends ConsumerState<AppNavigationBar> {
                 child: Icon(
                   datasource.getNavigationBarItemsIcons()[0],
                   size: 44,
-                  color: index == 0
+                  color: currentIndex == 0
                       ? Theme.of(context).colorScheme.surface
                       : Theme.of(context).colorScheme.onSurface,
                 ),
@@ -69,16 +66,13 @@ class _AppNavigationBarState extends ConsumerState<AppNavigationBar> {
             // ------------------ Map Button ------------------
             IconButton(
               padding: EdgeInsets.zero,
-              onPressed: () {
-                ref.read(navigationIndexProvider.notifier).setIndex(1);
-                controller.jumpToPage(1);
-              },
+              onPressed: () => onTap(1),
               icon: AnimatedContainer(
                 duration: buttonAnimationDuration,
                 width: 64,
                 height: 64,
                 decoration: BoxDecoration(
-                  color: index == 1
+                  color: currentIndex == 1
                       ? Theme.of(context).colorScheme.primary
                       : Colors.transparent,
                   shape: BoxShape.circle,
@@ -86,7 +80,7 @@ class _AppNavigationBarState extends ConsumerState<AppNavigationBar> {
                 child: Icon(
                   datasource.getNavigationBarItemsIcons()[1],
                   size: 44,
-                  color: index == 1
+                  color: currentIndex == 1
                       ? Theme.of(context).colorScheme.surface
                       : Theme.of(context).colorScheme.onSurface,
                 ),
@@ -96,16 +90,13 @@ class _AppNavigationBarState extends ConsumerState<AppNavigationBar> {
             // ------------------ MyBussines Button ------------------
             IconButton(
               padding: EdgeInsets.zero,
-              onPressed: () {
-                ref.read(navigationIndexProvider.notifier).setIndex(2);
-                controller.jumpToPage(2);
-              },
+              onPressed: () => onTap(2),
               icon: AnimatedContainer(
                 duration: buttonAnimationDuration,
                 width: 64,
                 height: 64,
                 decoration: BoxDecoration(
-                  color: index == 2
+                  color: currentIndex == 2
                       ? Theme.of(context).colorScheme.primary
                       : Colors.transparent,
                   shape: BoxShape.circle,
@@ -113,7 +104,7 @@ class _AppNavigationBarState extends ConsumerState<AppNavigationBar> {
                 child: Icon(
                   datasource.getNavigationBarItemsIcons()[2],
                   size: 44,
-                  color: index == 2
+                  color: currentIndex == 2
                       ? Theme.of(context).colorScheme.surface
                       : Theme.of(context).colorScheme.onSurface,
                 ),
