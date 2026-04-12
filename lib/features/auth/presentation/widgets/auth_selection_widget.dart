@@ -124,6 +124,7 @@ class GuestAccessButton extends ConsumerWidget {
       width: double.infinity,
       height: 50,
       child: OutlinedButton(
+        key: const ValueKey('guestAccessButton'),
         onPressed: () async {
           await setHasSeenOnboarding();
 
@@ -196,6 +197,7 @@ class MailLoginButton extends ConsumerWidget {
       width: double.infinity,
       height: 50,
       child: OutlinedButton(
+        key: const ValueKey('emailAccessButton'),
         onPressed: () {
           context.push(AuthRoutes.loginEmail);
         },

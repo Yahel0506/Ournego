@@ -12,6 +12,7 @@ class AuthSelectionScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
+      key: const ValueKey('authSelectionScreen'),
       body: Stack(
         children: [
           AnimatedBackground(),

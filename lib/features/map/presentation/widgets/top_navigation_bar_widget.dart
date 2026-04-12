@@ -18,12 +18,11 @@ class TopNavigationBarWidget extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 40.0),
       child: Row(
         children: [
-          // -------------------- Voice Search Button --------------------
           ElevatedButton(
             onPressed: () {},
             style: ElevatedButton.styleFrom(
               shape: const CircleBorder(),
-              minimumSize: Size(60, 60),
+              minimumSize: const Size(60, 60),
               padding: EdgeInsets.zero,
             ),
             child: Icon(
@@ -32,10 +31,9 @@ class TopNavigationBarWidget extends ConsumerWidget {
               color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
-          Spacer(),
-          // -------------------- Search Bar --------------------
+          const Spacer(),
           SearchBar(
-            elevation: WidgetStatePropertyAll(1),
+            elevation: const WidgetStatePropertyAll(1),
             leading: Padding(
               padding: const EdgeInsets.only(left: 8.0),
               child: Icon(
@@ -49,37 +47,38 @@ class TopNavigationBarWidget extends ConsumerWidget {
               minHeight: 60,
             ),
           ),
-          Spacer(),
-          // -------------------- User Profile Button --------------------
+          const Spacer(),
           ElevatedButton(
+            key: const ValueKey('mapProfileButton'),
             onPressed: () async {
               if (!context.mounted) return;
 
               if (isLogged) {
-                showDialog(
+                showDialog<void>(
                   context: context,
-                  builder: (context) {
+                  builder: (dialogContext) {
                     return AlertDialog(
-                      title: Text('Cerrar sesión'),
-                      content: Text(
+                      title: const Text('Cerrar sesión'),
+                      content: const Text(
                         '¿Estás seguro de que quieres cerrar sesión?',
                       ),
                       actions: [
                         TextButton(
                           onPressed: () {
-                            Navigator.of(context).pop();
+                            Navigator.of(dialogContext).pop();
                           },
-                          child: Text('Cancelar'),
+                          child: const Text('Cancelar'),
                         ),
                         TextButton(
+                          key: const ValueKey('confirmLogoutButton'),
                           onPressed: () async {
                             await logOutUsecase();
-                            if (context.mounted) {
-                              Navigator.of(context).pop();
-                              context.go(MapRoutes.map);
+                            if (dialogContext.mounted) {
+                              Navigator.of(dialogContext).pop();
+                              dialogContext.go(MapRoutes.map);
                             }
                           },
-                          child: Text('Cerrar sesión'),
+                          child: const Text('Cerrar sesión'),
                         ),
                       ],
                     );
@@ -91,26 +90,34 @@ class TopNavigationBarWidget extends ConsumerWidget {
             },
             style: ElevatedButton.styleFrom(
               shape: const CircleBorder(),
-              minimumSize: Size(60, 60),
+              minimumSize: const Size(60, 60),
               padding: EdgeInsets.zero,
             ),
             child: SizedBox(
               height: 44,
               width: 44,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(30),
-                child: Image(
-                  image: NetworkImage(imageUrl),
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Icon(
+              child: imageUrl.isNotEmpty
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(30),
+                      child: Image(
+                        image: NetworkImage(imageUrl),
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Icon(
+                            isLogged
+                                ? Icons.account_circle
+                                : Icons.login_rounded,
+                            size: 44,
+                            color: Colors.grey,
+                          );
+                        },
+                      ),
+                    )
+                  : Icon(
                       isLogged ? Icons.account_circle : Icons.login_rounded,
                       size: 44,
                       color: Colors.grey,
-                    );
-                  },
-                ),
-              ),
+                    ),
             ),
           ),
         ],

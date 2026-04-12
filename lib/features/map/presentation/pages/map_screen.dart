@@ -219,6 +219,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
   @override
   Widget build(BuildContext context) {
+    final mapTilesEnabled = ref.watch(mapTilesEnabledProvider);
     final mapState = ref.watch(mapProvider);
     final location = mapState.asData?.value;
     final businessState = ref.watch(businessesStreamProvider);
@@ -241,6 +242,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
         currentStyleId.isNotEmpty;
 
     return Scaffold(
+      key: const ValueKey('mapScreen'),
       resizeToAvoidBottomInset: false,
       body: Stack(
         alignment: Alignment.topCenter,
@@ -263,7 +265,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
               },
             ),
             children: [
-              if (hasMapboxConfig)
+              if (mapTilesEnabled && hasMapboxConfig)
                 TileLayer(
                   urlTemplate:
                       'https://api.mapbox.com/styles/v1/$myUsername/$currentStyleId/tiles/256/{z}/{x}/{y}@2x?access_token=$myAccessToken',
@@ -283,7 +285,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                         ),
                   key: Key(currentStyleId),
                 )
-              else
+              else if (mapTilesEnabled)
                 TileLayer(
                   urlTemplate:
                       'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -377,6 +379,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                               });
                             },
                             child: Container(
+                              key: ValueKey('businessMarker-${business.id}'),
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 border: Border.all(
@@ -424,6 +427,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                               });
                             },
                             child: Container(
+                              key: ValueKey('businessMarker-${business.id}'),
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 border: Border.all(

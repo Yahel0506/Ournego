@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/core/routing/route_observer.dart';
+import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
 import 'package:ournego/features/auth/presentation/pages/auth_selection_screen.dart';
 import 'package:ournego/features/auth/presentation/pages/complete_profile_screen.dart';
 import 'package:ournego/features/auth/presentation/pages/create_password_screen.dart';
@@ -22,14 +23,19 @@ import 'package:ournego/features/map/presentation/pages/map_screen.dart';
 import 'package:ournego/features/navigation/presentation/pages/main_layout_screen.dart';
 import 'package:ournego/features/onboarding/presentation/pages/onboarding_screen.dart';
 
-GoRouter createAppRouter({required bool startOnMap}) {
-  final auth = Supabase.instance.client.auth;
+GoRouter createAppRouter({
+  required bool startOnMap,
+  Stream<dynamic>? authStateChanges,
+  String? initialLocation,
+}) {
+  final refreshStream = authStateChanges ?? _defaultAuthStateChanges();
 
   return GoRouter(
-    initialLocation: startOnMap ? MapRoutes.map : AppRoutes.onboarding,
+    initialLocation:
+        initialLocation ?? (startOnMap ? MapRoutes.map : AppRoutes.onboarding),
     debugLogDiagnostics: true,
     observers: [AppRouteObserver.instance],
-    refreshListenable: GoRouterRefreshStream(auth.onAuthStateChange),
+    refreshListenable: GoRouterRefreshStream(refreshStream),
     routes: [
       GoRoute(
         path: AppRoutes.onboarding,
@@ -71,9 +77,7 @@ GoRouter createAppRouter({required bool startOnMap}) {
       ),
       ShellRoute(
         builder: (context, state, child) {
-          return FeedbackShakeListener(
-            child: MainLayoutScreen(child: child),
-          );
+          return FeedbackShakeListener(child: MainLayoutScreen(child: child));
         },
         routes: [
           GoRoute(
@@ -87,10 +91,8 @@ GoRouter createAppRouter({required bool startOnMap}) {
           GoRoute(
             path: MapRoutes.map,
             name: 'map',
-            pageBuilder: (context, state) => NoTransitionPage(
-              key: state.pageKey,
-              child: const MapScreen(),
-            ),
+            pageBuilder: (context, state) =>
+                NoTransitionPage(key: state.pageKey, child: const MapScreen()),
           ),
           GoRoute(
             path: BusinessRoutes.panel,
@@ -103,10 +105,8 @@ GoRouter createAppRouter({required bool startOnMap}) {
           GoRoute(
             path: MapRoutes.businessDetails,
             name: 'business-details',
-            pageBuilder: (context, state) => NoTransitionPage(
-              key: state.pageKey,
-              child: const MapScreen(),
-            ),
+            pageBuilder: (context, state) =>
+                NoTransitionPage(key: state.pageKey, child: const MapScreen()),
           ),
         ],
       ),
@@ -123,7 +123,8 @@ GoRouter createAppRouter({required bool startOnMap}) {
     ],
     redirect: (context, state) async {
       final path = state.uri.path;
-      final isLoggedIn = auth.currentUser != null;
+      final container = ProviderScope.containerOf(context, listen: false);
+      final isLoggedIn = container.read(authSessionStatusProvider);
       final isAuthRoute =
           path == AuthRoutes.authSelection ||
           path == AuthRoutes.loginEmail ||
@@ -145,7 +146,9 @@ GoRouter createAppRouter({required bool startOnMap}) {
         return null;
       }
 
-      final hasProfile = await _checkHasProfile();
+      final hasProfileUsecase = container.read(hasProfileUsecaseProvider);
+      final hasProfileResult = await hasProfileUsecase.checkHasProfile();
+      final hasProfile = hasProfileResult.fold((_) => false, (value) => value);
 
       if (!hasProfile && path != AuthRoutes.completeProfile) {
         return AuthRoutes.completeProfile;
@@ -183,28 +186,11 @@ GoRouter createAppRouter({required bool startOnMap}) {
   );
 }
 
-Future<bool> _checkHasProfile() async {
-  final client = Supabase.instance.client;
-  final userId = client.auth.currentUser?.id;
-
-  if (userId == null) {
-    return false;
-  }
-
+Stream<dynamic> _defaultAuthStateChanges() {
   try {
-    final data = await client
-        .from('users')
-        .select('has_profile')
-        .eq('id', userId)
-        .maybeSingle();
-
-    if (data == null) {
-      return false;
-    }
-
-    return data['has_profile'] as bool? ?? false;
+    return Supabase.instance.client.auth.onAuthStateChange;
   } catch (_) {
-    return false;
+    return const Stream<dynamic>.empty();
   }
 }
 

@@ -97,12 +97,18 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     super.dispose();
   }
 
-  Future<void> _goToNextPage(BuildContext context, int totalPages) async {
+  Future<void> _goToNextPage(
+    BuildContext context,
+    int totalPages, {
+    required bool enforceLocationPermission,
+  }) async {
     if (_currentPage >= totalPages - 1) {
       return;
     }
 
-    if (_currentPage == 2 && !_locationPermissionStatus.isGranted) {
+    if (enforceLocationPermission &&
+        _currentPage == 2 &&
+        !_locationPermissionStatus.isGranted) {
       await _showLocationRequiredDialog(
         context,
         isDeniedForever: _locationPermissionStatus.isPermanentlyDenied,
@@ -131,6 +137,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final enforceLocationPermission = ref.watch(
+      onboardingEnforceLocationPermissionProvider,
+    );
     final slides = ref.watch(slidesListProvider);
 
     final pages = [
@@ -181,6 +190,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     ];
 
     return Scaffold(
+      key: const ValueKey('onboardingScreen'),
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: Stack(
         alignment: Alignment.bottomCenter,
@@ -210,14 +220,21 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   FilledButton.tonalIcon(
+                    key: const ValueKey('onboardingPreviousButton'),
                     onPressed: _currentPage > 0 ? _goToPreviousPage : null,
                     icon: const Icon(Icons.arrow_back),
                     label: const Text('Anterior'),
                   ),
                   const SizedBox(width: 12),
                   FilledButton.icon(
+                    key: const ValueKey('onboardingNextButton'),
                     onPressed: _currentPage < pages.length - 1
-                        ? () => _goToNextPage(context, pages.length)
+                        ? () => _goToNextPage(
+                            context,
+                            pages.length,
+                            enforceLocationPermission:
+                                enforceLocationPermission,
+                          )
                         : null,
                     icon: const Icon(Icons.arrow_forward),
                     label: const Text('Siguiente'),
