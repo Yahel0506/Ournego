@@ -7,6 +7,7 @@ class RegisterBusinessScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: const ValueKey('registerBusinessScreen'),
       body: Center(
         child: Column(
           children: [Spacer(), const RegisterBusinessWidget(), Spacer()],

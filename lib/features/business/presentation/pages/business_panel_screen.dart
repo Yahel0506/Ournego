@@ -6,6 +6,9 @@ class BusinessPanelScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: Center(child: BusinessPanelComingSoonWidget()));
+    return Scaffold(
+      key: const ValueKey('businessDashboardScreen'),
+      body: Center(child: BusinessPanelComingSoonWidget()),
+    );
   }
 }

@@ -61,6 +61,7 @@ class _LoginEmailScreenState extends ConsumerState<LoginEmailScreen> {
     final setHasSeenOnboarding = ref.watch(setHasSeenOnboardingUsecaseProvider);
 
     return Scaffold(
+      key: const ValueKey('loginEmailScreen'),
       resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
@@ -88,6 +89,7 @@ class _LoginEmailScreenState extends ConsumerState<LoginEmailScreen> {
                             child: EmailInput(
                               text: text,
                               controller: _emailController,
+                              inputKey: const ValueKey('loginEmailInput'),
                             ),
                           ),
                           SizedBox(height: 30),
@@ -96,6 +98,7 @@ class _LoginEmailScreenState extends ConsumerState<LoginEmailScreen> {
                             child: PasswordInput(
                               text: text,
                               controller: _passwordController,
+                              inputKey: const ValueKey('loginPasswordInput'),
                             ),
                           ),
                           SizedBox(height: 30),
@@ -109,6 +112,7 @@ class _LoginEmailScreenState extends ConsumerState<LoginEmailScreen> {
                             passwordController: _passwordController,
                             getHasSeenOnboarding: getHasSeenOnboarding,
                             setHasSeenOnboarding: setHasSeenOnboarding,
+                            buttonKey: const ValueKey('loginSubmitButton'),
                           ),
                         ],
                       ),
@@ -146,6 +150,7 @@ class PrimaryButton extends StatelessWidget {
     required this.passwordController,
     required this.getHasSeenOnboarding,
     required this.setHasSeenOnboarding,
+    required this.buttonKey,
   });
 
   final AuthScreenText text;
@@ -156,10 +161,12 @@ class PrimaryButton extends StatelessWidget {
   final TextEditingController emailController;
   final GetHasSeenOnboardingUsecase getHasSeenOnboarding;
   final SetHasSeenOnboardingUsecase setHasSeenOnboarding;
+  final Key buttonKey;
 
   @override
   Widget build(BuildContext context) {
     return ElevatedButton(
+      key: buttonKey,
       onPressed: () async {
         if (formKey.currentState?.validate() ?? false) {
           final usecase = LogInWithEmailUsecase(repository: repository);
@@ -231,10 +238,16 @@ class PrimaryButton extends StatelessWidget {
 }
 
 class EmailInput extends StatelessWidget {
-  const EmailInput({super.key, required this.text, required this.controller});
+  const EmailInput({
+    super.key,
+    required this.text,
+    required this.controller,
+    required this.inputKey,
+  });
 
   final AuthScreenText text;
   final TextEditingController controller;
+  final Key inputKey;
 
   @override
   Widget build(BuildContext context) {
@@ -243,6 +256,7 @@ class EmailInput extends StatelessWidget {
         Text(text.primaryInstruction, style: OurnegoTextStyles.body),
         SizedBox(height: 10),
         TextFormField(
+          key: inputKey,
           autofillHints: const [AutofillHints.email, AutofillHints.username],
           keyboardType: TextInputType.emailAddress,
           controller: controller,
@@ -272,11 +286,13 @@ class EmailInput extends StatelessWidget {
 class PasswordInput extends StatefulWidget {
   final AuthScreenText text;
   final TextEditingController controller;
+  final Key inputKey;
 
   const PasswordInput({
     super.key,
     required this.text,
     required this.controller,
+    required this.inputKey,
   });
 
   @override
@@ -302,6 +318,7 @@ class _PasswordInputState extends State<PasswordInput> {
         ),
         SizedBox(height: 10),
         TextFormField(
+          key: widget.inputKey,
           autofillHints: const [AutofillHints.password],
           controller: controller,
           maxLines: 1,
