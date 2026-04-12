@@ -65,13 +65,21 @@ Future<void> main() async {
 
 class MyApp extends StatelessWidget {
   final bool startOnMap;
+  final Stream<dynamic>? authStateChanges;
 
-  const MyApp({super.key, required this.startOnMap});
+  const MyApp({
+    super.key,
+    required this.startOnMap,
+    this.authStateChanges,
+  });
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      routerConfig: createAppRouter(startOnMap: startOnMap),
+      routerConfig: createAppRouter(
+        startOnMap: startOnMap,
+        authStateChanges: authStateChanges,
+      ),
       scrollBehavior: MyCustomScrollBehavior(),
       title: 'Ournego',
       theme: OurnegoColors.lightTheme,

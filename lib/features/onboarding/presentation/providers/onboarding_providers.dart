@@ -28,3 +28,7 @@ final setHasSeenOnboardingUsecaseProvider =
       final repository = ref.watch(onboardingRepositoryProvider);
       return SetHasSeenOnboardingUsecase(repository: repository);
     });
+
+final onboardingEnforceLocationPermissionProvider = Provider<bool>(
+  (ref) => true,
+);

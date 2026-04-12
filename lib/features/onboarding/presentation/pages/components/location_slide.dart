@@ -89,6 +89,7 @@ class _LocationSlideState extends State<LocationSlide> {
         ),
         SizedBox(height: 20),
         OutlinedButton(
+          key: const ValueKey('activateLocationButton'),
           onPressed: _requestLocationPermission,
           style: OutlinedButton.styleFrom(
             foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,

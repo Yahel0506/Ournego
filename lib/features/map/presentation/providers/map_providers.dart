@@ -21,6 +21,8 @@ final geolocationDatasourceProvider = Provider<LocationDatasource>(
   (ref) => GeolocatorLocationDatasource(),
 );
 
+final mapTilesEnabledProvider = Provider<bool>((ref) => true);
+
 final businessesDatasourceProvider = Provider((ref) {
   return SupabaseMapDatasource();
 });
