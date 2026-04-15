@@ -6,6 +6,6 @@ class CommunityScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: Center(child: CommunityComingSoonWidget()));
+    return const CommunityComingSoonWidget();
   }
 }
