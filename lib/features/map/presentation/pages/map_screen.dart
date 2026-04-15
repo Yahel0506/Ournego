@@ -6,8 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:ournego/core/failures.dart';
-import 'package:ournego/core/mapbox_config.dart';
 import 'package:ournego/core/location/app_position.dart';
+import 'package:ournego/core/mapbox_config.dart';
 import 'package:ournego/core/ournego_colors.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/features/map/presentation/mappers/business_marker_ui_mapper.dart';
@@ -287,16 +287,13 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 )
               else if (mapTilesEnabled)
                 TileLayer(
-                  urlTemplate:
-                      'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                   userAgentPackageName: 'com.ournego.app',
                   tileProvider: kIsWeb
                       ? NetworkTileProvider(silenceExceptions: true)
                       : NetworkTileProvider(
                           silenceExceptions: true,
-                          headers: {
-                            'User-Agent': 'com.ournego.app',
-                          },
+                          headers: {'User-Agent': 'com.ournego.app'},
                           cachingProvider:
                               BuiltInMapCachingProvider.getOrCreateInstance(
                                 maxCacheSize: 1_000_000_000,
@@ -371,7 +368,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                               WidgetsBinding.instance.addPostFrameCallback((_) {
                                 if (_modalController.isAttached) {
                                   _modalController.animateTo(
-                                    0.25,
+                                    0.3,
                                     duration: Durations.medium1,
                                     curve: Curves.linearToEaseOut,
                                   );
@@ -419,7 +416,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                               WidgetsBinding.instance.addPostFrameCallback((_) {
                                 if (_modalController.isAttached) {
                                   _modalController.animateTo(
-                                    0.25,
+                                    0.3,
                                     duration: Durations.medium1,
                                     curve: Curves.linearToEaseOut,
                                   );
@@ -457,7 +454,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
               Align(
                 alignment: Alignment.bottomLeft,
                 child: Padding(
-                  padding: const EdgeInsets.only(bottom: 40, left: 10),
+                  padding: const EdgeInsets.only(bottom: 90, left: 10),
                   child: Row(
                     children: [
                       IconButton(
@@ -567,9 +564,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   Spacer(),
                   Column(
                     children: [
-                      FloatingActionButton(
-                        heroTag: 'btnZoomIn',
-                        onPressed: () {
+                      _MapControlButton(
+                        icon: Icons.add,
+                        onPressed: () async {
                           final double currentZoom =
                               _animatedMapController.mapController.camera.zoom;
 
@@ -578,18 +575,11 @@ class _MapScreenState extends ConsumerState<MapScreen>
                             duration: Durations.short4,
                           );
                         },
-                        backgroundColor: Theme.of(
-                          context,
-                        ).colorScheme.secondaryContainer,
-                        foregroundColor: Theme.of(
-                          context,
-                        ).colorScheme.onSurface,
-                        child: Icon(Icons.zoom_in),
                       ),
                       SizedBox(height: 12),
-                      FloatingActionButton(
-                        heroTag: 'btnZoomOut',
-                        onPressed: () {
+                      _MapControlButton(
+                        icon: Icons.remove,
+                        onPressed: () async {
                           final double currentZoom =
                               _animatedMapController.mapController.camera.zoom;
 
@@ -598,17 +588,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
                             duration: Durations.short4,
                           );
                         },
-                        backgroundColor: Theme.of(
-                          context,
-                        ).colorScheme.secondaryContainer,
-                        foregroundColor: Theme.of(
-                          context,
-                        ).colorScheme.onSurface,
-                        child: Icon(Icons.zoom_out),
                       ),
                       SizedBox(height: 12),
-                      FloatingActionButton(
-                        heroTag: 'btnLocation',
+                      _MapControlButton(
+                        icon: Icons.my_location_rounded,
                         onPressed: () async {
                           final currentLocation = ref
                               .read(mapProvider)
@@ -652,20 +635,13 @@ class _MapScreenState extends ConsumerState<MapScreen>
                             await _showLocationErrorSheet(locationError);
                           }
                         },
-                        backgroundColor: Theme.of(
-                          context,
-                        ).colorScheme.secondaryContainer,
-                        foregroundColor: Theme.of(
-                          context,
-                        ).colorScheme.onSurface,
-                        child: Icon(Icons.location_searching),
                       ),
                     ],
                   ),
                   SizedBox(width: 16),
                 ],
               ),
-              SizedBox(height: 60),
+              SizedBox(height: 100),
             ],
           ),
           Align(
@@ -680,7 +656,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
                   if (currentSize == 0.95) {
                     newState = 2; // Está cerca de 0.9
-                  } else if (currentSize > 0.25) {
+                  } else if (currentSize > 0.3) {
                     newState = 1; // Está cerca de 0.5
                   } else {
                     newState = 0; // Está cerca de 0.2
@@ -698,7 +674,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   controller: _modalController,
                   shouldCloseOnMinExtent: false,
                   snap: true,
-                  snapSizes: [0.25, 0.6, 0.95],
+                  snapSizes: [0.3, 0.6, 0.95],
                   initialChildSize: 0.0,
                   minChildSize: 0.0,
                   maxChildSize: 0.95,
@@ -714,6 +690,61 @@ class _MapScreenState extends ConsumerState<MapScreen>
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _MapControlButton extends StatefulWidget {
+  final IconData icon;
+  final Future<void> Function() onPressed;
+
+  const _MapControlButton({required this.icon, required this.onPressed});
+
+  @override
+  State<_MapControlButton> createState() => _MapControlButtonState();
+}
+
+class _MapControlButtonState extends State<_MapControlButton> {
+  bool _isPressed = false;
+
+  Future<void> _handleTap() async {
+    if (!mounted) return;
+
+    setState(() {
+      _isPressed = true;
+    });
+
+    await widget.onPressed();
+
+    if (!mounted) return;
+
+    setState(() {
+      _isPressed = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return AnimatedScale(
+      duration: const Duration(milliseconds: 140),
+      scale: _isPressed ? 0.94 : 1,
+      child: SizedBox(
+        width: 52,
+        height: 52,
+        child: Material(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(16),
+          elevation: 5,
+          shadowColor: Colors.black.withValues(alpha: 0.2),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: _handleTap,
+            child: Icon(widget.icon, size: 22, color: colorScheme.onSurface),
+          ),
+        ),
       ),
     );
   }
