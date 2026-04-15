@@ -13,12 +13,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ournego/core/failures.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/features/map/domain/entities/business.dart';
 import 'package:ournego/features/map/domain/entities/product.dart';
 import 'package:ournego/features/map/presentation/providers/map_providers.dart';
-import 'package:ournego/core/failures.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class BusinessInformationWidget extends ConsumerWidget {
@@ -277,7 +277,12 @@ class BusinessInformationWidget extends ConsumerWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(10.0),
+              padding: const EdgeInsets.only(
+                left: 10,
+                right: 10,
+                top: 10,
+                bottom: 10,
+              ),
               child: Column(
                 children: [
                   const SizedBox(height: 10),
