@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ournego/features/navigation/presentation/providers/navigation_provider.dart';
 
+final GlobalKey appNavigationBarKey = GlobalKey(debugLabel: 'appNavigationBar');
+
 class AppNavigationBar extends ConsumerWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
@@ -19,6 +21,7 @@ class AppNavigationBar extends ConsumerWidget {
     final datasource = ref.watch(appNavigationBarProvider);
     final colorScheme = Theme.of(context).colorScheme;
     final icons = datasource.getNavigationBarItemsIcons();
+    final kIsWideScreen = MediaQuery.of(context).size.width > 600;
 
     const double height = 72;
     const double borderRadius = 100;
@@ -26,6 +29,7 @@ class AppNavigationBar extends ConsumerWidget {
     const EdgeInsets paddingR = EdgeInsets.fromLTRB(8, 8, 8, 10);
 
     return BottomAppBar(
+      key: appNavigationBarKey,
       color: Colors.transparent,
       padding: EdgeInsets.zero,
       elevation: 0,
@@ -37,8 +41,8 @@ class AppNavigationBar extends ConsumerWidget {
             boxShadow: const [
               BoxShadow(
                 color: Color(0x26000000),
-                blurRadius: 22,
-                spreadRadius: 1,
+                blurRadius: 10,
+                spreadRadius: 0.2,
               ),
             ],
             borderRadius: BorderRadius.circular(borderRadius),
@@ -49,7 +53,7 @@ class AppNavigationBar extends ConsumerWidget {
               filter: ImageFilter.blur(sigmaY: 0, sigmaX: 0),
               child: Container(
                 padding: paddingR,
-                width: double.infinity,
+                width: kIsWideScreen ? 400 : double.infinity,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(borderRadius),
                   border: Border.all(

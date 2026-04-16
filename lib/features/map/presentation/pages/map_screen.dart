@@ -4,17 +4,22 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:ournego/core/failures.dart';
 import 'package:ournego/core/location/app_position.dart';
 import 'package:ournego/core/mapbox_config.dart';
 import 'package:ournego/core/ournego_colors.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
+import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/features/map/presentation/mappers/business_marker_ui_mapper.dart';
 import 'package:ournego/features/map/presentation/models/business_marker_ui_model.dart';
 import 'package:ournego/features/map/presentation/providers/map_providers.dart';
-import 'package:ournego/features/map/presentation/widgets/business_information_widget.dart';
+import 'package:ournego/features/map/presentation/widgets/floating_sheet/floating_sheet_controller.dart';
+import 'package:ournego/features/map/presentation/widgets/floating_sheet/models/sheet_business_data.dart';
+import 'package:ournego/features/map/presentation/widgets/floating_sheet/ournego_floating_sheet.dart';
 import 'package:ournego/features/map/presentation/widgets/top_navigation_bar_widget.dart';
+import 'package:ournego/features/navigation/presentation/widgets/navigation_bar_widget.dart';
 import 'package:ournego/shared/widgets/information_card_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -30,14 +35,48 @@ class _MapScreenState extends ConsumerState<MapScreen>
     with TickerProviderStateMixin {
   late final _animatedMapController = AnimatedMapController(vsync: this);
   late ProviderSubscription<AsyncValue<AppPosition>> _providerSubscription;
+  late final FloatingSheetController _floatingSheetController;
 
   final _businessMarkerUiMapper = BusinessMarkerUiMapper();
-
-  final _modalController = DraggableScrollableController();
 
   LatLng? _initialCenter;
   double? _initialZoom;
   bool _isLocationModalOpen = false;
+
+  double get _expandedHeight {
+    final mq = MediaQuery.of(context);
+    final screenHeight = mq.size.height;
+    final topPadding = mq.padding.top;
+    final bottomPadding = mq.padding.bottom;
+    final topBarHeight = _readWidgetHeight(topNavigationBarKey, fallback: 56);
+    final navBarHeight = _readWidgetHeight(appNavigationBarKey, fallback: 72);
+
+    return screenHeight -
+        topPadding -
+        topBarHeight -
+        navBarHeight -
+        bottomPadding +
+        70;
+  }
+
+  double get _collapsedHeight {
+    final screenHeight = MediaQuery.of(context).size.height;
+    return (screenHeight * 0.24);
+  }
+
+  double _readWidgetHeight(GlobalKey key, {required double fallback}) {
+    final targetContext = key.currentContext;
+    if (targetContext == null) {
+      return fallback;
+    }
+
+    final renderObject = targetContext.findRenderObject();
+    if (renderObject is RenderBox && renderObject.hasSize) {
+      return renderObject.size.height;
+    }
+
+    return fallback;
+  }
 
   Future<void> _restoreCamera() async {
     final prefs = await SharedPreferences.getInstance();
@@ -123,6 +162,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
         : 'Reintentar';
 
     await showModalBottomSheet<void>(
+      // ⚠️ OUT OF SCOPE — OurnegoFloatingSheet migration
+      // Este showModalBottomSheet maneja errores de permisos de ubicación.
+      // NO modificar, mover ni eliminar como parte de esta tarea.
+      // Relacionado con: _showLocationErrorSheet() / permisos GPS
       context: context,
       isDismissible: true,
       builder: (modalContext) {
@@ -185,6 +228,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
   @override
   void initState() {
     super.initState();
+    _floatingSheetController = FloatingSheetController();
 
     _providerSubscription = ref.listenManual<AsyncValue<AppPosition>>(
       mapProvider,
@@ -212,8 +256,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
   @override
   void dispose() {
     _animatedMapController.dispose();
-    _modalController.dispose();
     _providerSubscription.close();
+    _floatingSheetController.dispose();
     super.dispose();
   }
 
@@ -223,8 +267,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final mapState = ref.watch(mapProvider);
     final location = mapState.asData?.value;
     final businessState = ref.watch(businessesStreamProvider);
-
-    final bool isWide = MediaQuery.of(context).size.width > 600;
+    final topBarHeight = _readWidgetHeight(topNavigationBarKey, fallback: 68);
+    final isWide = MediaQuery.of(context).size.width > 600;
 
     final bool isDarkModeOn =
         MediaQuery.of(context).platformBrightness == Brightness.dark;
@@ -353,9 +397,17 @@ class _MapScreenState extends ConsumerState<MapScreen>
                           point: LatLng(business.latitude, business.longitude),
                           child: GestureDetector(
                             onTap: () {
-                              ref
-                                  .read(selectedBusiness.notifier)
-                                  .selectedBusiness(business);
+                              final favoriteAsync = ref.read(
+                                isBusinessFavoriteStreamProvider(business.id),
+                              );
+                              final isFavorite = favoriteAsync.value ?? false;
+
+                              _floatingSheetController.openBusiness(
+                                SheetBusinessData.fromBusiness(
+                                  business,
+                                  isFavorite: isFavorite,
+                                ),
+                              );
 
                               _animatedMapController.animateTo(
                                 dest: LatLng(
@@ -364,16 +416,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
                                 ),
                                 zoom: 18,
                               );
-
-                              WidgetsBinding.instance.addPostFrameCallback((_) {
-                                if (_modalController.isAttached) {
-                                  _modalController.animateTo(
-                                    0.3,
-                                    duration: Durations.medium1,
-                                    curve: Curves.linearToEaseOut,
-                                  );
-                                }
-                              });
                             },
                             child: Container(
                               key: ValueKey('businessMarker-${business.id}'),
@@ -401,9 +443,17 @@ class _MapScreenState extends ConsumerState<MapScreen>
                           point: LatLng(business.latitude, business.longitude),
                           child: GestureDetector(
                             onTap: () {
-                              ref
-                                  .read(selectedBusiness.notifier)
-                                  .selectedBusiness(business);
+                              final favoriteAsync = ref.read(
+                                isBusinessFavoriteStreamProvider(business.id),
+                              );
+                              final isFavorite = favoriteAsync.value ?? false;
+
+                              _floatingSheetController.openBusiness(
+                                SheetBusinessData.fromBusiness(
+                                  business,
+                                  isFavorite: isFavorite,
+                                ),
+                              );
 
                               _animatedMapController.animateTo(
                                 dest: LatLng(
@@ -412,16 +462,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
                                 ),
                                 zoom: 18,
                               );
-
-                              WidgetsBinding.instance.addPostFrameCallback((_) {
-                                if (_modalController.isAttached) {
-                                  _modalController.animateTo(
-                                    0.3,
-                                    duration: Durations.medium1,
-                                    curve: Curves.linearToEaseOut,
-                                  );
-                                }
-                              });
                             },
                             child: Container(
                               key: ValueKey('businessMarker-${business.id}'),
@@ -644,53 +684,96 @@ class _MapScreenState extends ConsumerState<MapScreen>
               SizedBox(height: 100),
             ],
           ),
-          Align(
-            alignment: Alignment.center,
-            child: SizedBox(
-              width: isWide ? 600 : double.maxFinite,
-              child: NotificationListener<DraggableScrollableNotification>(
-                onNotification: (notification) {
-                  final double currentSize = notification.extent;
-
-                  int newState;
-
-                  if (currentSize == 0.95) {
-                    newState = 2; // Está cerca de 0.9
-                  } else if (currentSize > 0.3) {
-                    newState = 1; // Está cerca de 0.5
-                  } else {
-                    newState = 0; // Está cerca de 0.2
-                  }
-
-                  final int currentStateInProvider = ref.read(modalState);
-
-                  if (newState != currentStateInProvider) {
-                    ref.read(modalState.notifier).changeStateTo(newState);
-                  }
-
-                  return true;
-                },
-                child: DraggableScrollableSheet(
-                  controller: _modalController,
-                  shouldCloseOnMinExtent: false,
-                  snap: true,
-                  snapSizes: [0.3, 0.6, 0.95],
-                  initialChildSize: 0.0,
-                  minChildSize: 0.0,
-                  maxChildSize: 0.95,
-                  builder: (context, scrollController) {
-                    {
-                      return BusinessInformationWidget(
-                        scrollController: scrollController,
-                      );
-                    }
-                  },
-                ),
-              ),
-            ),
+          OurnegoFloatingSheet(
+            controller: _floatingSheetController,
+            collapsedHeight: _collapsedHeight,
+            expandedHeight: _expandedHeight,
+            maxWidth: isWide ? 600 : double.infinity,
+            bottomOffset: 96.0,
+            sideStackTop:
+                MediaQuery.of(context).padding.top + topBarHeight + 10,
+            onFavorite: _onFavorite,
+            onContact: _onContact,
+            onCatalog: _onCatalog,
+            onReviews: _onReviews,
           ),
         ],
       ),
+    );
+  }
+
+  Future<bool> _onFavorite() async {
+    final activeBusiness = _floatingSheetController.activeBusiness;
+    if (activeBusiness == null) {
+      return false;
+    }
+
+    final previousIsFavorite = !activeBusiness.isFavorite;
+
+    final result = await ref
+        .read(businessFavoritesUsecaseProvider)
+        .toggleFavorite(activeBusiness.id, previousIsFavorite);
+
+    return result.fold(
+      (failure) {
+        if (failure is AuthenticationRequiredFailure) {
+          if (context.mounted) {
+            context.push(AuthRoutes.authSelection);
+          }
+          return false;
+        }
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No se pudo actualizar favorito')),
+          );
+        }
+        return false;
+      },
+      (_) {
+        ref.invalidate(isBusinessFavoriteStreamProvider(activeBusiness.id));
+        return true;
+      },
+    );
+  }
+
+  Future<void> _onContact() async {
+    final activeBusiness = _floatingSheetController.activeBusiness;
+    if (activeBusiness?.phoneNumber == null) {
+      if (!context.mounted) return;
+      showDialog<void>(
+        context: context,
+        builder: (dialogContext) {
+          return AlertDialog(
+            backgroundColor: Theme.of(context).colorScheme.surface,
+            content: const Text(
+              'Lamentablemente, este negocio no cuenta con número de teléfono :(',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text('Entiendo'),
+              ),
+            ],
+          );
+        },
+      );
+      return;
+    }
+
+    final uri = Uri.parse('https://wa.me/${activeBusiness!.phoneNumber}');
+    await launchUrl(uri);
+  }
+
+  void _onCatalog() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Catálogo próximamente disponible')),
+    );
+  }
+
+  void _onReviews() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Reseñas próximamente disponibles')),
     );
   }
 }
