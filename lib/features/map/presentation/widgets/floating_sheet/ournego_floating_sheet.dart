@@ -37,10 +37,10 @@ class OurnegoFloatingSheet extends StatefulWidget {
   final double bottomOffset;
   final double sideStackTop;
   final double maxWidth;
-  final Future<bool> Function() onFavorite;
-  final VoidCallback onContact;
-  final VoidCallback onCatalog;
-  final VoidCallback onReviews;
+  final Future<bool> Function(SheetBusinessData business) onFavorite;
+  final Future<void> Function(SheetBusinessData business) onContact;
+  final void Function(SheetBusinessData business) onCatalog;
+  final void Function(SheetBusinessData business) onReviews;
 
   const OurnegoFloatingSheet({
     super.key,
@@ -96,27 +96,62 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet> {
   Widget build(BuildContext context) {
     final controller = widget.controller;
     final activeBusiness = controller.activeBusiness;
+    final comparisonBusiness = controller.comparisonBusiness;
+    final isComparisonMode = controller.isComparisonMode;
 
-    return Stack(
-      children: [
-        _buildOverlay(controller.state),
-        _buildMinimizedStack(controller.minimizedBusinesses),
-        if (activeBusiness != null)
-          _buildFloatingSheet(
-            activeBusiness: activeBusiness,
-            controller: controller,
-          ),
-      ],
+    return AnimatedSwitcher(
+      duration: kSheetTransitionDuration,
+      switchInCurve: kEaseOutExpo,
+      switchOutCurve: kEaseOutExpo,
+      transitionBuilder: (child, animation) {
+        final slide = Tween<Offset>(
+          begin: const Offset(0, 0.08),
+          end: Offset.zero,
+        ).animate(animation);
+
+        return FadeTransition(
+          opacity: animation,
+          child: SlideTransition(position: slide, child: child),
+        );
+      },
+      child: Stack(
+        key: ValueKey<String>(
+          '${controller.isComparisonMode}-${controller.activeBusiness?.id}-${controller.comparisonBusiness?.id}',
+        ),
+        children: [
+          _buildOverlay(controller.state, isComparisonMode),
+          if (!isComparisonMode)
+            _buildMinimizedStack(controller.minimizedBusinesses),
+          if (activeBusiness != null && comparisonBusiness == null)
+            _buildFloatingSheet(
+              activeBusiness: activeBusiness,
+              controller: controller,
+            ),
+          if (activeBusiness != null && comparisonBusiness != null)
+            _buildComparisonSheets(
+              primaryBusiness: activeBusiness,
+              secondaryBusiness: comparisonBusiness,
+              controller: controller,
+            ),
+        ],
+      ),
     );
   }
 
-  Widget _buildOverlay(FloatingSheetState state) {
+  Widget _buildOverlay(FloatingSheetState state, bool isComparisonMode) {
+    final shouldBlock =
+        state == FloatingSheetState.expanded || isComparisonMode;
+
     return AnimatedOpacity(
       duration: kSheetTransitionDuration,
       curve: kEaseOutExpo,
-      opacity: state == FloatingSheetState.expanded ? 0.4 : 0,
+      opacity: isComparisonMode
+          ? 0.5
+          : state == FloatingSheetState.expanded
+          ? 0.4
+          : 0,
       child: IgnorePointer(
-        ignoring: state != FloatingSheetState.expanded,
+        ignoring: !shouldBlock,
         child: Container(color: Colors.black),
       ),
     );
@@ -141,13 +176,183 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet> {
                   child: MinimizedStackIcon(
                     business: business,
                     onTap: () =>
-                        widget.controller.restoreFromMinimized(business.id),
+                        widget.controller.onMinimizedBusinessTap(business.id),
                     onLongPress: () =>
                         widget.controller.removeFromMinimized(business.id),
                   ),
                 ),
               )
               .toList(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildComparisonSheets({
+    required SheetBusinessData primaryBusiness,
+    required SheetBusinessData secondaryBusiness,
+    required FloatingSheetController controller,
+  }) {
+    final gap = 10.0;
+    final compareHeight = (widget.expandedHeight - gap) / 2;
+    final topBottom = widget.bottomOffset + compareHeight + gap;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final availableWidth = screenWidth - 24;
+    final sheetWidth = availableWidth > widget.maxWidth
+        ? widget.maxWidth
+        : availableWidth;
+    final centeredLeft = (screenWidth - sheetWidth) / 2;
+
+    return AnimatedSwitcher(
+      duration: kSheetTransitionDuration,
+      switchInCurve: kEaseOutExpo,
+      switchOutCurve: kEaseOutExpo,
+      transitionBuilder: (child, animation) {
+        final scale = Tween<double>(begin: 0.96, end: 1).animate(animation);
+        return FadeTransition(
+          opacity: animation,
+          child: ScaleTransition(scale: scale, child: child),
+        );
+      },
+      child: Stack(
+        key: ValueKey<String>(
+          'compare-${primaryBusiness.id}-${secondaryBusiness.id}',
+        ),
+        children: [
+          Positioned(
+            left: centeredLeft,
+            width: sheetWidth,
+            bottom: widget.bottomOffset,
+            child: _buildComparisonCard(
+              business: primaryBusiness,
+              controller: controller,
+              height: compareHeight,
+              isPrimary: true,
+            ),
+          ),
+          Positioned(
+            left: centeredLeft,
+            width: sheetWidth,
+            bottom: topBottom,
+            child: _buildComparisonCard(
+              business: secondaryBusiness,
+              controller: controller,
+              height: compareHeight,
+              isPrimary: false,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildComparisonCard({
+    required SheetBusinessData business,
+    required FloatingSheetController controller,
+    required double height,
+    required bool isPrimary,
+  }) {
+    return AnimatedContainer(
+      duration: kSheetTransitionDuration,
+      curve: kEaseOutExpo,
+      height: height,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+          width: 1,
+        ),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.35),
+            blurRadius: 24,
+            spreadRadius: -4,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+        child: Column(
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _TypeRatingBadgeRow(
+                  type: business.type,
+                  rating: business.rating,
+                ),
+                const Spacer(),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SheetControlButton(
+                      icon: business.isFavorite
+                          ? Icons.favorite_rounded
+                          : Icons.favorite_border_rounded,
+                      onTap: _isFavoriteUpdating
+                          ? () {}
+                          : () async {
+                              setState(() {
+                                _isFavoriteUpdating = true;
+                              });
+
+                              controller.toggleFavoriteForBusiness(business.id);
+                              final success = await widget.onFavorite(business);
+                              if (!success) {
+                                controller.toggleFavoriteForBusiness(
+                                  business.id,
+                                );
+                              }
+
+                              if (!mounted) return;
+                              setState(() {
+                                _isFavoriteUpdating = false;
+                              });
+                            },
+                      backgroundColor: business.isFavorite
+                          ? Theme.of(
+                              context,
+                            ).colorScheme.primary.withValues(alpha: 0.25)
+                          : null,
+                      iconColor: business.isFavorite
+                          ? Theme.of(context).colorScheme.primary
+                          : null,
+                    ),
+                    const SizedBox(width: 8),
+                    SheetControlButton(
+                      icon: Icons.picture_in_picture_alt_rounded,
+                      onTap: isPrimary
+                          ? controller.minimizePrimaryInComparison
+                          : controller.minimizeSecondaryInComparison,
+                    ),
+                    const SizedBox(width: 8),
+                    SheetControlButton(
+                      icon: Icons.close_rounded,
+                      onTap: isPrimary
+                          ? controller.closePrimaryInComparison
+                          : controller.closeSecondaryInComparison,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: SheetHeader(name: business.name, isExpanded: true),
+            ),
+            const SizedBox(height: 12),
+            Expanded(
+              child: _LegacyExpandedContent(
+                business: business,
+                onContact: () => widget.onContact(business),
+                onCatalog: () => widget.onCatalog(business),
+                onReviews: () => widget.onReviews(business),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -196,141 +401,148 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet> {
       top: top,
       bottom: bottom,
       width: animatedWidth,
-      child: TweenAnimationBuilder<double>(
-        tween: Tween<double>(begin: 1, end: opacity),
+      child: AnimatedOpacity(
         duration: kSheetTransitionDuration,
         curve: kEaseOutExpo,
-        builder: (context, animatedOpacity, child) {
-          return Opacity(opacity: animatedOpacity, child: child);
-        },
+        opacity: opacity,
         onEnd: controller.finalizeTransitionOut,
-        child: AnimatedContainer(
+        child: AnimatedScale(
           duration: kSheetTransitionDuration,
           curve: kEaseOutExpo,
-          height: animatedHeight,
-          child: GestureDetector(
-            onVerticalDragEnd: (details) {
-              controller.handleVerticalDragEnd(
-                velocity: details.primaryVelocity ?? 0,
-                currentHeight: targetHeight,
-                collapsedHeight: widget.collapsedHeight,
-                expandedHeight: widget.expandedHeight,
-              );
-            },
-            child: IgnorePointer(
-              ignoring: isMinimized,
-              child: AnimatedContainer(
-                duration: kSheetTransitionDuration,
-                curve: kEaseOutExpo,
-                height: animatedHeight,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
-                  border: Border.all(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.outline.withValues(alpha: 0.3),
-                    width: 1,
-                  ),
-                  borderRadius: BorderRadius.circular(18),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.35),
-                      blurRadius: 24,
-                      spreadRadius: -4,
-                      offset: const Offset(0, 8),
+          scale: isMinimizingToStack
+              ? 0.2
+              : isMinimized
+              ? 0.94
+              : 1,
+          alignment: Alignment.bottomCenter,
+          child: AnimatedContainer(
+            duration: kSheetTransitionDuration,
+            curve: kEaseOutExpo,
+            height: animatedHeight,
+            child: GestureDetector(
+              onVerticalDragEnd: (details) {
+                controller.handleVerticalDragEnd(
+                  velocity: details.primaryVelocity ?? 0,
+                  currentHeight: targetHeight,
+                  collapsedHeight: widget.collapsedHeight,
+                  expandedHeight: widget.expandedHeight,
+                );
+              },
+              child: IgnorePointer(
+                ignoring: isMinimized,
+                child: AnimatedContainer(
+                  duration: kSheetTransitionDuration,
+                  curve: kEaseOutExpo,
+                  height: animatedHeight,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    border: Border.all(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.outline.withValues(alpha: 0.3),
+                      width: 1,
                     ),
-                  ],
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-                  child: Column(
-                    children: [
-                      _AnimatedDragHandle(isExpanded: isExpanded),
-                      const SizedBox(height: 8),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _TypeRatingBadgeRow(
-                            type: activeBusiness.type,
-                            rating: activeBusiness.rating,
-                          ),
-                          const Spacer(),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              SheetControlButton(
-                                icon: activeBusiness.isFavorite
-                                    ? Icons.favorite_rounded
-                                    : Icons.favorite_border_rounded,
-                                onTap: _isFavoriteUpdating
-                                    ? () {}
-                                    : () async {
-                                        setState(() {
-                                          _isFavoriteUpdating = true;
-                                        });
-
-                                        controller.toggleFavorite();
-                                        final success = await widget
-                                            .onFavorite();
-
-                                        if (!success) {
-                                          controller.toggleFavorite();
-                                        }
-
-                                        if (!mounted) return;
-                                        setState(() {
-                                          _isFavoriteUpdating = false;
-                                        });
-                                      },
-                                backgroundColor: activeBusiness.isFavorite
-                                    ? Theme.of(context).colorScheme.primary
-                                          .withValues(alpha: 0.25)
-                                    : null,
-                                iconColor: activeBusiness.isFavorite
-                                    ? Theme.of(context).colorScheme.primary
-                                    : null,
-                              ),
-                              const SizedBox(width: 8),
-                              SheetControlButton(
-                                icon: Icons.picture_in_picture_alt_rounded,
-                                onTap: controller.minimizeActiveBusiness,
-                              ),
-                              const SizedBox(width: 8),
-                              SheetControlButton(
-                                icon: isExpanded
-                                    ? Icons.keyboard_arrow_down_rounded
-                                    : Icons.open_in_full_rounded,
-                                onTap: controller.toggleExpandedCollapsed,
-                              ),
-                            ],
-                          ),
-                        ],
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.35),
+                        blurRadius: 24,
+                        spreadRadius: -4,
+                        offset: const Offset(0, 8),
                       ),
-                      const SizedBox(height: 8),
-                      SizedBox(
-                        width: double.infinity,
-                        child: SheetHeader(
-                          name: activeBusiness.name,
-                          isExpanded: isExpanded,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      if (!isExpanded)
-                        _LegacyCollapsedActions(
-                          onContact: widget.onContact,
-                          onCatalog: widget.onCatalog,
-                          onReviews: widget.onReviews,
-                        )
-                      else
-                        Expanded(
-                          child: _LegacyExpandedContent(
-                            business: activeBusiness,
-                            onContact: widget.onContact,
-                            onCatalog: widget.onCatalog,
-                            onReviews: widget.onReviews,
-                          ),
-                        ),
                     ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+                    child: Column(
+                      children: [
+                        _AnimatedDragHandle(isExpanded: isExpanded),
+                        const SizedBox(height: 8),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _TypeRatingBadgeRow(
+                              type: activeBusiness.type,
+                              rating: activeBusiness.rating,
+                            ),
+                            const Spacer(),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                SheetControlButton(
+                                  icon: activeBusiness.isFavorite
+                                      ? Icons.favorite_rounded
+                                      : Icons.favorite_border_rounded,
+                                  onTap: _isFavoriteUpdating
+                                      ? () {}
+                                      : () async {
+                                          setState(() {
+                                            _isFavoriteUpdating = true;
+                                          });
+
+                                          controller.toggleFavorite();
+                                          final success = await widget
+                                              .onFavorite(activeBusiness);
+
+                                          if (!success) {
+                                            controller.toggleFavorite();
+                                          }
+
+                                          if (!mounted) return;
+                                          setState(() {
+                                            _isFavoriteUpdating = false;
+                                          });
+                                        },
+                                  backgroundColor: activeBusiness.isFavorite
+                                      ? Theme.of(context).colorScheme.primary
+                                            .withValues(alpha: 0.25)
+                                      : null,
+                                  iconColor: activeBusiness.isFavorite
+                                      ? Theme.of(context).colorScheme.primary
+                                      : null,
+                                ),
+                                const SizedBox(width: 8),
+                                SheetControlButton(
+                                  icon: Icons.picture_in_picture_alt_rounded,
+                                  onTap: controller.minimizeActiveBusiness,
+                                ),
+                                const SizedBox(width: 8),
+                                SheetControlButton(
+                                  icon: isExpanded
+                                      ? Icons.keyboard_arrow_down_rounded
+                                      : Icons.open_in_full_rounded,
+                                  onTap: controller.toggleExpandedCollapsed,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          width: double.infinity,
+                          child: SheetHeader(
+                            name: activeBusiness.name,
+                            isExpanded: isExpanded,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        if (!isExpanded)
+                          _LegacyCollapsedActions(
+                            onContact: () => widget.onContact(activeBusiness),
+                            onCatalog: () => widget.onCatalog(activeBusiness),
+                            onReviews: () => widget.onReviews(activeBusiness),
+                          )
+                        else
+                          Expanded(
+                            child: _LegacyExpandedContent(
+                              business: activeBusiness,
+                              onContact: () => widget.onContact(activeBusiness),
+                              onCatalog: () => widget.onCatalog(activeBusiness),
+                              onReviews: () => widget.onReviews(activeBusiness),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
               ),
