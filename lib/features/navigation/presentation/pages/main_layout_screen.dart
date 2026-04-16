@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shake/shake.dart';
-
 import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/features/feedback/presentation/widgets/feedback_dialog_widget.dart';
 import 'package:ournego/features/navigation/presentation/providers/navigation_provider.dart';
 import 'package:ournego/features/navigation/presentation/widgets/navigation_bar_widget.dart';
+import 'package:shake/shake.dart';
 
 class MainLayoutScreen extends ConsumerWidget {
   final Widget child;
@@ -20,10 +19,31 @@ class MainLayoutScreen extends ConsumerWidget {
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      body: child,
+      extendBody: true,
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 320),
+        switchInCurve: Curves.easeOutCubic,
+        switchOutCurve: Curves.easeInCubic,
+        transitionBuilder: (widget, animation) {
+          final slideAnimation = Tween<Offset>(
+            begin: const Offset(0.04, 0),
+            end: Offset.zero,
+          ).animate(animation);
+
+          return FadeTransition(
+            opacity: animation,
+            child: SlideTransition(position: slideAnimation, child: widget),
+          );
+        },
+        child: KeyedSubtree(key: ValueKey(location), child: child),
+      ),
       bottomNavigationBar: AppNavigationBar(
         currentIndex: currentIndex,
         onTap: (index) {
+          if (index == currentIndex) {
+            return;
+          }
+
           switch (index) {
             case 0:
               context.go(AppRoutes.community);

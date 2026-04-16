@@ -73,54 +73,67 @@ class RegisterBusinessWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Padding(
-      padding: const EdgeInsets.all(32.0),
-      child: Column(
-        children: [
-          SizedBox(
-            height: 180,
-            child: Image.asset('assets/images/register_business.png'),
-          ),
-          const SizedBox(height: 24),
-          const Text('Registra tu negocio', style: OurnegoTextStyles.header),
-          SizedBox(height: 8),
-          const Text(
-            'Comienza a crecer creando tu negocio en Ournego, y desbloquea grandes funcionalidades.',
-            style: OurnegoTextStyles.body,
-            textAlign: TextAlign.center,
-          ),
-          SizedBox(height: 32),
-          ElevatedButton(
-            onPressed: () async {
-              try {
-                final isLogged = ref.read(authSessionStatusProvider);
-                if (!context.mounted) return;
+    return Scaffold(
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: SizedBox.expand(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                  height: 180,
+                  child: Image.asset('assets/images/register_business.png'),
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'Registra tu negocio',
+                  style: OurnegoTextStyles.header,
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Comienza a crecer creando tu negocio en Ournego, y desbloquea grandes funcionalidades.',
+                  style: OurnegoTextStyles.body,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32),
+                ElevatedButton(
+                  onPressed: () async {
+                    try {
+                      final isLogged = ref.read(authSessionStatusProvider);
+                      if (!context.mounted) return;
 
-                if (isLogged) {
-                  context.push(BusinessRoutes.form);
-                } else {
-                  context.push(AuthRoutes.authSelection);
-                }
-              } catch (_) {
-                if (!context.mounted) return;
-                await _showSessionErrorDialog(context, ref);
-              }
-            },
-            style: ButtonStyle(
-              backgroundColor: WidgetStatePropertyAll(
-                Theme.of(context).colorScheme.secondary,
-              ),
-              foregroundColor: WidgetStatePropertyAll(
-                Theme.of(context).colorScheme.onSecondary,
-              ),
-              overlayColor: WidgetStatePropertyAll(
-                Theme.of(context).colorScheme.secondaryContainer,
-              ),
-              fixedSize: WidgetStatePropertyAll(const Size(200, 60)),
+                      if (isLogged) {
+                        context.push(BusinessRoutes.form);
+                      } else {
+                        context.push(AuthRoutes.authSelection);
+                      }
+                    } catch (_) {
+                      if (!context.mounted) return;
+                      await _showSessionErrorDialog(context, ref);
+                    }
+                  },
+                  style: ButtonStyle(
+                    backgroundColor: WidgetStatePropertyAll(
+                      Theme.of(context).colorScheme.secondary,
+                    ),
+                    foregroundColor: WidgetStatePropertyAll(
+                      Theme.of(context).colorScheme.onSecondary,
+                    ),
+                    overlayColor: WidgetStatePropertyAll(
+                      Theme.of(context).colorScheme.secondaryContainer,
+                    ),
+                    fixedSize: WidgetStatePropertyAll(const Size(200, 60)),
+                  ),
+                  child: const Text(
+                    'Comenzar',
+                    style: OurnegoTextStyles.header,
+                  ),
+                ),
+              ],
             ),
-            child: const Text('Comenzar', style: OurnegoTextStyles.header),
           ),
-        ],
+        ),
       ),
     );
   }
