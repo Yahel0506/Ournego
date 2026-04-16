@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
 
+final GlobalKey topNavigationBarKey = GlobalKey(debugLabel: 'topNavigationBar');
+
 class TopNavigationBarWidget extends ConsumerWidget {
   const TopNavigationBarWidget({super.key});
 
@@ -18,6 +20,7 @@ class TopNavigationBarWidget extends ConsumerWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Padding(
+      key: topNavigationBarKey,
       padding: const EdgeInsets.fromLTRB(16, 40, 16, 0),
       child: Row(
         children: [
