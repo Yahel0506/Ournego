@@ -6,20 +6,26 @@ import 'package:ournego/features/map/presentation/widgets/floating_sheet/models/
 class FloatingSheetController extends ChangeNotifier {
   FloatingSheetState _state = FloatingSheetState.collapsed;
   SheetBusinessData? _activeBusiness;
+  SheetBusinessData? _comparisonBusiness;
   final List<SheetBusinessData> _minimizedBusinesses = [];
   bool _pendingClearActive = false;
   bool _pendingMinimizeToStack = false;
 
   FloatingSheetState get state => _state;
   SheetBusinessData? get activeBusiness => _activeBusiness;
+  SheetBusinessData? get comparisonBusiness => _comparisonBusiness;
   List<SheetBusinessData> get minimizedBusinesses =>
       List<SheetBusinessData>.unmodifiable(_minimizedBusinesses);
 
   bool get hasActiveBusiness => _activeBusiness != null;
+  bool get isComparisonMode =>
+      _activeBusiness != null && _comparisonBusiness != null;
   bool get pendingClearActive => _pendingClearActive;
   bool get pendingMinimizeToStack => _pendingMinimizeToStack;
 
   void openBusiness(SheetBusinessData business) {
+    _comparisonBusiness = null;
+
     final current = _activeBusiness;
     if (current != null && current.id != business.id) {
       _pushToMinimized(current);
@@ -58,6 +64,7 @@ class FloatingSheetController extends ChangeNotifier {
     }
 
     _activeBusiness = null;
+    _comparisonBusiness = null;
     _pendingClearActive = false;
     _pendingMinimizeToStack = false;
     notifyListeners();
@@ -72,6 +79,10 @@ class FloatingSheetController extends ChangeNotifier {
   }
 
   void minimizeActiveBusiness() {
+    if (isComparisonMode) {
+      return;
+    }
+
     final current = _activeBusiness;
     if (current == null) return;
 
@@ -95,8 +106,83 @@ class FloatingSheetController extends ChangeNotifier {
     }
 
     _activeBusiness = selected;
+    _comparisonBusiness = null;
     _pendingClearActive = false;
     _pendingMinimizeToStack = false;
+    _state = FloatingSheetState.collapsed;
+    notifyListeners();
+  }
+
+  void onMinimizedBusinessTap(String businessId) {
+    if (isComparisonMode) {
+      return;
+    }
+
+    if (_activeBusiness != null && _state == FloatingSheetState.collapsed) {
+      enterComparisonFromMinimized(businessId);
+      return;
+    }
+
+    restoreFromMinimized(businessId);
+  }
+
+  void enterComparisonFromMinimized(String businessId) {
+    final current = _activeBusiness;
+    if (current == null || _state != FloatingSheetState.collapsed) {
+      return;
+    }
+
+    final index = _minimizedBusinesses.indexWhere((b) => b.id == businessId);
+    if (index < 0) {
+      return;
+    }
+
+    _comparisonBusiness = _minimizedBusinesses.removeAt(index);
+    notifyListeners();
+  }
+
+  void closePrimaryInComparison() {
+    if (!isComparisonMode || _comparisonBusiness == null) {
+      return;
+    }
+
+    _activeBusiness = _comparisonBusiness;
+    _comparisonBusiness = null;
+    _state = FloatingSheetState.collapsed;
+    notifyListeners();
+  }
+
+  void closeSecondaryInComparison() {
+    if (!isComparisonMode) {
+      return;
+    }
+
+    _comparisonBusiness = null;
+    _state = FloatingSheetState.collapsed;
+    notifyListeners();
+  }
+
+  void minimizePrimaryInComparison() {
+    if (!isComparisonMode ||
+        _activeBusiness == null ||
+        _comparisonBusiness == null) {
+      return;
+    }
+
+    _pushToMinimized(_activeBusiness!);
+    _activeBusiness = _comparisonBusiness;
+    _comparisonBusiness = null;
+    _state = FloatingSheetState.collapsed;
+    notifyListeners();
+  }
+
+  void minimizeSecondaryInComparison() {
+    if (!isComparisonMode || _comparisonBusiness == null) {
+      return;
+    }
+
+    _pushToMinimized(_comparisonBusiness!);
+    _comparisonBusiness = null;
     _state = FloatingSheetState.collapsed;
     notifyListeners();
   }
@@ -169,6 +255,28 @@ class FloatingSheetController extends ChangeNotifier {
     _activeBusiness = updated;
     notifyListeners();
     return updated.isFavorite;
+  }
+
+  bool toggleFavoriteForBusiness(String businessId) {
+    if (_activeBusiness?.id == businessId) {
+      final updated = _activeBusiness!.copyWith(
+        isFavorite: !_activeBusiness!.isFavorite,
+      );
+      _activeBusiness = updated;
+      notifyListeners();
+      return updated.isFavorite;
+    }
+
+    if (_comparisonBusiness?.id == businessId) {
+      final updated = _comparisonBusiness!.copyWith(
+        isFavorite: !_comparisonBusiness!.isFavorite,
+      );
+      _comparisonBusiness = updated;
+      notifyListeners();
+      return updated.isFavorite;
+    }
+
+    return false;
   }
 
   void _pushToMinimized(SheetBusinessData business) {

@@ -56,7 +56,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
         topBarHeight -
         navBarHeight -
         bottomPadding +
-        70;
+        90;
   }
 
   double get _collapsedHeight {
@@ -397,6 +397,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
                           point: LatLng(business.latitude, business.longitude),
                           child: GestureDetector(
                             onTap: () {
+                              if (_floatingSheetController.isComparisonMode) {
+                                return;
+                              }
+
                               final favoriteAsync = ref.read(
                                 isBusinessFavoriteStreamProvider(business.id),
                               );
@@ -443,6 +447,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
                           point: LatLng(business.latitude, business.longitude),
                           child: GestureDetector(
                             onTap: () {
+                              if (_floatingSheetController.isComparisonMode) {
+                                return;
+                              }
+
                               final favoriteAsync = ref.read(
                                 isBusinessFavoriteStreamProvider(business.id),
                               );
@@ -702,17 +710,16 @@ class _MapScreenState extends ConsumerState<MapScreen>
     );
   }
 
-  Future<bool> _onFavorite() async {
-    final activeBusiness = _floatingSheetController.activeBusiness;
-    if (activeBusiness == null) {
+  Future<bool> _onFavorite(SheetBusinessData business) async {
+    if (business.id.isEmpty) {
       return false;
     }
 
-    final previousIsFavorite = !activeBusiness.isFavorite;
+    final previousIsFavorite = !business.isFavorite;
 
     final result = await ref
         .read(businessFavoritesUsecaseProvider)
-        .toggleFavorite(activeBusiness.id, previousIsFavorite);
+        .toggleFavorite(business.id, previousIsFavorite);
 
     return result.fold(
       (failure) {
@@ -731,15 +738,14 @@ class _MapScreenState extends ConsumerState<MapScreen>
         return false;
       },
       (_) {
-        ref.invalidate(isBusinessFavoriteStreamProvider(activeBusiness.id));
+        ref.invalidate(isBusinessFavoriteStreamProvider(business.id));
         return true;
       },
     );
   }
 
-  Future<void> _onContact() async {
-    final activeBusiness = _floatingSheetController.activeBusiness;
-    if (activeBusiness?.phoneNumber == null) {
+  Future<void> _onContact(SheetBusinessData business) async {
+    if (business.phoneNumber == null) {
       if (!context.mounted) return;
       showDialog<void>(
         context: context,
@@ -761,19 +767,23 @@ class _MapScreenState extends ConsumerState<MapScreen>
       return;
     }
 
-    final uri = Uri.parse('https://wa.me/${activeBusiness!.phoneNumber}');
+    final uri = Uri.parse('https://wa.me/${business.phoneNumber}');
     await launchUrl(uri);
   }
 
-  void _onCatalog() {
+  void _onCatalog(SheetBusinessData business) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Catálogo próximamente disponible')),
+      SnackBar(
+        content: Text('Catálogo de ${business.name} próximamente disponible'),
+      ),
     );
   }
 
-  void _onReviews() {
+  void _onReviews(SheetBusinessData business) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Reseñas próximamente disponibles')),
+      SnackBar(
+        content: Text('Reseñas de ${business.name} próximamente disponibles'),
+      ),
     );
   }
 }
