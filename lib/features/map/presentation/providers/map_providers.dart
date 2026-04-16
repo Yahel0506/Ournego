@@ -12,8 +12,6 @@ import 'package:ournego/features/map/domain/repositories/map_repository.dart';
 import 'package:ournego/features/map/domain/usecases/get_businesses_usecase.dart';
 import 'package:ournego/features/map/domain/usecases/get_current_location_usecase.dart';
 import 'package:ournego/features/map/presentation/providers/notifiers/map_notifier.dart';
-import 'package:ournego/features/map/presentation/providers/notifiers/modal_state_notifier.dart';
-import 'package:ournego/features/map/presentation/providers/notifiers/selected_business_notifier.dart';
 
 import '../../domain/usecases/business_favorites_usecase.dart';
 
@@ -49,14 +47,6 @@ final businessesStreamProvider = StreamProvider<List<Business>>((ref) {
   final repository = ref.read(mapRepositoryProvider);
   return GetBusinessesUsecase(repository: repository)();
 });
-
-final modalState = NotifierProvider<ModalStateNotifier, int>(
-  ModalStateNotifier.new,
-);
-
-final selectedBusiness = NotifierProvider<SelectedBusinessNotifier, Business?>(
-  SelectedBusinessNotifier.new,
-);
 
 final ownerProfileStreamProvider = StreamProvider.autoDispose
     .family<AppUser, String>((ref, ownerId) {
