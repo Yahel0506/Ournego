@@ -4,17 +4,22 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:ournego/core/failures.dart';
-import 'package:ournego/core/mapbox_config.dart';
 import 'package:ournego/core/location/app_position.dart';
+import 'package:ournego/core/mapbox_config.dart';
 import 'package:ournego/core/ournego_colors.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
+import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/features/map/presentation/mappers/business_marker_ui_mapper.dart';
 import 'package:ournego/features/map/presentation/models/business_marker_ui_model.dart';
 import 'package:ournego/features/map/presentation/providers/map_providers.dart';
-import 'package:ournego/features/map/presentation/widgets/business_information_widget.dart';
+import 'package:ournego/features/map/presentation/widgets/floating_sheet/floating_sheet_controller.dart';
+import 'package:ournego/features/map/presentation/widgets/floating_sheet/models/sheet_business_data.dart';
+import 'package:ournego/features/map/presentation/widgets/floating_sheet/ournego_floating_sheet.dart';
 import 'package:ournego/features/map/presentation/widgets/top_navigation_bar_widget.dart';
+import 'package:ournego/features/navigation/presentation/widgets/navigation_bar_widget.dart';
 import 'package:ournego/shared/widgets/information_card_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -30,14 +35,48 @@ class _MapScreenState extends ConsumerState<MapScreen>
     with TickerProviderStateMixin {
   late final _animatedMapController = AnimatedMapController(vsync: this);
   late ProviderSubscription<AsyncValue<AppPosition>> _providerSubscription;
+  late final FloatingSheetController _floatingSheetController;
 
   final _businessMarkerUiMapper = BusinessMarkerUiMapper();
-
-  final _modalController = DraggableScrollableController();
 
   LatLng? _initialCenter;
   double? _initialZoom;
   bool _isLocationModalOpen = false;
+
+  double get _expandedHeight {
+    final mq = MediaQuery.of(context);
+    final screenHeight = mq.size.height;
+    final topPadding = mq.padding.top;
+    final bottomPadding = mq.padding.bottom;
+    final topBarHeight = _readWidgetHeight(topNavigationBarKey, fallback: 56);
+    final navBarHeight = _readWidgetHeight(appNavigationBarKey, fallback: 72);
+
+    return screenHeight -
+        topPadding -
+        topBarHeight -
+        navBarHeight -
+        bottomPadding +
+        90;
+  }
+
+  double get _collapsedHeight {
+    final screenHeight = MediaQuery.of(context).size.height;
+    return (screenHeight * 0.24);
+  }
+
+  double _readWidgetHeight(GlobalKey key, {required double fallback}) {
+    final targetContext = key.currentContext;
+    if (targetContext == null) {
+      return fallback;
+    }
+
+    final renderObject = targetContext.findRenderObject();
+    if (renderObject is RenderBox && renderObject.hasSize) {
+      return renderObject.size.height;
+    }
+
+    return fallback;
+  }
 
   Future<void> _restoreCamera() async {
     final prefs = await SharedPreferences.getInstance();
@@ -123,6 +162,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
         : 'Reintentar';
 
     await showModalBottomSheet<void>(
+      // ⚠️ OUT OF SCOPE — OurnegoFloatingSheet migration
+      // Este showModalBottomSheet maneja errores de permisos de ubicación.
+      // NO modificar, mover ni eliminar como parte de esta tarea.
+      // Relacionado con: _showLocationErrorSheet() / permisos GPS
       context: context,
       isDismissible: true,
       builder: (modalContext) {
@@ -185,6 +228,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
   @override
   void initState() {
     super.initState();
+    _floatingSheetController = FloatingSheetController();
 
     _providerSubscription = ref.listenManual<AsyncValue<AppPosition>>(
       mapProvider,
@@ -212,8 +256,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
   @override
   void dispose() {
     _animatedMapController.dispose();
-    _modalController.dispose();
     _providerSubscription.close();
+    _floatingSheetController.dispose();
     super.dispose();
   }
 
@@ -223,8 +267,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final mapState = ref.watch(mapProvider);
     final location = mapState.asData?.value;
     final businessState = ref.watch(businessesStreamProvider);
-
-    final bool isWide = MediaQuery.of(context).size.width > 600;
+    final topBarHeight = _readWidgetHeight(topNavigationBarKey, fallback: 68);
+    final isWide = MediaQuery.of(context).size.width > 600;
 
     final bool isDarkModeOn =
         MediaQuery.of(context).platformBrightness == Brightness.dark;
@@ -287,16 +331,13 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 )
               else if (mapTilesEnabled)
                 TileLayer(
-                  urlTemplate:
-                      'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                   userAgentPackageName: 'com.ournego.app',
                   tileProvider: kIsWeb
                       ? NetworkTileProvider(silenceExceptions: true)
                       : NetworkTileProvider(
                           silenceExceptions: true,
-                          headers: {
-                            'User-Agent': 'com.ournego.app',
-                          },
+                          headers: {'User-Agent': 'com.ournego.app'},
                           cachingProvider:
                               BuiltInMapCachingProvider.getOrCreateInstance(
                                 maxCacheSize: 1_000_000_000,
@@ -356,9 +397,21 @@ class _MapScreenState extends ConsumerState<MapScreen>
                           point: LatLng(business.latitude, business.longitude),
                           child: GestureDetector(
                             onTap: () {
-                              ref
-                                  .read(selectedBusiness.notifier)
-                                  .selectedBusiness(business);
+                              if (_floatingSheetController.isComparisonMode) {
+                                return;
+                              }
+
+                              final favoriteAsync = ref.read(
+                                isBusinessFavoriteStreamProvider(business.id),
+                              );
+                              final isFavorite = favoriteAsync.value ?? false;
+
+                              _floatingSheetController.openBusiness(
+                                SheetBusinessData.fromBusiness(
+                                  business,
+                                  isFavorite: isFavorite,
+                                ),
+                              );
 
                               _animatedMapController.animateTo(
                                 dest: LatLng(
@@ -367,16 +420,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
                                 ),
                                 zoom: 18,
                               );
-
-                              WidgetsBinding.instance.addPostFrameCallback((_) {
-                                if (_modalController.isAttached) {
-                                  _modalController.animateTo(
-                                    0.25,
-                                    duration: Durations.medium1,
-                                    curve: Curves.linearToEaseOut,
-                                  );
-                                }
-                              });
                             },
                             child: Container(
                               key: ValueKey('businessMarker-${business.id}'),
@@ -404,9 +447,21 @@ class _MapScreenState extends ConsumerState<MapScreen>
                           point: LatLng(business.latitude, business.longitude),
                           child: GestureDetector(
                             onTap: () {
-                              ref
-                                  .read(selectedBusiness.notifier)
-                                  .selectedBusiness(business);
+                              if (_floatingSheetController.isComparisonMode) {
+                                return;
+                              }
+
+                              final favoriteAsync = ref.read(
+                                isBusinessFavoriteStreamProvider(business.id),
+                              );
+                              final isFavorite = favoriteAsync.value ?? false;
+
+                              _floatingSheetController.openBusiness(
+                                SheetBusinessData.fromBusiness(
+                                  business,
+                                  isFavorite: isFavorite,
+                                ),
+                              );
 
                               _animatedMapController.animateTo(
                                 dest: LatLng(
@@ -415,16 +470,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
                                 ),
                                 zoom: 18,
                               );
-
-                              WidgetsBinding.instance.addPostFrameCallback((_) {
-                                if (_modalController.isAttached) {
-                                  _modalController.animateTo(
-                                    0.25,
-                                    duration: Durations.medium1,
-                                    curve: Curves.linearToEaseOut,
-                                  );
-                                }
-                              });
                             },
                             child: Container(
                               key: ValueKey('businessMarker-${business.id}'),
@@ -457,7 +502,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
               Align(
                 alignment: Alignment.bottomLeft,
                 child: Padding(
-                  padding: const EdgeInsets.only(bottom: 40, left: 10),
+                  padding: const EdgeInsets.only(bottom: 90, left: 10),
                   child: Row(
                     children: [
                       IconButton(
@@ -567,9 +612,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   Spacer(),
                   Column(
                     children: [
-                      FloatingActionButton(
-                        heroTag: 'btnZoomIn',
-                        onPressed: () {
+                      _MapControlButton(
+                        icon: Icons.add,
+                        onPressed: () async {
                           final double currentZoom =
                               _animatedMapController.mapController.camera.zoom;
 
@@ -578,18 +623,11 @@ class _MapScreenState extends ConsumerState<MapScreen>
                             duration: Durations.short4,
                           );
                         },
-                        backgroundColor: Theme.of(
-                          context,
-                        ).colorScheme.secondaryContainer,
-                        foregroundColor: Theme.of(
-                          context,
-                        ).colorScheme.onSurface,
-                        child: Icon(Icons.zoom_in),
                       ),
                       SizedBox(height: 12),
-                      FloatingActionButton(
-                        heroTag: 'btnZoomOut',
-                        onPressed: () {
+                      _MapControlButton(
+                        icon: Icons.remove,
+                        onPressed: () async {
                           final double currentZoom =
                               _animatedMapController.mapController.camera.zoom;
 
@@ -598,17 +636,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
                             duration: Durations.short4,
                           );
                         },
-                        backgroundColor: Theme.of(
-                          context,
-                        ).colorScheme.secondaryContainer,
-                        foregroundColor: Theme.of(
-                          context,
-                        ).colorScheme.onSurface,
-                        child: Icon(Icons.zoom_out),
                       ),
                       SizedBox(height: 12),
-                      FloatingActionButton(
-                        heroTag: 'btnLocation',
+                      _MapControlButton(
+                        icon: Icons.my_location_rounded,
                         onPressed: () async {
                           final currentLocation = ref
                               .read(mapProvider)
@@ -652,68 +683,161 @@ class _MapScreenState extends ConsumerState<MapScreen>
                             await _showLocationErrorSheet(locationError);
                           }
                         },
-                        backgroundColor: Theme.of(
-                          context,
-                        ).colorScheme.secondaryContainer,
-                        foregroundColor: Theme.of(
-                          context,
-                        ).colorScheme.onSurface,
-                        child: Icon(Icons.location_searching),
                       ),
                     ],
                   ),
                   SizedBox(width: 16),
                 ],
               ),
-              SizedBox(height: 60),
+              SizedBox(height: 100),
             ],
           ),
-          Align(
-            alignment: Alignment.center,
-            child: SizedBox(
-              width: isWide ? 600 : double.maxFinite,
-              child: NotificationListener<DraggableScrollableNotification>(
-                onNotification: (notification) {
-                  final double currentSize = notification.extent;
-
-                  int newState;
-
-                  if (currentSize == 0.95) {
-                    newState = 2; // Está cerca de 0.9
-                  } else if (currentSize > 0.25) {
-                    newState = 1; // Está cerca de 0.5
-                  } else {
-                    newState = 0; // Está cerca de 0.2
-                  }
-
-                  final int currentStateInProvider = ref.read(modalState);
-
-                  if (newState != currentStateInProvider) {
-                    ref.read(modalState.notifier).changeStateTo(newState);
-                  }
-
-                  return true;
-                },
-                child: DraggableScrollableSheet(
-                  controller: _modalController,
-                  shouldCloseOnMinExtent: false,
-                  snap: true,
-                  snapSizes: [0.25, 0.6, 0.95],
-                  initialChildSize: 0.0,
-                  minChildSize: 0.0,
-                  maxChildSize: 0.95,
-                  builder: (context, scrollController) {
-                    {
-                      return BusinessInformationWidget(
-                        scrollController: scrollController,
-                      );
-                    }
-                  },
-                ),
-              ),
-            ),
+          OurnegoFloatingSheet(
+            controller: _floatingSheetController,
+            collapsedHeight: _collapsedHeight,
+            expandedHeight: _expandedHeight,
+            maxWidth: isWide ? 600 : double.infinity,
+            bottomOffset: 96.0,
+            sideStackTop:
+                MediaQuery.of(context).padding.top + topBarHeight + 10,
+            onFavorite: _onFavorite,
+            onContact: _onContact,
+            onCatalog: _onCatalog,
+            onReviews: _onReviews,
           ),
         ],
+      ),
+    );
+  }
+
+  Future<bool> _onFavorite(SheetBusinessData business) async {
+    if (business.id.isEmpty) {
+      return false;
+    }
+
+    final previousIsFavorite = !business.isFavorite;
+
+    final result = await ref
+        .read(businessFavoritesUsecaseProvider)
+        .toggleFavorite(business.id, previousIsFavorite);
+
+    return result.fold(
+      (failure) {
+        if (failure is AuthenticationRequiredFailure) {
+          if (context.mounted) {
+            context.push(AuthRoutes.authSelection);
+          }
+          return false;
+        }
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No se pudo actualizar favorito')),
+          );
+        }
+        return false;
+      },
+      (_) {
+        ref.invalidate(isBusinessFavoriteStreamProvider(business.id));
+        return true;
+      },
+    );
+  }
+
+  Future<void> _onContact(SheetBusinessData business) async {
+    if (business.phoneNumber == null) {
+      if (!context.mounted) return;
+      showDialog<void>(
+        context: context,
+        builder: (dialogContext) {
+          return AlertDialog(
+            backgroundColor: Theme.of(context).colorScheme.surface,
+            content: const Text(
+              'Lamentablemente, este negocio no cuenta con número de teléfono :(',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text('Entiendo'),
+              ),
+            ],
+          );
+        },
+      );
+      return;
+    }
+
+    final uri = Uri.parse('https://wa.me/${business.phoneNumber}');
+    await launchUrl(uri);
+  }
+
+  void _onCatalog(SheetBusinessData business) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Catálogo de ${business.name} próximamente disponible'),
+      ),
+    );
+  }
+
+  void _onReviews(SheetBusinessData business) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Reseñas de ${business.name} próximamente disponibles'),
+      ),
+    );
+  }
+}
+
+class _MapControlButton extends StatefulWidget {
+  final IconData icon;
+  final Future<void> Function() onPressed;
+
+  const _MapControlButton({required this.icon, required this.onPressed});
+
+  @override
+  State<_MapControlButton> createState() => _MapControlButtonState();
+}
+
+class _MapControlButtonState extends State<_MapControlButton> {
+  bool _isPressed = false;
+
+  Future<void> _handleTap() async {
+    if (!mounted) return;
+
+    setState(() {
+      _isPressed = true;
+    });
+
+    await widget.onPressed();
+
+    if (!mounted) return;
+
+    setState(() {
+      _isPressed = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return AnimatedScale(
+      duration: const Duration(milliseconds: 140),
+      scale: _isPressed ? 0.94 : 1,
+      child: SizedBox(
+        width: 52,
+        height: 52,
+        child: Material(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(16),
+          elevation: 5,
+          shadowColor: Colors.black.withValues(alpha: 0.2),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: _handleTap,
+            child: Icon(widget.icon, size: 22, color: colorScheme.onSurface),
+          ),
+        ),
       ),
     );
   }
