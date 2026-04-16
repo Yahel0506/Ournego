@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import 'package:ournego/features/map/domain/entities/business.dart';
+import 'package:ournego/features/map/presentation/mappers/business_marker_ui_mapper.dart';
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/models/sheet_business_data.dart';
 
 class MinimizedStackIcon extends StatelessWidget {
@@ -16,6 +19,29 @@ class MinimizedStackIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasImage = business.images.isNotEmpty;
+    const markerMapper = BusinessMarkerUiMapper();
+    final markerUi = markerMapper(
+      Business(
+        id: business.id,
+        name: business.name,
+        description: business.description,
+        ownerId: business.ownerId,
+        address: business.address,
+        phoneNumber: business.phoneNumber,
+        latitude: 0,
+        longitude: 0,
+        type: business.type,
+        images: business.images,
+      ),
+    );
+
+    Widget fallbackIcon() {
+      return Icon(
+        markerUi.icon,
+        color: Theme.of(context).colorScheme.inverseSurface,
+        size: 22,
+      );
+    }
 
     return GestureDetector(
       onTap: onTap,
@@ -37,17 +63,9 @@ class MinimizedStackIcon extends StatelessWidget {
               ? Image.network(
                   business.images.first,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Icon(
-                    Icons.store_rounded,
-                    color: Theme.of(context).colorScheme.inverseSurface,
-                    size: 22,
-                  ),
+                  errorBuilder: (context, error, stackTrace) => fallbackIcon(),
                 )
-              : Icon(
-                  Icons.store_rounded,
-                  color: Theme.of(context).colorScheme.inverseSurface,
-                  size: 22,
-                ),
+              : fallbackIcon(),
         ),
       ),
     );
