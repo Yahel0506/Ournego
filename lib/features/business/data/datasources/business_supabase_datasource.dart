@@ -1,9 +1,9 @@
 import 'dart:async';
-import 'dart:io';
+import 'dart:io' show SocketException;
 
 import 'package:ournego/features/business/data/errors/business_registration_exceptions.dart';
 import 'package:ournego/features/business/domain/entities/app_schedule.dart';
-import 'package:path/path.dart' as p;
+import 'package:ournego/features/business/domain/entities/business_image_data.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class BusinessSupabaseDatasource {
@@ -59,20 +59,21 @@ class BusinessSupabaseDatasource {
     }
   }
 
-  Future<void> uploadBusinessImage(File image, String business) async {
+  Future<void> uploadBusinessImage(
+    BusinessImageData image,
+    String business,
+  ) async {
     try {
-      final fileName = p.basename(image.path);
+      final fileName = image.fileName.trim().isNotEmpty
+          ? image.fileName
+          : 'business-image.jpg';
       final storagePath = '$business/$fileName';
-
-      // NOTE: On Flutter web, dart:io File is not available for multipart upload.
-      // Supabase storage supports uploading raw bytes, which works across platforms.
-      final bytes = await image.readAsBytes();
 
       await _supabase.storage
           .from('businesses_pictures')
           .uploadBinary(
             storagePath,
-            bytes,
+            image.bytes,
             fileOptions: const FileOptions(cacheControl: '3600', upsert: true),
           );
       final imageUrl = _supabase.storage

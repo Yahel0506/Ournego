@@ -1,6 +1,5 @@
-import 'dart:io';
-
 import 'package:dartz/dartz.dart';
+import 'package:ournego/features/business/domain/entities/business_image_data.dart';
 
 import '../../../../core/failures.dart';
 import '../entities/app_schedule.dart';
@@ -18,7 +17,7 @@ class RegisterBusinessUsecase {
     required String address,
     required double latitude,
     required double longitude,
-    required File image,
+    required BusinessImageData image,
     required String phoneNumber,
     required List<AppSchedule> hours,
   }) async {

@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -14,6 +14,7 @@ import 'package:ournego/core/location/geolocator_location_datasource.dart';
 import 'package:ournego/core/location/location_datasource.dart';
 import 'package:ournego/core/mapbox_config.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
+import 'package:ournego/features/business/domain/entities/business_image_data.dart';
 import 'package:ournego/features/business/domain/usecases/get_addresses_suggestions_usecase.dart';
 import 'package:ournego/features/business/presentation/pages/components/business_hours_picker.dart';
 import 'package:ournego/features/feedback/presentation/widgets/feedback_dialog_widget.dart';
@@ -50,7 +51,9 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
   static const _draftAddressKey = 'business_form_draft_address';
   static const _draftPhoneKey = 'business_form_draft_phone';
   static const _draftCategoryKey = 'business_form_draft_category';
-  static const _draftImagePathKey = 'business_form_draft_image_path';
+  static const _draftImageBytesKey = 'business_form_draft_image_bytes';
+  static const _draftImageNameKey = 'business_form_draft_image_name';
+  static const _draftImageMimeTypeKey = 'business_form_draft_image_mime_type';
   static const _draftLatitudeKey = 'business_form_draft_latitude';
   static const _draftLongitudeKey = 'business_form_draft_longitude';
 
@@ -62,7 +65,9 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
   late final _animatedMapController = AnimatedMapController(vsync: this);
   late ProviderSubscription<AsyncValue<AppPosition>> _providerSubscription;
   final _picker = ImagePicker();
-  File _pickedImage = File('');
+  Uint8List? _pickedImageBytes;
+  String _pickedImageName = '';
+  String? _pickedImageMimeType;
   // TODO: re-enable business hours picker and collect schedules via callbacks
   // or a Riverpod notifier instead of querying child widget state.
   int? _selectedCategory = 0; // 0 - 12
@@ -83,7 +88,18 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
     await prefs.setString(_draftAddressKey, _addressController.text);
     await prefs.setString(_draftPhoneKey, _phoneController.text);
     await prefs.setInt(_draftCategoryKey, _selectedCategory ?? 0);
-    await prefs.setString(_draftImagePathKey, _pickedImage.path);
+    if (_pickedImageBytes != null && _pickedImageBytes!.isNotEmpty) {
+      await prefs.setString(
+        _draftImageBytesKey,
+        base64Encode(_pickedImageBytes!),
+      );
+      await prefs.setString(_draftImageNameKey, _pickedImageName);
+      await prefs.setString(_draftImageMimeTypeKey, _pickedImageMimeType ?? '');
+    } else {
+      await prefs.remove(_draftImageBytesKey);
+      await prefs.remove(_draftImageNameKey);
+      await prefs.remove(_draftImageMimeTypeKey);
+    }
 
     final camera = _animatedMapController.mapController.camera;
     if (camera.zoom > 0) {
@@ -103,7 +119,9 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
     await prefs.remove(_draftAddressKey);
     await prefs.remove(_draftPhoneKey);
     await prefs.remove(_draftCategoryKey);
-    await prefs.remove(_draftImagePathKey);
+    await prefs.remove(_draftImageBytesKey);
+    await prefs.remove(_draftImageNameKey);
+    await prefs.remove(_draftImageMimeTypeKey);
     await prefs.remove(_draftLatitudeKey);
     await prefs.remove(_draftLongitudeKey);
   }
@@ -117,7 +135,9 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
     final draftAddress = prefs.getString(_draftAddressKey) ?? '';
     final draftPhone = prefs.getString(_draftPhoneKey) ?? '';
     final draftCategory = prefs.getInt(_draftCategoryKey);
-    final draftImagePath = prefs.getString(_draftImagePathKey) ?? '';
+    final draftImageBase64 = prefs.getString(_draftImageBytesKey) ?? '';
+    final draftImageName = prefs.getString(_draftImageNameKey) ?? '';
+    final draftImageMimeType = prefs.getString(_draftImageMimeTypeKey) ?? '';
     final draftLatitude = prefs.getDouble(_draftLatitudeKey);
     final draftLongitude = prefs.getDouble(_draftLongitudeKey);
 
@@ -135,10 +155,17 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
       _selectedCategory = draftCategory;
     }
 
-    if (draftImagePath.isNotEmpty) {
-      final imageFile = File(draftImagePath);
-      if (await imageFile.exists()) {
-        _pickedImage = imageFile;
+    if (draftImageBase64.isNotEmpty) {
+      try {
+        _pickedImageBytes = base64Decode(draftImageBase64);
+        _pickedImageName = draftImageName;
+        _pickedImageMimeType = draftImageMimeType.isEmpty
+            ? null
+            : draftImageMimeType;
+      } catch (_) {
+        _pickedImageBytes = null;
+        _pickedImageName = '';
+        _pickedImageMimeType = null;
       }
     }
 
@@ -292,25 +319,8 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
     );
   }
 
-  void _showMissingMapboxConfigSnackBar() {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Mapa deshabilitado: falta configurar Mapbox en variables de entorno.',
-        ),
-      ),
-    );
-  }
-
-  Future<File> pickBusinessImage() async {
-    return _picker.pickImage(source: ImageSource.gallery).then((pickedFile) {
-      if (pickedFile != null) {
-        return File(pickedFile.path);
-      } else {
-        return File('');
-      }
-    });
+  Future<XFile?> pickBusinessImage() async {
+    return _picker.pickImage(source: ImageSource.gallery);
   }
 
   @override
@@ -444,12 +454,19 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
                     child: FilledButton(
                       onPressed: () async {
                         final pickedImage = await pickBusinessImage();
-                        if (pickedImage.path.isEmpty) return;
+                        if (pickedImage == null) return;
+
+                        final bytes = await pickedImage.readAsBytes();
+                        if (bytes.isEmpty) return;
+
                         setState(() {
-                          _pickedImage = pickedImage;
+                          _pickedImageBytes = bytes;
+                          _pickedImageName = pickedImage.name;
+                          _pickedImageMimeType = pickedImage.mimeType;
                         });
-                        _persistDraft();
-                        debugPrint(_pickedImage.path);
+
+                        await _persistDraft();
+                        debugPrint(_pickedImageName);
                       },
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -460,7 +477,8 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
                           ),
                           SizedBox(width: 16),
                           Icon(
-                            _pickedImage.path.isEmpty
+                            _pickedImageBytes == null ||
+                                    _pickedImageBytes!.isEmpty
                                 ? Icons.cloud_upload_rounded
                                 : Icons.check_rounded,
                             size: 24,
@@ -470,7 +488,7 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
                     ),
                   ),
                   SizedBox(height: 16),
-                  _pickedImage.path.isEmpty
+                  (_pickedImageBytes == null || _pickedImageBytes!.isEmpty)
                       ? Text(
                           'Para verificar que tu negocio realmente existe, necesitamos una foto del exterior de tu local.',
                           style: OurnegoTextStyles.body.copyWith(
@@ -483,9 +501,11 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
                           height: 300,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(30),
-                            image: _pickedImage.path.isNotEmpty
+                            image:
+                                _pickedImageBytes != null &&
+                                    _pickedImageBytes!.isNotEmpty
                                 ? DecorationImage(
-                                    image: FileImage(_pickedImage),
+                                    image: MemoryImage(_pickedImageBytes!),
                                     fit: BoxFit.cover,
                                   )
                                 : null,
@@ -634,7 +654,9 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
                     height: 56,
                     child: FilledButton(
                       onPressed: () async {
-                        final hasImage = _pickedImage.path.isNotEmpty;
+                        final hasImage =
+                            _pickedImageBytes != null &&
+                            _pickedImageBytes!.isNotEmpty;
 
                         if (_isSending.value) return;
 
@@ -662,7 +684,13 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
                                 .camera
                                 .center
                                 .longitude,
-                            image: _pickedImage,
+                            image: BusinessImageData(
+                              bytes: _pickedImageBytes!,
+                              fileName: _pickedImageName.isNotEmpty
+                                  ? _pickedImageName
+                                  : 'business-image.jpg',
+                              mimeType: _pickedImageMimeType,
+                            ),
                             phoneNumber: _phoneController.text,
                             hours: hours,
                           );
