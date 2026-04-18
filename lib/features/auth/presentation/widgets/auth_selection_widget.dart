@@ -2,8 +2,8 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
+import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
 import 'package:ournego/features/onboarding/presentation/providers/onboarding_providers.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -83,7 +83,7 @@ class TermsRichText extends StatelessWidget {
       child: RichText(
         textAlign: TextAlign.center,
         text: TextSpan(
-          text: 'Al continuar, aceptas nuestros',
+          text: 'Al continuar, aceptas nuestros ',
           style: OurnegoTextStyles.body.merge(
             TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
           ),
