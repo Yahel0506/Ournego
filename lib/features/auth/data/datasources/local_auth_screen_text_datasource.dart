@@ -34,7 +34,7 @@ class LocalAuthScreenTextDatasource {
       secondaryInstruction: 'Confirma tu contraseña:',
       secondaryHint: 'Confirmar contraseña',
       passwordRules: [
-        '1 letra',
+        '1 letra mayúscula',
         '1 número o carácter especial',
         '8 caracteres',
       ],
