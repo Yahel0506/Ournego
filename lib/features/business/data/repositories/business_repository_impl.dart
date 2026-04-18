@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
 import 'package:ournego/core/failures.dart';
@@ -8,6 +6,7 @@ import 'package:ournego/features/business/data/datasources/business_geocoding_da
 import 'package:ournego/features/business/data/datasources/business_supabase_datasource.dart';
 import 'package:ournego/features/business/data/errors/business_registration_exceptions.dart';
 import 'package:ournego/features/business/domain/entities/app_schedule.dart';
+import 'package:ournego/features/business/domain/entities/business_image_data.dart';
 import 'package:ournego/features/business/domain/repositories/business_repository.dart';
 
 class BusinessRepositoryImpl implements BusinessRepository {
@@ -59,7 +58,7 @@ class BusinessRepositoryImpl implements BusinessRepository {
     required String address,
     required double latitude,
     required double longitude,
-    required File image,
+    required BusinessImageData image,
     required String phoneNumber,
     required List<AppSchedule> hours,
   }) async {

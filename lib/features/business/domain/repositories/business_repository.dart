@@ -1,7 +1,6 @@
-import 'dart:io';
-
 import 'package:dartz/dartz.dart';
 import 'package:ournego/core/location/app_position.dart';
+import 'package:ournego/features/business/domain/entities/business_image_data.dart';
 import 'package:ournego/features/business/domain/entities/app_schedule.dart';
 
 import '../../../../core/failures.dart';
@@ -18,7 +17,7 @@ abstract class BusinessRepository {
     required String address,
     required double latitude,
     required double longitude,
-    required File image,
+    required BusinessImageData image,
     required String phoneNumber,
     required List<AppSchedule> hours,
   });
