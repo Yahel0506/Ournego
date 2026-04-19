@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -16,6 +18,7 @@ import 'package:ournego/features/map/presentation/mappers/business_marker_ui_map
 import 'package:ournego/features/map/presentation/models/business_marker_ui_model.dart';
 import 'package:ournego/features/map/presentation/providers/map_providers.dart';
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/floating_sheet_controller.dart';
+import 'package:ournego/features/map/presentation/widgets/floating_sheet/floating_sheet_state.dart';
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/models/sheet_business_data.dart';
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/ournego_floating_sheet.dart';
 import 'package:ournego/features/map/presentation/widgets/top_navigation_bar_widget.dart';
@@ -33,6 +36,16 @@ class MapScreen extends ConsumerStatefulWidget {
 
 class _MapScreenState extends ConsumerState<MapScreen>
     with TickerProviderStateMixin {
+  static const _lastLatitudeKey = 'map_last_latitude';
+  static const _lastLongitudeKey = 'map_last_longitude';
+  static const _lastZoomKey = 'map_last_zoom';
+  static const _markerVisibleKey = 'map_marker_visible';
+  static const _markerHiddenKey = 'map_marker_hidden';
+  static const _sheetStateKey = 'map_sheet_state';
+  static const _sheetActiveBusinessKey = 'map_sheet_active_business';
+  static const _sheetComparisonBusinessKey = 'map_sheet_comparison_business';
+  static const _sheetMinimizedListKey = 'map_sheet_minimized_list';
+
   late final _animatedMapController = AnimatedMapController(vsync: this);
   late ProviderSubscription<AsyncValue<AppPosition>> _providerSubscription;
   late final FloatingSheetController _floatingSheetController;
@@ -80,9 +93,12 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
   Future<void> _restoreCamera() async {
     final prefs = await SharedPreferences.getInstance();
-    final lastLatitude = prefs.getDouble('lastLatitude');
-    final lastLongitude = prefs.getDouble('lastLongitude');
-    final lastZoom = prefs.getDouble('lastZoom');
+    final lastLatitude = prefs.getDouble(_lastLatitudeKey);
+    final lastLongitude = prefs.getDouble(_lastLongitudeKey);
+    final lastZoom = prefs.getDouble(_lastZoomKey);
+
+    _isMarkerVisible = prefs.getBool(_markerVisibleKey) ?? true;
+    _isMarkerHidden = prefs.getBool(_markerHiddenKey) ?? false;
 
     if (lastLatitude != null && lastLongitude != null) {
       _initialCenter = LatLng(lastLatitude, lastLongitude);
@@ -99,6 +115,106 @@ class _MapScreenState extends ConsumerState<MapScreen>
     });
 
     setState(() {});
+  }
+
+  Future<void> _restoreSheetStateFromPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    final rawState = prefs.getString(_sheetStateKey);
+    final rawActiveBusiness = prefs.getString(_sheetActiveBusinessKey);
+    final rawComparisonBusiness = prefs.getString(_sheetComparisonBusinessKey);
+    final rawMinimizedList = prefs.getString(_sheetMinimizedListKey);
+
+    if (rawState == null &&
+        rawActiveBusiness == null &&
+        rawComparisonBusiness == null &&
+        rawMinimizedList == null) {
+      return;
+    }
+
+    SheetBusinessData? parseBusiness(String? raw) {
+      if (raw == null || raw.isEmpty) return null;
+
+      try {
+        final json = jsonDecode(raw) as Map<String, dynamic>;
+        return SheetBusinessData.fromJson(json);
+      } catch (_) {
+        return null;
+      }
+    }
+
+    List<SheetBusinessData> parseMinimized(String? raw) {
+      if (raw == null || raw.isEmpty) return const [];
+
+      try {
+        final decoded = jsonDecode(raw) as List<dynamic>;
+        return decoded
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .map(SheetBusinessData.fromJson)
+            .toList(growable: false);
+      } catch (_) {
+        return const [];
+      }
+    }
+
+    final restoredState = FloatingSheetStateCodec.fromStorageValue(
+      rawState ?? 'collapsed',
+    );
+    final activeBusiness = parseBusiness(rawActiveBusiness);
+    final comparisonBusiness = parseBusiness(rawComparisonBusiness);
+    final minimizedList = parseMinimized(rawMinimizedList);
+
+    _floatingSheetController.restoreState(
+      state: restoredState,
+      activeBusiness: activeBusiness,
+      comparisonBusiness: comparisonBusiness,
+      minimizedBusinesses: minimizedList,
+    );
+  }
+
+  Future<void> _persistMapAndSheetState() async {
+    final prefs = await SharedPreferences.getInstance();
+    final camera = _animatedMapController.mapController.camera;
+
+    await prefs.setDouble(_lastLatitudeKey, camera.center.latitude);
+    await prefs.setDouble(_lastLongitudeKey, camera.center.longitude);
+    await prefs.setDouble(_lastZoomKey, camera.zoom);
+    await prefs.setBool(_markerVisibleKey, _isMarkerVisible);
+    await prefs.setBool(_markerHiddenKey, _isMarkerHidden);
+
+    final activeBusiness = _floatingSheetController.activeBusiness;
+    final comparisonBusiness = _floatingSheetController.comparisonBusiness;
+    final minimizedBusinesses = _floatingSheetController.minimizedBusinesses;
+
+    await prefs.setString(
+      _sheetStateKey,
+      _floatingSheetController.state.storageValue,
+    );
+
+    if (activeBusiness != null) {
+      await prefs.setString(
+        _sheetActiveBusinessKey,
+        jsonEncode(activeBusiness.toJson()),
+      );
+    } else {
+      await prefs.remove(_sheetActiveBusinessKey);
+    }
+
+    if (comparisonBusiness != null) {
+      await prefs.setString(
+        _sheetComparisonBusinessKey,
+        jsonEncode(comparisonBusiness.toJson()),
+      );
+    } else {
+      await prefs.remove(_sheetComparisonBusinessKey);
+    }
+
+    if (minimizedBusinesses.isNotEmpty) {
+      final encoded = minimizedBusinesses.map((b) => b.toJson()).toList();
+      await prefs.setString(_sheetMinimizedListKey, jsonEncode(encoded));
+    } else {
+      await prefs.remove(_sheetMinimizedListKey);
+    }
   }
 
   bool _isMarkerVisible = true;
@@ -229,6 +345,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
   void initState() {
     super.initState();
     _floatingSheetController = FloatingSheetController();
+    _floatingSheetController.addListener(_persistMapAndSheetState);
 
     _providerSubscription = ref.listenManual<AsyncValue<AppPosition>>(
       mapProvider,
@@ -251,10 +368,12 @@ class _MapScreenState extends ConsumerState<MapScreen>
       },
     );
     _restoreCamera();
+    _restoreSheetStateFromPrefs();
   }
 
   @override
   void dispose() {
+    _floatingSheetController.removeListener(_persistMapAndSheetState);
     _animatedMapController.dispose();
     _providerSubscription.close();
     _floatingSheetController.dispose();
@@ -300,12 +419,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
               minZoom: 3,
               maxZoom: 21,
               onPositionChanged: (camera, hasGesture) async {
-                final prefs = await SharedPreferences.getInstance();
-                final position = camera.center;
-                prefs.setDouble('lastLatitude', position.latitude);
-                prefs.setDouble('lastLongitude', position.longitude);
-                prefs.setDouble('lastZoom', camera.zoom);
                 checkMinZoom(camera.zoom);
+                await _persistMapAndSheetState();
               },
             ),
             children: [

@@ -287,4 +287,28 @@ class FloatingSheetController extends ChangeNotifier {
       _minimizedBusinesses.removeLast();
     }
   }
+
+  void restoreState({
+    required FloatingSheetState state,
+    SheetBusinessData? activeBusiness,
+    SheetBusinessData? comparisonBusiness,
+    required List<SheetBusinessData> minimizedBusinesses,
+  }) {
+    _activeBusiness = activeBusiness;
+    _comparisonBusiness = comparisonBusiness;
+    _minimizedBusinesses
+      ..clear()
+      ..addAll(minimizedBusinesses.take(4));
+
+    _pendingClearActive = false;
+    _pendingMinimizeToStack = false;
+
+    if (_activeBusiness == null) {
+      _state = FloatingSheetState.minimized;
+    } else {
+      _state = state;
+    }
+
+    notifyListeners();
+  }
 }
