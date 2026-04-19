@@ -9,6 +9,18 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class BusinessSupabaseDatasource {
   final _supabase = Supabase.instance.client;
 
+  String _minutesToSqlTime(int minutesFromMidnight) {
+    final hours = minutesFromMidnight ~/ 60;
+    final minutes = minutesFromMidnight % 60;
+    return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:00';
+  }
+
+  int _mapAppDayToSqlDay(int appDay) {
+    // App: 0 = Monday, 6 = Sunday
+    // DB:  1 = Monday, 7 = Sunday
+    return appDay + 1;
+  }
+
   Future<bool> isSignedIn() async {
     try {
       final user = _supabase.auth.currentUser;
@@ -99,32 +111,47 @@ class BusinessSupabaseDatasource {
     }
   }
 
-  // TODO: Improve this method
   Future<void> setBusinessHours(
     String businessId,
     List<AppSchedule> hours,
   ) async {
-    await Future.wait(
-      hours.map((schedule) async {
-        // Convert minutes-from-midnight to "HH:mm" format
-        final openHour = schedule.openMinutes ~/ 60;
-        final openMinute = schedule.openMinutes % 60;
-        final closeHour = schedule.closeMinutes ~/ 60;
-        final closeMinute = schedule.closeMinutes % 60;
+    try {
+      await Future.wait(
+        hours.map((schedule) async {
+          final openTime = _minutesToSqlTime(schedule.openMinutes);
+          final closeTime = _minutesToSqlTime(schedule.closeMinutes);
+          final dayOfWeek = _mapAppDayToSqlDay(schedule.dayOfWeek);
 
-        final openTime =
-            '${openHour.toString().padLeft(2, '0')}:${openMinute.toString().padLeft(2, '0')}';
-        final closeTime =
-            '${closeHour.toString().padLeft(2, '0')}:${closeMinute.toString().padLeft(2, '0')}';
+          await _supabase.from('business_hours').insert({
+            'business_id': businessId,
+            'day_of_week': dayOfWeek,
+            'opening_time': openTime,
+            'closing_time': closeTime,
+          });
+        }),
+      );
+    } on TimeoutException {
+      throw BusinessRegistrationNetworkException();
+    } on SocketException {
+      throw BusinessRegistrationNetworkException();
+    } on PostgrestException catch (e) {
+      final code = (e.code ?? '').toLowerCase();
+      final message = e.message.toLowerCase();
 
-        await _supabase.from('business_hours').insert({
-          'business_id': businessId,
-          'day_of_week': schedule.dayOfWeek,
-          'opening_time': openTime,
-          'closing_time': closeTime,
-        });
-      }),
-    );
+      if (code == '42501' || message.contains('permission denied')) {
+        throw BusinessRegistrationUnauthorizedException();
+      }
+
+      if (code == '23514' ||
+          message.contains('violates') ||
+          message.contains('invalid')) {
+        throw BusinessRegistrationValidationException();
+      }
+
+      throw BusinessRegistrationUnknownException();
+    } catch (_) {
+      throw BusinessRegistrationUnknownException();
+    }
   }
 
   Future<bool> checkIfOwner() async {
