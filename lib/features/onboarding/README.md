@@ -18,3 +18,7 @@ Manages onboarding slides and onboarding completion flag persistence.
 ## Notes / Extension Points
 - Keep `hasSeenOnboarding` persistence in datasource/repository, not directly in UI widgets.
 - Use `SlideModel` for serialized/data-layer transformations.
+
+## UI Refactor Notes
+- Onboarding informational dialogs are migrated to `OurnegoInformationDialog`.
+- Keep onboarding visuals consistent with shared styles before introducing screen-specific UI primitives.

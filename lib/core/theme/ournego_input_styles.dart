@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ournego/core/theme/tokens/ournego_radius_tokens.dart';
 
 class OurnegoInputStyles {
   OurnegoInputStyles._();
@@ -7,7 +8,9 @@ class OurnegoInputStyles {
     return InputDecorationTheme(
       filled: true,
       fillColor: colorScheme.surface,
-      border: const OutlineInputBorder(),
+      border: const OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(OurnegoRadiusTokens.xl)),
+      ),
       enabledBorder: OutlineInputBorder(
         borderSide: BorderSide(color: colorScheme.outline),
       ),

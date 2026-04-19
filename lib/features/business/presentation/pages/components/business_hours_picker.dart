@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ournego/core/theme/tokens/ournego_radius_tokens.dart';
+import 'package:ournego/core/theme/tokens/ournego_spacing_tokens.dart';
 import 'package:ournego/features/business/domain/entities/app_schedule.dart';
 
 import '../../../../../core/ournego_text_styles.dart';
@@ -91,8 +93,8 @@ class _BusinessHoursPickerState extends ConsumerState<BusinessHoursPicker> {
                     width: double.maxFinite,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.only(
-                        bottomRight: Radius.circular(30),
-                        bottomLeft: Radius.circular(30),
+                        bottomRight: Radius.circular(OurnegoRadiusTokens.xl),
+                        bottomLeft: Radius.circular(OurnegoRadiusTokens.xl),
                       ),
                       color: Theme.of(context).colorScheme.surface,
                       border: Border.all(
@@ -106,7 +108,7 @@ class _BusinessHoursPickerState extends ConsumerState<BusinessHoursPicker> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text('Inicio:'),
-                            SizedBox(width: 8),
+                            const SizedBox(width: OurnegoSpacingTokens.xs),
                             GestureDetector(
                               onTap: () {
                                 showTimePicker(
@@ -132,14 +134,16 @@ class _BusinessHoursPickerState extends ConsumerState<BusinessHoursPicker> {
                                   ),
                                 ),
                                 child: Padding(
-                                  padding: EdgeInsets.all(8.0),
+                                  padding: const EdgeInsets.all(
+                                    OurnegoSpacingTokens.xs,
+                                  ),
                                   child: Text(_openTime.format(context)),
                                 ),
                               ),
                             ),
-                            SizedBox(width: 16),
+                            const SizedBox(width: OurnegoSpacingTokens.md),
                             Text('Cierre:'),
-                            SizedBox(width: 8),
+                            const SizedBox(width: OurnegoSpacingTokens.xs),
                             GestureDetector(
                               onTap: () {
                                 showTimePicker(
@@ -165,21 +169,23 @@ class _BusinessHoursPickerState extends ConsumerState<BusinessHoursPicker> {
                                   ),
                                 ),
                                 child: Padding(
-                                  padding: EdgeInsets.all(8.0),
+                                  padding: const EdgeInsets.all(
+                                    OurnegoSpacingTokens.xs,
+                                  ),
                                   child: Text(_closeTime.format(context)),
                                 ),
                               ),
                             ),
                           ],
                         ),
-                        SizedBox(height: 16),
+                        const SizedBox(height: OurnegoSpacingTokens.md),
                       ],
                     ),
                   ),
                   crossFadeState: _isOpen
                       ? CrossFadeState.showSecond
                       : CrossFadeState.showFirst,
-                  duration: Duration(milliseconds: 200),
+                  duration: const Duration(milliseconds: 200),
                 ),
               ],
             ),
@@ -190,12 +196,12 @@ class _BusinessHoursPickerState extends ConsumerState<BusinessHoursPicker> {
                 border: BoxBorder.all(
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
-                borderRadius: BorderRadius.circular(30),
+                borderRadius: BorderRadius.circular(OurnegoRadiusTokens.xl),
                 color: Theme.of(context).colorScheme.surface,
               ),
               child: Row(
                 children: [
-                  SizedBox(width: 16),
+                  const SizedBox(width: OurnegoSpacingTokens.md),
                   Expanded(
                     child: Text(switch (widget.day) {
                       0 => 'Lunes',
@@ -209,7 +215,9 @@ class _BusinessHoursPickerState extends ConsumerState<BusinessHoursPicker> {
                     }, style: OurnegoTextStyles.body),
                   ),
                   Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: OurnegoSpacingTokens.md,
+                    ),
                     child: Switch(
                       value: _isOpen,
                       onChanged: (value) {
@@ -225,7 +233,7 @@ class _BusinessHoursPickerState extends ConsumerState<BusinessHoursPicker> {
             ),
           ],
         ),
-        SizedBox(height: 16),
+        const SizedBox(height: OurnegoSpacingTokens.md),
       ],
     );
   }

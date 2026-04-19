@@ -21,3 +21,8 @@ Manages business registration, ownership checks, panel view, business form flow,
 ## Notes / Extension Points
 - Keep owner checks in business usecases fed by auth state, avoid duplicating auth logic.
 - Route to auth via route constants when auth is required.
+
+## UI Refactor Notes
+- Business form and information dialogs are partially migrated to shared presets.
+- Prefer `OurnegoInputField`/`OurnegoInputDecorations.filled(...)` and shared snackbar/dialog widgets in new UI changes.
+- Use spacing/radius tokens when touching reusable components like schedulers, cards, and form sections.

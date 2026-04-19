@@ -41,6 +41,7 @@ See:
 
 - `ARCHITECTURE.md` for high-level architecture and dependency rules
 - `AGENTS.md` for coding conventions and implementation patterns
+- `docs/ui-refactor/README.md` for the UI refactor manual (shared presets, tokens, and migration flow)
 
 ## Core Commands
 

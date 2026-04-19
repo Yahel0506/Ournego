@@ -7,7 +7,6 @@ import 'package:go_router/go_router.dart';
 import 'package:string_validator/string_validator.dart';
 
 import 'package:ournego/core/failures.dart';
-import 'package:ournego/core/ournego_colors.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/features/auth/data/datasources/local_auth_screen_text_datasource.dart';
@@ -19,7 +18,10 @@ import 'package:ournego/features/auth/presentation/providers/auth_providers.dart
 import 'package:ournego/features/onboarding/domain/usecases/get_has_seen_onboarding_usecase.dart';
 import 'package:ournego/features/onboarding/domain/usecases/set_has_seen_onboarding_usecase.dart';
 import 'package:ournego/features/onboarding/presentation/providers/onboarding_providers.dart';
-import 'package:ournego/shared/widgets/animated_background.dart';
+import 'package:ournego/shared/widgets/ournego_buttons.dart';
+import 'package:ournego/shared/widgets/ournego_inputs.dart';
+import 'package:ournego/shared/widgets/ournego_page_layout.dart';
+import 'package:ournego/shared/widgets/ournego_snackbars.dart';
 
 class LoginEmailScreen extends ConsumerStatefulWidget {
   const LoginEmailScreen({super.key});
@@ -60,78 +62,58 @@ class _LoginEmailScreenState extends ConsumerState<LoginEmailScreen> {
     final getHasSeenOnboarding = ref.watch(getHasSeenOnboardingUsecaseProvider);
     final setHasSeenOnboarding = ref.watch(setHasSeenOnboardingUsecaseProvider);
 
-    return Scaffold(
-      key: const ValueKey('loginEmailScreen'),
-      resizeToAvoidBottomInset: false,
-      body: Stack(
+    return OurnegoPageLayout(
+      scaffoldKey: const ValueKey('loginEmailScreen'),
+      child: Column(
         children: [
-          AnimatedBackground(),
-          Center(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: 500),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 30,
-                  vertical: 120,
+          // Título de la screen
+          Text(text.title, style: OurnegoTextStyles.header),
+          Spacer(),
+          // Campos de texto
+          Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                // Introducir email
+                AutofillGroup(
+                  child: EmailInput(
+                    text: text,
+                    controller: _emailController,
+                    inputKey: const ValueKey('loginEmailInput'),
+                  ),
                 ),
-                child: Column(
-                  children: [
-                    // Título de la screen
-                    Text(text.title, style: OurnegoTextStyles.header),
-                    Spacer(),
-                    // Campos de texto
-                    Form(
-                      key: _formKey,
-                      child: Column(
-                        children: [
-                          // Introducir email
-                          AutofillGroup(
-                            child: EmailInput(
-                              text: text,
-                              controller: _emailController,
-                              inputKey: const ValueKey('loginEmailInput'),
-                            ),
-                          ),
-                          SizedBox(height: 30),
-                          // Introducir contraseña
-                          AutofillGroup(
-                            child: PasswordInput(
-                              text: text,
-                              controller: _passwordController,
-                              inputKey: const ValueKey('loginPasswordInput'),
-                            ),
-                          ),
-                          SizedBox(height: 30),
-                          // Botón Login
-                          PrimaryButton(
-                            text: text,
-                            repository: repository,
-                            errorMessages: errorMessages,
-                            formKey: _formKey,
-                            emailController: _emailController,
-                            passwordController: _passwordController,
-                            getHasSeenOnboarding: getHasSeenOnboarding,
-                            setHasSeenOnboarding: setHasSeenOnboarding,
-                            buttonKey: const ValueKey('loginSubmitButton'),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Spacer(),
-                    // Texto para hacer SignUp
-                    InkWell(
-                      onTap: () {
-                        context.push(AuthRoutes.signupEmail);
-                      },
-                      child: Text(
-                        text.signUp.toString(),
-                        style: OurnegoTextStyles.link,
-                      ),
-                    ),
-                  ],
+                SizedBox(height: 30),
+                // Introducir contraseña
+                AutofillGroup(
+                  child: PasswordInput(
+                    text: text,
+                    controller: _passwordController,
+                    inputKey: const ValueKey('loginPasswordInput'),
+                  ),
                 ),
-              ),
+                SizedBox(height: 30),
+                // Botón Login
+                PrimaryButton(
+                  text: text,
+                  repository: repository,
+                  errorMessages: errorMessages,
+                  formKey: _formKey,
+                  emailController: _emailController,
+                  passwordController: _passwordController,
+                  getHasSeenOnboarding: getHasSeenOnboarding,
+                  setHasSeenOnboarding: setHasSeenOnboarding,
+                  buttonKey: const ValueKey('loginSubmitButton'),
+                ),
+              ],
             ),
+          ),
+          Spacer(),
+          // Texto para hacer SignUp
+          InkWell(
+            onTap: () {
+              context.push(AuthRoutes.signupEmail);
+            },
+            child: Text(text.signUp.toString(), style: OurnegoTextStyles.link),
           ),
         ],
       ),
@@ -165,8 +147,8 @@ class PrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton(
-      key: buttonKey,
+    return OurnegoPrimaryButton(
+      buttonKey: buttonKey,
       onPressed: () async {
         if (formKey.currentState?.validate() ?? false) {
           final usecase = LogInWithEmailUsecase(repository: repository);
@@ -179,23 +161,9 @@ class PrimaryButton extends StatelessWidget {
           result.fold(
             (failure) {
               final message = errorMessages.getErrorMessage(failure);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Column(
-                    children: [
-                      Text(
-                        message,
-                        textAlign: TextAlign.center,
-                        style: OurnegoTextStyles.body.copyWith(
-                          color: Colors.red,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  backgroundColor: Colors.transparent,
-                ),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(OurnegoSnackbars.error(context, message));
               if (failure is UserProfileNotFound) {
                 context.push(AuthRoutes.completeProfile);
               }
@@ -219,19 +187,6 @@ class PrimaryButton extends StatelessWidget {
           );
         }
       },
-      style: ButtonStyle(
-        minimumSize: WidgetStatePropertyAll(Size(double.infinity, 50)),
-        backgroundColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.pressed)) {
-            return OurnegoColors.azulVerde;
-          } else {
-            return OurnegoColors.azulCielo;
-          }
-        }),
-        foregroundColor: WidgetStatePropertyAll(
-          Theme.of(context).colorScheme.onPrimary,
-        ),
-      ),
       child: Text(text.primaryButton, style: OurnegoTextStyles.body),
     );
   }
@@ -255,8 +210,8 @@ class EmailInput extends StatelessWidget {
       children: [
         Text(text.primaryInstruction, style: OurnegoTextStyles.body),
         SizedBox(height: 10),
-        TextFormField(
-          key: inputKey,
+        OurnegoInputField(
+          fieldKey: inputKey,
           autofillHints: const [AutofillHints.email, AutofillHints.username],
           keyboardType: TextInputType.emailAddress,
           controller: controller,
@@ -272,11 +227,7 @@ class EmailInput extends StatelessWidget {
               return null;
             }
           },
-          decoration: InputDecoration(
-            hint: Text(text.primaryHint),
-            filled: true,
-            border: OutlineInputBorder(),
-          ),
+          hint: Text(text.primaryHint),
         ),
       ],
     );
@@ -317,8 +268,8 @@ class _PasswordInputState extends State<PasswordInput> {
           style: OurnegoTextStyles.body,
         ),
         SizedBox(height: 10),
-        TextFormField(
-          key: widget.inputKey,
+        OurnegoInputField(
+          fieldKey: widget.inputKey,
           autofillHints: const [AutofillHints.password],
           controller: controller,
           maxLines: 1,
@@ -329,21 +280,17 @@ class _PasswordInputState extends State<PasswordInput> {
               return null;
             }
           },
-          decoration: InputDecoration(
-            suffixIcon: IconButton(
-              onPressed: () {
-                setState(() {
-                  _isObscure = !_isObscure;
-                });
-              },
-              icon: _isObscure
-                  ? Icon(Icons.visibility_off)
-                  : Icon(Icons.visibility),
-            ),
-            hint: Text(widget.text.secondaryHint.toString()),
-            filled: true,
-            border: OutlineInputBorder(),
+          suffixIcon: IconButton(
+            onPressed: () {
+              setState(() {
+                _isObscure = !_isObscure;
+              });
+            },
+            icon: _isObscure
+                ? Icon(Icons.visibility_off)
+                : Icon(Icons.visibility),
           ),
+          hint: Text(widget.text.secondaryHint.toString()),
           obscureText: _isObscure,
         ),
         SizedBox(height: 15),

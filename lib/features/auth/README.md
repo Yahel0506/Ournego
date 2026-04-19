@@ -23,3 +23,8 @@ Handles authentication and profile lifecycle: email login/signup, Google login, 
 ## Notes / Extension Points
 - Keep navigation cross-feature through route constants, not direct screen imports.
 - Keep datasource-level mapping/errors and repository-level failure translation.
+
+## UI Refactor Notes
+- This feature is one of the most migrated to shared UI presets.
+- Prefer `OurnegoPageLayout`, `OurnegoInputField`, `OurnegoButtonStyles`, and `OurnegoSnackbars` for new auth screens/flows.
+- Avoid inline `InputDecoration`/`styleFrom` unless there is a feature-specific visual requirement that cannot be represented by current shared presets.
