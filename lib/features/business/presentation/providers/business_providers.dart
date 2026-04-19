@@ -5,8 +5,16 @@ import 'package:ournego/features/business/data/datasources/business_supabase_dat
 import 'package:ournego/features/business/data/repositories/business_repository_impl.dart';
 import 'package:ournego/features/business/domain/repositories/business_repository.dart';
 import 'package:ournego/features/business/domain/usecases/check_if_owner_usecase.dart';
+import 'package:ournego/features/business/domain/usecases/delete_business_image_usecase.dart';
+import 'package:ournego/features/business/domain/usecases/delete_business_phone_number_usecase.dart';
 import 'package:ournego/features/business/domain/usecases/get_addresses_suggestions_usecase.dart';
+import 'package:ournego/features/business/domain/usecases/insert_business_image_usecase.dart';
 import 'package:ournego/features/business/domain/usecases/register_business_usecase.dart';
+import 'package:ournego/features/business/domain/usecases/upsert_business_category_usecase.dart';
+import 'package:ournego/features/business/domain/usecases/upsert_business_description_usecase.dart';
+import 'package:ournego/features/business/domain/usecases/upsert_business_location_usecase.dart';
+import 'package:ournego/features/business/domain/usecases/upsert_business_name_usecase.dart';
+import 'package:ournego/features/business/domain/usecases/upsert_business_phone_number_usecase.dart';
 
 // |---------------------------------| \\
 // |------- LAYER 1: DATASOURCES ---| \\
@@ -53,6 +61,57 @@ final registerBusinessUsecaseProvider = Provider<RegisterBusinessUsecase>((
   final repository = ref.watch(businessRepositoryProvider);
   return RegisterBusinessUsecase(repository: repository);
 });
+
+final upsertBusinessNameUsecaseProvider = Provider<UpsertBusinessNameUsecase>((
+  ref,
+) {
+  final repository = ref.watch(businessRepositoryProvider);
+  return UpsertBusinessNameUsecase(repository: repository);
+});
+
+final upsertBusinessDescriptionUsecaseProvider =
+    Provider<UpsertBusinessDescriptionUsecase>((ref) {
+      final repository = ref.watch(businessRepositoryProvider);
+      return UpsertBusinessDescriptionUsecase(repository: repository);
+    });
+
+final upsertBusinessLocationUsecaseProvider =
+    Provider<UpsertBusinessLocationUsecase>((ref) {
+      final repository = ref.watch(businessRepositoryProvider);
+      return UpsertBusinessLocationUsecase(repository: repository);
+    });
+
+final upsertBusinessCategoryUsecaseProvider =
+    Provider<UpsertBusinessCategoryUsecase>((ref) {
+      final repository = ref.watch(businessRepositoryProvider);
+      return UpsertBusinessCategoryUsecase(repository: repository);
+    });
+
+final insertBusinessImageUsecaseProvider = Provider<InsertBusinessImageUsecase>(
+  (ref) {
+    final repository = ref.watch(businessRepositoryProvider);
+    return InsertBusinessImageUsecase(repository: repository);
+  },
+);
+
+final deleteBusinessImageUsecaseProvider = Provider<DeleteBusinessImageUsecase>(
+  (ref) {
+    final repository = ref.watch(businessRepositoryProvider);
+    return DeleteBusinessImageUsecase(repository: repository);
+  },
+);
+
+final upsertBusinessPhoneNumberUsecaseProvider =
+    Provider<UpsertBusinessPhoneNumberUsecase>((ref) {
+      final repository = ref.watch(businessRepositoryProvider);
+      return UpsertBusinessPhoneNumberUsecase(repository: repository);
+    });
+
+final deleteBusinessPhoneNumberUsecaseProvider =
+    Provider<DeleteBusinessPhoneNumberUsecase>((ref) {
+      final repository = ref.watch(businessRepositoryProvider);
+      return DeleteBusinessPhoneNumberUsecase(repository: repository);
+    });
 
 final checkIfOwnerUsecaseProvider = Provider<CheckIfOwnerUsecase>((ref) {
   final repository = ref.watch(businessRepositoryProvider);
