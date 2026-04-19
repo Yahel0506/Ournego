@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/ournego_text_styles.dart';
+import '../../core/theme/tokens/ournego_spacing_tokens.dart';
 
 class InformationCardWidget extends StatelessWidget {
   const InformationCardWidget({
@@ -16,8 +17,10 @@ class InformationCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Padding(
-      padding: const EdgeInsets.all(32.0),
+      padding: const EdgeInsets.all(OurnegoSpacingTokens.xl),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -27,19 +30,21 @@ class InformationCardWidget extends StatelessWidget {
             errorBuilder: (_, error, stackTrace) =>
                 const Icon(Icons.info_outline, size: 96),
           ),
-          SizedBox(height: 16.0),
+          const SizedBox(height: OurnegoSpacingTokens.md),
           Text(
             title,
             style: OurnegoTextStyles.header,
             textAlign: TextAlign.center,
           ),
-          SizedBox(height: 8.0),
+          const SizedBox(height: OurnegoSpacingTokens.xs),
           Text(
             description,
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            style: OurnegoTextStyles.body.copyWith(
+              color: colorScheme.onSurface.withValues(alpha: 0.7),
+            ),
           ),
-          SizedBox(height: 48),
+          const SizedBox(height: OurnegoSpacingTokens.xxl),
         ],
       ),
     );

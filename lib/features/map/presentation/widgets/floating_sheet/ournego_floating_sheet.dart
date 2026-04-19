@@ -9,6 +9,7 @@ import 'package:ournego/features/map/presentation/widgets/floating_sheet/compone
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/floating_sheet_controller.dart';
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/floating_sheet_state.dart';
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/models/sheet_business_data.dart';
+import 'package:ournego/shared/widgets/ournego_buttons.dart';
 
 // =============================================================
 // OURNEGO FLOATING SHEET — ANALISIS PRE-IMPLEMENTACION
@@ -725,23 +726,13 @@ class _LegacyActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return SizedBox(
       height: 42,
       child: ElevatedButton(
         onPressed: onTap,
-        style: ElevatedButton.styleFrom(
-          elevation: 0,
-          backgroundColor: colorScheme.inverseSurface.withValues(alpha: 0.12),
-          foregroundColor: colorScheme.onSurface,
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(
-              color: colorScheme.outline.withValues(alpha: 0.28),
-            ),
-          ),
+        style: OurnegoButtonStyles.tonalCardButton(
+          context: context,
+          radius: 12,
         ),
         child: label == null
             ? Icon(icon, size: 18)
@@ -750,11 +741,11 @@ class _LegacyActionButton extends StatelessWidget {
                 children: [
                   Icon(icon, size: 18),
                   const SizedBox(width: 6),
-                  const Flexible(
+                  Flexible(
                     child: Text(
-                      'Buscar Productos',
+                      label!,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                       ),
@@ -871,22 +862,13 @@ class _LegacyWideButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return SizedBox(
       height: 58,
       child: ElevatedButton(
         onPressed: onTap,
-        style: ElevatedButton.styleFrom(
-          elevation: 0,
-          backgroundColor: colorScheme.inverseSurface.withValues(alpha: 0.12),
-          foregroundColor: colorScheme.onSurface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-            side: BorderSide(
-              color: colorScheme.outline.withValues(alpha: 0.28),
-            ),
-          ),
+        style: OurnegoButtonStyles.tonalCardButton(
+          context: context,
+          radius: 14,
         ),
         child: Row(
           children: [
@@ -1010,8 +992,10 @@ class _LegacyCatalogCard extends StatelessWidget {
               onPressed: onCatalog,
               icon: const Icon(Icons.inventory_2_rounded, size: 18),
               label: const Text('Ver catálogo'),
-              style: TextButton.styleFrom(
-                foregroundColor: colorScheme.onSurface.withValues(alpha: 0.8),
+              style: ButtonStyle(
+                foregroundColor: WidgetStatePropertyAll(
+                  colorScheme.onSurface.withValues(alpha: 0.8),
+                ),
               ),
             ),
           ),
@@ -1034,21 +1018,11 @@ class _CompactAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return ElevatedButton.icon(
       onPressed: onTap,
       icon: Icon(icon, size: 16),
       label: Text(text),
-      style: ElevatedButton.styleFrom(
-        elevation: 0,
-        backgroundColor: colorScheme.inverseSurface.withValues(alpha: 0.12),
-        foregroundColor: colorScheme.onSurface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: colorScheme.outline.withValues(alpha: 0.28)),
-        ),
-      ),
+      style: OurnegoButtonStyles.tonalCardButton(context: context, radius: 12),
     );
   }
 }

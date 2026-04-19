@@ -21,3 +21,9 @@ Renders map experience, location handling, business marker visualization, modal 
 ## Notes / Extension Points
 - Keep tile fallback behavior for missing Mapbox config.
 - Keep permission/denied flows centralized in map presentation state.
+
+## UI Refactor Notes
+- Map is under active migration to shared UI presets.
+- Top navigation now uses shared circular button styles and shared alert dialog patterns in profile/logout flow.
+- Floating sheet has partial adoption of shared button presets; remaining inline decorations should be migrated incrementally to preserve visual parity.
+- For new map UI work, default to shared dialogs/snackbars/buttons first, then add map-specific presets only when repeated patterns are confirmed.
