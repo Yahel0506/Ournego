@@ -9,6 +9,35 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class BusinessSupabaseDatasource {
   final _supabase = Supabase.instance.client;
 
+  Future<void> _runProtectedWrite(Future<void> Function() action) async {
+    try {
+      await action();
+    } on TimeoutException {
+      throw BusinessRegistrationNetworkException();
+    } on SocketException {
+      throw BusinessRegistrationNetworkException();
+    } on StorageException {
+      throw BusinessRegistrationImageUploadException();
+    } on PostgrestException catch (e) {
+      final code = (e.code ?? '').toLowerCase();
+      final message = e.message.toLowerCase();
+
+      if (code == '42501' || message.contains('permission denied')) {
+        throw BusinessRegistrationUnauthorizedException();
+      }
+
+      if (code == '23514' ||
+          message.contains('violates') ||
+          message.contains('invalid')) {
+        throw BusinessRegistrationValidationException();
+      }
+
+      throw BusinessRegistrationUnknownException();
+    } catch (_) {
+      throw BusinessRegistrationUnknownException();
+    }
+  }
+
   String _minutesToSqlTime(int minutesFromMidnight) {
     final hours = minutesFromMidnight ~/ 60;
     final minutes = minutesFromMidnight % 60;
@@ -109,6 +138,158 @@ class BusinessSupabaseDatasource {
     } catch (_) {
       throw BusinessRegistrationUnknownException();
     }
+  }
+
+  Future<void> upsertBusinessName({
+    required String businessId,
+    required String name,
+  }) async {
+    await _runProtectedWrite(() async {
+      await _supabase
+          .from('businesses')
+          .update({'name': name})
+          .eq('business_id', businessId);
+    });
+  }
+
+  Future<void> upsertBusinessDescription({
+    required String businessId,
+    required String description,
+  }) async {
+    await _runProtectedWrite(() async {
+      await _supabase
+          .from('businesses')
+          .update({'description': description})
+          .eq('business_id', businessId);
+    });
+  }
+
+  Future<void> upsertBusinessLocation({
+    required String businessId,
+    required String address,
+    required double latitude,
+    required double longitude,
+  }) async {
+    await _runProtectedWrite(() async {
+      await _supabase
+          .from('businesses')
+          .update({
+            'address': address,
+            'latitude': latitude,
+            'longitude': longitude,
+          })
+          .eq('business_id', businessId);
+    });
+  }
+
+  Future<void> upsertBusinessCategory({
+    required String businessId,
+    required int category,
+  }) async {
+    await _runProtectedWrite(() async {
+      await _supabase
+          .from('businesses')
+          .update({'type': category})
+          .eq('business_id', businessId);
+    });
+  }
+
+  Future<void> insertBusinessImage({
+    required String businessId,
+    required BusinessImageData image,
+  }) async {
+    await _runProtectedWrite(() async {
+      final fileName = image.fileName.trim().isNotEmpty
+          ? image.fileName
+          : 'business-image.jpg';
+      final storagePath = '$businessId/$fileName';
+
+      await _supabase.storage
+          .from('businesses_pictures')
+          .uploadBinary(
+            storagePath,
+            image.bytes,
+            fileOptions: const FileOptions(cacheControl: '3600', upsert: true),
+          );
+
+      final imageUrl = _supabase.storage
+          .from('businesses_pictures')
+          .getPublicUrl(storagePath);
+
+      final existing = await _supabase
+          .from('businesses')
+          .select('images')
+          .eq('business_id', businessId)
+          .single();
+
+      final rawImages = (existing['images'] as List<dynamic>? ?? const [])
+          .whereType<String>()
+          .toList();
+
+      final updatedImages = [...rawImages, imageUrl];
+
+      await _supabase
+          .from('businesses')
+          .update({'images': updatedImages})
+          .eq('business_id', businessId);
+    });
+  }
+
+  Future<void> deleteBusinessImage({
+    required String businessId,
+    required String imageUrl,
+  }) async {
+    await _runProtectedWrite(() async {
+      final existing = await _supabase
+          .from('businesses')
+          .select('images')
+          .eq('business_id', businessId)
+          .single();
+
+      final rawImages = (existing['images'] as List<dynamic>? ?? const [])
+          .whereType<String>()
+          .toList();
+
+      rawImages.remove(imageUrl);
+
+      await _supabase
+          .from('businesses')
+          .update({'images': rawImages})
+          .eq('business_id', businessId);
+
+      final bucket = _supabase.storage.from('businesses_pictures');
+      final uri = Uri.tryParse(imageUrl);
+      final path = uri?.pathSegments.skipWhile(
+        (s) => s != 'businesses_pictures',
+      );
+      if (path != null && path.isNotEmpty) {
+        final storagePath = path.skip(1).join('/');
+        if (storagePath.isNotEmpty) {
+          await bucket.remove([storagePath]);
+        }
+      }
+    });
+  }
+
+  Future<void> upsertBusinessPhoneNumber({
+    required String businessId,
+    required String phoneNumber,
+  }) async {
+    await _runProtectedWrite(() async {
+      await _supabase
+          .from('businesses')
+          .update({'phone_number': phoneNumber})
+          .eq('business_id', businessId);
+    });
+  }
+
+  Future<void> deleteBusinessPhoneNumber({required String businessId}) async {
+    await _runProtectedWrite(() async {
+      await _supabase
+          .from('businesses')
+          .update({'phone_number': null})
+          .eq('business_id', businessId);
+    });
   }
 
   Future<void> setBusinessHours(
