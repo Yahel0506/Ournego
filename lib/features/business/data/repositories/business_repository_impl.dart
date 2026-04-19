@@ -74,7 +74,7 @@ class BusinessRepositoryImpl implements BusinessRepository {
       });
 
       await businessDatasource.uploadBusinessImage(image, businessId);
-      //await businessDatasource.setBusinessHours(businessId, hours);
+      await businessDatasource.setBusinessHours(businessId, hours);
 
       return Right(null);
     } on BusinessRegistrationUnauthorizedException {

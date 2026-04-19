@@ -203,7 +203,7 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
       return const _BusinessRegistrationErrorContent(
         title: 'No tienes permisos para registrar un negocio',
         description:
-            'Inicia sesion nuevamente y vuelve a intentarlo. Si el problema continua, envianos feedback.',
+            'Tu sesión no tiene permisos para escribir en una tabla protegida (RLS). Inicia sesión nuevamente o solicita habilitar políticas de business_hours en Supabase.',
       );
     }
 
