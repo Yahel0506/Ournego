@@ -103,4 +103,186 @@ class BusinessRepositoryImpl implements BusinessRepository {
       return Left(ServerFailure());
     }
   }
+
+  @override
+  Future<Either<Failure, void>> upsertBusinessName({
+    required String businessId,
+    required String name,
+  }) async {
+    try {
+      await businessDatasource.upsertBusinessName(
+        businessId: businessId,
+        name: name,
+      );
+      return const Right(null);
+    } on BusinessRegistrationUnauthorizedException {
+      return Left(BusinessRegistrationUnauthorizedFailure());
+    } on BusinessRegistrationValidationException {
+      return Left(BusinessRegistrationValidationFailure());
+    } on BusinessRegistrationNetworkException {
+      return Left(BusinessRegistrationNetworkFailure());
+    } catch (_) {
+      return Left(BusinessRegistrationUnknownFailure());
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> upsertBusinessDescription({
+    required String businessId,
+    required String description,
+  }) async {
+    try {
+      await businessDatasource.upsertBusinessDescription(
+        businessId: businessId,
+        description: description,
+      );
+      return const Right(null);
+    } on BusinessRegistrationUnauthorizedException {
+      return Left(BusinessRegistrationUnauthorizedFailure());
+    } on BusinessRegistrationValidationException {
+      return Left(BusinessRegistrationValidationFailure());
+    } on BusinessRegistrationNetworkException {
+      return Left(BusinessRegistrationNetworkFailure());
+    } catch (_) {
+      return Left(BusinessRegistrationUnknownFailure());
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> upsertBusinessLocation({
+    required String businessId,
+    required String address,
+    required double latitude,
+    required double longitude,
+  }) async {
+    try {
+      await businessDatasource.upsertBusinessLocation(
+        businessId: businessId,
+        address: address,
+        latitude: latitude,
+        longitude: longitude,
+      );
+      return const Right(null);
+    } on BusinessRegistrationUnauthorizedException {
+      return Left(BusinessRegistrationUnauthorizedFailure());
+    } on BusinessRegistrationValidationException {
+      return Left(BusinessRegistrationValidationFailure());
+    } on BusinessRegistrationNetworkException {
+      return Left(BusinessRegistrationNetworkFailure());
+    } catch (_) {
+      return Left(BusinessRegistrationUnknownFailure());
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> upsertBusinessCategory({
+    required String businessId,
+    required int category,
+  }) async {
+    try {
+      await businessDatasource.upsertBusinessCategory(
+        businessId: businessId,
+        category: category,
+      );
+      return const Right(null);
+    } on BusinessRegistrationUnauthorizedException {
+      return Left(BusinessRegistrationUnauthorizedFailure());
+    } on BusinessRegistrationValidationException {
+      return Left(BusinessRegistrationValidationFailure());
+    } on BusinessRegistrationNetworkException {
+      return Left(BusinessRegistrationNetworkFailure());
+    } catch (_) {
+      return Left(BusinessRegistrationUnknownFailure());
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> insertBusinessImage({
+    required String businessId,
+    required BusinessImageData image,
+  }) async {
+    try {
+      await businessDatasource.insertBusinessImage(
+        businessId: businessId,
+        image: image,
+      );
+      return const Right(null);
+    } on BusinessRegistrationUnauthorizedException {
+      return Left(BusinessRegistrationUnauthorizedFailure());
+    } on BusinessRegistrationValidationException {
+      return Left(BusinessRegistrationValidationFailure());
+    } on BusinessRegistrationImageUploadException {
+      return Left(BusinessRegistrationImageUploadFailure());
+    } on BusinessRegistrationNetworkException {
+      return Left(BusinessRegistrationNetworkFailure());
+    } catch (_) {
+      return Left(BusinessRegistrationUnknownFailure());
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> deleteBusinessImage({
+    required String businessId,
+    required String imageUrl,
+  }) async {
+    try {
+      await businessDatasource.deleteBusinessImage(
+        businessId: businessId,
+        imageUrl: imageUrl,
+      );
+      return const Right(null);
+    } on BusinessRegistrationUnauthorizedException {
+      return Left(BusinessRegistrationUnauthorizedFailure());
+    } on BusinessRegistrationValidationException {
+      return Left(BusinessRegistrationValidationFailure());
+    } on BusinessRegistrationImageUploadException {
+      return Left(BusinessRegistrationImageUploadFailure());
+    } on BusinessRegistrationNetworkException {
+      return Left(BusinessRegistrationNetworkFailure());
+    } catch (_) {
+      return Left(BusinessRegistrationUnknownFailure());
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> upsertBusinessPhoneNumber({
+    required String businessId,
+    required String phoneNumber,
+  }) async {
+    try {
+      await businessDatasource.upsertBusinessPhoneNumber(
+        businessId: businessId,
+        phoneNumber: phoneNumber,
+      );
+      return const Right(null);
+    } on BusinessRegistrationUnauthorizedException {
+      return Left(BusinessRegistrationUnauthorizedFailure());
+    } on BusinessRegistrationValidationException {
+      return Left(BusinessRegistrationValidationFailure());
+    } on BusinessRegistrationNetworkException {
+      return Left(BusinessRegistrationNetworkFailure());
+    } catch (_) {
+      return Left(BusinessRegistrationUnknownFailure());
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> deleteBusinessPhoneNumber({
+    required String businessId,
+  }) async {
+    try {
+      await businessDatasource.deleteBusinessPhoneNumber(
+        businessId: businessId,
+      );
+      return const Right(null);
+    } on BusinessRegistrationUnauthorizedException {
+      return Left(BusinessRegistrationUnauthorizedFailure());
+    } on BusinessRegistrationValidationException {
+      return Left(BusinessRegistrationValidationFailure());
+    } on BusinessRegistrationNetworkException {
+      return Left(BusinessRegistrationNetworkFailure());
+    } catch (_) {
+      return Left(BusinessRegistrationUnknownFailure());
+    }
+  }
 }
