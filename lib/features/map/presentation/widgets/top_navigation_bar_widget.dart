@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
+import 'package:ournego/shared/widgets/ournego_alert_dialog.dart';
+import 'package:ournego/shared/widgets/ournego_buttons.dart';
 
 final GlobalKey topNavigationBarKey = GlobalKey(debugLabel: 'topNavigationBar');
 
@@ -28,13 +30,7 @@ class TopNavigationBarWidget extends ConsumerWidget {
             borderRadius: 30,
             child: ElevatedButton(
               onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                shape: const CircleBorder(),
-                minimumSize: const Size(52, 52),
-                padding: EdgeInsets.zero,
-                backgroundColor: colorScheme.surface.withValues(alpha: 0.6),
-                elevation: 0,
-              ),
+              style: OurnegoButtonStyles.circularSurface(context: context),
               child: Icon(Icons.mic, size: 26, color: colorScheme.onSurface),
             ),
           ),
@@ -68,18 +64,14 @@ class TopNavigationBarWidget extends ConsumerWidget {
                   showDialog<void>(
                     context: context,
                     builder: (dialogContext) {
-                      return AlertDialog(
-                        title: const Text('Cerrar sesión'),
-                        content: const Text(
-                          '¿Estás seguro de que quieres cerrar sesión?',
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () {
-                              Navigator.of(dialogContext).pop();
-                            },
-                            child: const Text('Cancelar'),
-                          ),
+                      return OurnegoAlertDialog(
+                        title: 'Cerrar sesión',
+                        content: '¿Estás seguro de que quieres cerrar sesión?',
+                        actionLabel: 'Cancelar',
+                        onAction: () {
+                          Navigator.of(dialogContext).pop();
+                        },
+                        trailingActions: [
                           TextButton(
                             key: const ValueKey('confirmLogoutButton'),
                             onPressed: () async {
@@ -99,13 +91,7 @@ class TopNavigationBarWidget extends ConsumerWidget {
                   context.push(AuthRoutes.authSelection);
                 }
               },
-              style: ElevatedButton.styleFrom(
-                shape: const CircleBorder(),
-                minimumSize: const Size(52, 52),
-                padding: EdgeInsets.zero,
-                backgroundColor: colorScheme.surface.withValues(alpha: 0.6),
-                elevation: 0,
-              ),
+              style: OurnegoButtonStyles.circularSurface(context: context),
               child: SizedBox(
                 height: 40,
                 width: 40,

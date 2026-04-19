@@ -5,7 +5,7 @@ import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
 import 'package:ournego/features/navigation/presentation/providers/navigation_provider.dart';
-import 'package:ournego/shared/widgets/information_card_widget.dart';
+import 'package:ournego/shared/widgets/ournego_information_dialog.dart';
 
 import '../../../feedback/presentation/widgets/feedback_dialog_widget.dart';
 
@@ -16,55 +16,40 @@ class RegisterBusinessWidget extends ConsumerWidget {
     return showDialog<void>(
       context: context,
       builder: (dialogContext) {
-        return Dialog(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 460),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const InformationCardWidget(
-                  title: 'No se pudo verificar tu sesion',
-                  description:
-                      'Intenta de nuevo en unos segundos. Si el problema continua, envianos feedback.',
-                  imagePath: 'assets/images/generic_error.png',
+        return OurnegoInformationDialog(
+          title: 'No se pudo verificar tu sesion',
+          description:
+              'Intenta de nuevo en unos segundos. Si el problema continua, envianos feedback.',
+          imagePath: 'assets/images/generic_error.png',
+          actions: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () async {
+                    Navigator.of(dialogContext).pop();
+                    if (ref.read(isFeedbackDialogOpenProvider)) {
+                      return;
+                    }
+                    ref.read(isFeedbackDialogOpenProvider.notifier).setIsOpen();
+                    await showDialog<void>(
+                      context: context,
+                      builder: (_) => const FeedbackDialogWidget(),
+                    );
+                    ref
+                        .read(isFeedbackDialogOpenProvider.notifier)
+                        .setIsClosed();
+                  },
+                  child: const Text('Feedback'),
                 ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () async {
-                            Navigator.of(dialogContext).pop();
-                            if (ref.read(isFeedbackDialogOpenProvider)) {
-                              return;
-                            }
-                            ref
-                                .read(isFeedbackDialogOpenProvider.notifier)
-                                .setIsOpen();
-                            await showDialog<void>(
-                              context: context,
-                              builder: (_) => const FeedbackDialogWidget(),
-                            );
-                            ref
-                                .read(isFeedbackDialogOpenProvider.notifier)
-                                .setIsClosed();
-                          },
-                          child: const Text('Feedback'),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: FilledButton(
-                          onPressed: () => Navigator.of(dialogContext).pop(),
-                          child: const Text('Entiendo'),
-                        ),
-                      ),
-                    ],
-                  ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FilledButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Entiendo'),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         );
       },

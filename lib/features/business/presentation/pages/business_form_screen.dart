@@ -21,6 +21,10 @@ import 'package:ournego/features/feedback/presentation/widgets/feedback_dialog_w
 import 'package:ournego/features/navigation/presentation/providers/navigation_provider.dart';
 import 'package:ournego/shared/widgets/animated_background.dart';
 import 'package:ournego/shared/widgets/information_card_widget.dart';
+import 'package:ournego/shared/widgets/ournego_alert_dialog.dart';
+import 'package:ournego/shared/widgets/ournego_information_dialog.dart';
+import 'package:ournego/shared/widgets/ournego_inputs.dart';
+import 'package:ournego/shared/widgets/ournego_snackbars.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../domain/entities/app_schedule.dart';
 import '../providers/business_providers.dart';
@@ -277,42 +281,29 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
       context: context,
       barrierDismissible: true,
       builder: (dialogContext) {
-        return Dialog(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 460),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                InformationCardWidget(
-                  title: content.title,
-                  description: content.description,
-                  imagePath: _genericBusinessErrorImage,
+        return OurnegoInformationDialog(
+          title: content.title,
+          description: content.description,
+          imagePath: _genericBusinessErrorImage,
+          actions: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () async {
+                    Navigator.of(dialogContext).pop();
+                    await _openFeedbackDialogFromErrorDialog(context);
+                  },
+                  child: const Text('Feedback'),
                 ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () async {
-                            Navigator.of(dialogContext).pop();
-                            await _openFeedbackDialogFromErrorDialog(context);
-                          },
-                          child: const Text('Feedback'),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: FilledButton(
-                          onPressed: () => Navigator.of(dialogContext).pop(),
-                          child: const Text('Entiendo'),
-                        ),
-                      ),
-                    ],
-                  ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FilledButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Entiendo'),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         );
       },
@@ -352,10 +343,8 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
           error: (error, stackTrace) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    'Error al obtener la ubicación actual. Por favor selecciona la ubicación manualmente.',
-                  ),
+                OurnegoSnackbars.info(
+                  'Error al obtener la ubicación actual. Por favor selecciona la ubicación manualmente.',
                 ),
               );
             });
@@ -604,11 +593,9 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
                       });
                       _persistDraft();
                     },
-                    decoration: InputDecoration(
+                    decoration: OurnegoInputDecorations.filled(
+                      context: context,
                       labelText: 'Categoría del negocio',
-                      border: OutlineInputBorder(),
-                      filled: true,
-                      fillColor: Theme.of(context).colorScheme.surface,
                     ),
                   ),
                   SizedBox(height: 24),
@@ -618,16 +605,11 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
                     textAlign: TextAlign.center,
                   ),
                   SizedBox(height: 16),
-                  TextFormField(
+                  OurnegoInputField(
                     controller: _phoneController,
                     keyboardType: TextInputType.phone,
-                    decoration: InputDecoration(
-                      icon: Text('+52'),
-                      hintText: 'Número de teléfono',
-                      border: OutlineInputBorder(),
-                      filled: true,
-                      fillColor: Theme.of(context).colorScheme.surface,
-                    ),
+                    icon: const Text('+52'),
+                    hintText: 'Número de teléfono',
                   ),
                   SizedBox(height: 24),
                   Text(
@@ -707,10 +689,8 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
                               _clearDraft();
                               if (!mounted) return Future<void>.value();
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    'Negocio registrado exitosamente.',
-                                  ),
+                                OurnegoSnackbars.info(
+                                  'Negocio registrado exitosamente.',
                                 ),
                               );
                               ref.invalidate(isOwnerProvider);
@@ -731,17 +711,12 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
                           showDialog(
                             context: context,
                             builder: (buildContext) {
-                              return AlertDialog(
-                                title: Text('Error'),
-                                content: Text(errorMessage),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.of(buildContext).pop();
-                                    },
-                                    child: Text('OK'),
-                                  ),
-                                ],
+                              return OurnegoAlertDialog(
+                                title: 'Error',
+                                content: errorMessage,
+                                onAction: () {
+                                  Navigator.of(buildContext).pop();
+                                },
                               );
                             },
                           );
@@ -882,7 +857,8 @@ class BusinessAddressInput extends StatelessWidget {
       focusNode: focusNode,
       controller: _addressController,
       builder: (context, controller, focusNode) {
-        return TextFormField(
+        return OurnegoInputField(
+          fieldKey: const ValueKey('businessAddressInput'),
           validator: (value) {
             if (value == null || value.isEmpty) {
               return 'Por favor ingresa una dirección válida';
@@ -891,15 +867,10 @@ class BusinessAddressInput extends StatelessWidget {
           },
           controller: _addressController,
           focusNode: focusNode,
-          decoration: InputDecoration(
-            hintStyle: OurnegoTextStyles.body.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withAlpha(150),
-            ),
-            hintText: 'Calle y número, ciudad, estado...',
-            border: OutlineInputBorder(),
-            filled: true,
-            fillColor: Theme.of(context).colorScheme.surface,
+          hintStyle: OurnegoTextStyles.body.copyWith(
+            color: Theme.of(context).colorScheme.onSurface.withAlpha(150),
           ),
+          hintText: 'Calle y número, ciudad, estado...',
         );
       },
       itemBuilder: (context, place) {
@@ -925,19 +896,17 @@ class BusinessAddressInput extends StatelessWidget {
         return result.fold((failure) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  failure is AuthenticationRequiredFailure
-                      ? 'Inicia sesion para usar sugerencias de direccion.'
-                      : 'No se pudieron cargar sugerencias de direccion.',
-                ),
+              OurnegoSnackbars.info(
+                failure is AuthenticationRequiredFailure
+                    ? 'Inicia sesion para usar sugerencias de direccion.'
+                    : 'No se pudieron cargar sugerencias de direccion.',
               ),
             );
           });
           return <AppPosition>[];
         }, (suggestions) => suggestions);
       },
-      debounceDuration: Duration(milliseconds: 400),
+      debounceDuration: const Duration(milliseconds: 400),
     );
   }
 }
@@ -952,7 +921,8 @@ class BusinessDescriptionInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
+    return OurnegoInputField(
+      fieldKey: const ValueKey('businessDescriptionInput'),
       validator: (value) {
         if (value == null || value.isEmpty) {
           return 'Por favor ingresa una descripción del negocio';
@@ -961,16 +931,11 @@ class BusinessDescriptionInput extends StatelessWidget {
       },
       controller: _descriptionController,
       maxLines: 4,
-      decoration: InputDecoration(
-        border: OutlineInputBorder(),
-        hintStyle: TextStyle(
-          color: Theme.of(context).colorScheme.onSurface.withAlpha(150),
-        ),
-        hintText:
-            'Ejemplo: Cafetería que ofrece café orgánico y pasteles caseros.',
-        filled: true,
-        fillColor: Theme.of(context).colorScheme.surface,
+      hintStyle: TextStyle(
+        color: Theme.of(context).colorScheme.onSurface.withAlpha(150),
       ),
+      hintText:
+          'Ejemplo: Cafetería que ofrece café orgánico y pasteles caseros.',
     );
   }
 }
@@ -984,7 +949,8 @@ class BusinessNameInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
+    return OurnegoInputField(
+      fieldKey: const ValueKey('businessNameInput'),
       validator: (value) {
         if (value == null || value.isEmpty) {
           return 'Por favor ingresa el nombre del negocio';
@@ -992,12 +958,7 @@ class BusinessNameInput extends StatelessWidget {
         return null;
       },
       controller: controller,
-      decoration: InputDecoration(
-        labelText: 'Nombre del negocio',
-        border: OutlineInputBorder(),
-        filled: true,
-        fillColor: Theme.of(context).colorScheme.surface,
-      ),
+      labelText: 'Nombre del negocio',
     );
   }
 }

@@ -6,7 +6,7 @@ import 'package:ournego/features/onboarding/presentation/pages/components/generi
 import 'package:ournego/features/onboarding/presentation/pages/components/location_slide.dart';
 import 'package:ournego/features/onboarding/presentation/providers/onboarding_providers.dart';
 import 'package:ournego/shared/widgets/animated_background.dart';
-import 'package:ournego/shared/widgets/information_card_widget.dart';
+import 'package:ournego/shared/widgets/ournego_information_dialog.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../../auth/presentation/widgets/auth_selection_widget.dart';
@@ -37,47 +37,36 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       context: context,
       barrierDismissible: true,
       builder: (context) {
-        return Dialog(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 420),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                InformationCardWidget(
-                  title: isDeniedForever
-                      ? 'Permiso de ubicacion bloqueado'
-                      : 'Ubicacion requerida',
-                  description: isDeniedForever
-                      ? 'Activalo desde los ajustes del dispositivo para continuar.'
-                      : 'Debes habilitar la ubicacion para poder continuar.',
-                  imagePath: 'assets/images/location_error.png',
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: const Text('Entendido'),
-                      ),
-                      if (isDeniedForever) ...[
-                        const SizedBox(width: 8),
-                        FilledButton(
-                          onPressed: () async {
-                            await openAppSettings();
-                            if (context.mounted) {
-                              Navigator.of(context).pop();
-                            }
-                          },
-                          child: const Text('Abrir ajustes'),
-                        ),
-                      ],
-                    ],
-                  ),
+        return OurnegoInformationDialog(
+          maxWidth: 420,
+          title: isDeniedForever
+              ? 'Permiso de ubicacion bloqueado'
+              : 'Ubicacion requerida',
+          description: isDeniedForever
+              ? 'Activalo desde los ajustes del dispositivo para continuar.'
+              : 'Debes habilitar la ubicacion para poder continuar.',
+          imagePath: 'assets/images/location_error.png',
+          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          actions: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Entendido'),
+              ),
+              if (isDeniedForever) ...[
+                const SizedBox(width: 8),
+                FilledButton(
+                  onPressed: () async {
+                    await openAppSettings();
+                    if (context.mounted) {
+                      Navigator.of(context).pop();
+                    }
+                  },
+                  child: const Text('Abrir ajustes'),
                 ),
               ],
-            ),
+            ],
           ),
         );
       },

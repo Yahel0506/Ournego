@@ -19,3 +19,7 @@ Provides shell layout, bottom navigation interactions, and navigation-specific U
 ## Notes / Extension Points
 - Keep this feature decoupled from direct imports of other feature screens in layout widgets.
 - Tab routing should remain route-based (`context.go`) instead of page controller coupling.
+
+## UI Refactor Notes
+- Navigation shell UI should consume shared button/dialog/snackbar presets when needed instead of defining style variants locally.
+- Keep nav-related spacing and corner radii aligned with global tokens.

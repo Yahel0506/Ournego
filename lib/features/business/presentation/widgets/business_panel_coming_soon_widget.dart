@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:ournego/core/ournego_text_styles.dart';
+import 'package:ournego/shared/widgets/information_card_widget.dart';
 
 class BusinessPanelComingSoonWidget extends StatelessWidget {
   const BusinessPanelComingSoonWidget({super.key});
@@ -8,31 +8,12 @@ class BusinessPanelComingSoonWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: SizedBox.expand(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Image(
-                  image: AssetImage('assets/images/waiting_clock.png'),
-                  height: 250,
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  '¡Panel de negocio en camino!',
-                  style: OurnegoTextStyles.header,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Estamos trabajando arduamente para traerte esta función. ¡Pronto estará disponible!',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                ),
-                const SizedBox(height: 48),
-              ],
-            ),
+        child: const SizedBox.expand(
+          child: InformationCardWidget(
+            title: '¡Panel de negocio en camino!',
+            description:
+                'Estamos trabajando arduamente para traerte esta función. ¡Pronto estará disponible!',
+            imagePath: 'assets/images/waiting_clock.png',
           ),
         ),
       ),

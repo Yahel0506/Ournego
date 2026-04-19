@@ -24,6 +24,8 @@ import 'package:ournego/features/map/presentation/widgets/floating_sheet/ournego
 import 'package:ournego/features/map/presentation/widgets/top_navigation_bar_widget.dart';
 import 'package:ournego/features/navigation/presentation/widgets/navigation_bar_widget.dart';
 import 'package:ournego/shared/widgets/information_card_widget.dart';
+import 'package:ournego/shared/widgets/ournego_alert_dialog.dart';
+import 'package:ournego/shared/widgets/ournego_snackbars.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -847,7 +849,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('No se pudo actualizar favorito')),
+            OurnegoSnackbars.info('No se pudo actualizar favorito'),
           );
         }
         return false;
@@ -865,17 +867,12 @@ class _MapScreenState extends ConsumerState<MapScreen>
       showDialog<void>(
         context: context,
         builder: (dialogContext) {
-          return AlertDialog(
-            backgroundColor: Theme.of(context).colorScheme.surface,
-            content: const Text(
-              'Lamentablemente, este negocio no cuenta con número de teléfono :(',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(),
-                child: const Text('Entiendo'),
-              ),
-            ],
+          return OurnegoAlertDialog(
+            title: 'Sin teléfono disponible',
+            content:
+                'Lamentablemente, este negocio no cuenta con número de teléfono :(',
+            actionLabel: 'Entiendo',
+            onAction: () => Navigator.of(dialogContext).pop(),
           );
         },
       );
@@ -888,16 +885,16 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
   void _onCatalog(SheetBusinessData business) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Catálogo de ${business.name} próximamente disponible'),
+      OurnegoSnackbars.info(
+        'Catálogo de ${business.name} próximamente disponible',
       ),
     );
   }
 
   void _onReviews(SheetBusinessData business) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Reseñas de ${business.name} próximamente disponibles'),
+      OurnegoSnackbars.info(
+        'Reseñas de ${business.name} próximamente disponibles',
       ),
     );
   }

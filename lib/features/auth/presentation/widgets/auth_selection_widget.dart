@@ -6,6 +6,8 @@ import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
 import 'package:ournego/features/onboarding/presentation/providers/onboarding_providers.dart';
+import 'package:ournego/shared/widgets/ournego_buttons.dart';
+import 'package:ournego/shared/widgets/ournego_snackbars.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AuthSelectionWidget extends ConsumerWidget {
@@ -132,13 +134,7 @@ class GuestAccessButton extends ConsumerWidget {
             config.onSuccess!();
           }
         },
-        style: OutlinedButton.styleFrom(
-          side: BorderSide(
-            width: 3,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-          foregroundColor: Theme.of(context).colorScheme.onSurface,
-        ),
+        style: OurnegoButtonStyles.authOutlinedOnSurface(context),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -165,13 +161,7 @@ class PhoneLoginButton extends ConsumerWidget {
       height: 50,
       child: OutlinedButton(
         onPressed: () {},
-        style: OutlinedButton.styleFrom(
-          side: BorderSide(
-            width: 3,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-          foregroundColor: Theme.of(context).colorScheme.onSurface,
-        ),
+        style: OurnegoButtonStyles.authOutlinedOnSurface(context),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -201,13 +191,7 @@ class MailLoginButton extends ConsumerWidget {
         onPressed: () {
           context.push(AuthRoutes.loginEmail);
         },
-        style: OutlinedButton.styleFrom(
-          side: BorderSide(
-            width: 3,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-          foregroundColor: Theme.of(context).colorScheme.onSurface,
-        ),
+        style: OurnegoButtonStyles.authOutlinedOnSurface(context),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -243,7 +227,7 @@ class GoogleLoginButton extends ConsumerWidget {
           googleSignIn.fold(
             (failure) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Error: ${failure.toString()}')),
+                OurnegoSnackbars.info('Error: ${failure.toString()}'),
               );
             },
             (_) async {
@@ -253,10 +237,7 @@ class GoogleLoginButton extends ConsumerWidget {
             },
           );
         },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Theme.of(context).colorScheme.onSurface,
-          foregroundColor: Theme.of(context).colorScheme.surface,
-        ),
+        style: OurnegoButtonStyles.authFilledOnSurface(context),
         child: Row(
           children: [
             // Asegúrate de que esta imagen exista
