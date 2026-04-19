@@ -59,4 +59,45 @@ class SheetBusinessData {
       images: images,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'description': description,
+      'ownerId': ownerId,
+      'address': address,
+      'phoneNumber': phoneNumber,
+      'type': type.index,
+      'isFavorite': isFavorite,
+      'rating': rating,
+      'images': images,
+    };
+  }
+
+  factory SheetBusinessData.fromJson(Map<String, dynamic> json) {
+    final rawTypeIndex = json['type'] as int?;
+    final type =
+        rawTypeIndex != null &&
+            rawTypeIndex >= 0 &&
+            rawTypeIndex < BusinessType.values.length
+        ? BusinessType.values[rawTypeIndex]
+        : BusinessType.unknown;
+
+    final rawImages = json['images'] as List<dynamic>? ?? [];
+    final images = rawImages.map((e) => e as String).toList(growable: false);
+
+    return SheetBusinessData(
+      id: json['id'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      description: json['description'] as String? ?? '',
+      ownerId: json['ownerId'] as String? ?? '',
+      address: json['address'] as String? ?? '',
+      phoneNumber: json['phoneNumber'] as String?,
+      type: type,
+      isFavorite: json['isFavorite'] as bool? ?? false,
+      rating: (json['rating'] as num?)?.toDouble(),
+      images: images,
+    );
+  }
 }

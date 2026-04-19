@@ -1,75 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/features/feedback/presentation/widgets/feedback_dialog_widget.dart';
 import 'package:ournego/features/navigation/presentation/providers/navigation_provider.dart';
 import 'package:ournego/features/navigation/presentation/widgets/navigation_bar_widget.dart';
 import 'package:shake/shake.dart';
 
 class MainLayoutScreen extends ConsumerWidget {
-  final Widget child;
+  final StatefulNavigationShell navigationShell;
 
-  const MainLayoutScreen({super.key, required this.child});
+  const MainLayoutScreen({super.key, required this.navigationShell});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final location = GoRouterState.of(context).uri.path;
-    final currentIndex = _indexFromLocation(location);
+    final currentIndex = navigationShell.currentIndex;
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
       extendBody: true,
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 320),
-        switchInCurve: Curves.easeOutCubic,
-        switchOutCurve: Curves.easeInCubic,
-        transitionBuilder: (widget, animation) {
-          final slideAnimation = Tween<Offset>(
-            begin: const Offset(0.04, 0),
-            end: Offset.zero,
-          ).animate(animation);
-
-          return FadeTransition(
-            opacity: animation,
-            child: SlideTransition(position: slideAnimation, child: widget),
-          );
-        },
-        child: KeyedSubtree(key: ValueKey(location), child: child),
-      ),
+      body: navigationShell,
       bottomNavigationBar: AppNavigationBar(
         currentIndex: currentIndex,
         onTap: (index) {
-          if (index == currentIndex) {
-            return;
-          }
-
-          switch (index) {
-            case 0:
-              context.go(AppRoutes.community);
-              return;
-            case 1:
-              context.go(MapRoutes.map);
-              return;
-            case 2:
-              context.go(BusinessRoutes.panel);
-              return;
-          }
+          navigationShell.goBranch(
+            index,
+            initialLocation: index == currentIndex,
+          );
         },
       ),
     );
-  }
-
-  int _indexFromLocation(String location) {
-    if (location.startsWith(AppRoutes.community)) {
-      return 0;
-    }
-
-    if (location.startsWith(BusinessRoutes.panel)) {
-      return 2;
-    }
-
-    return 1;
   }
 }
 

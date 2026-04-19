@@ -75,38 +75,56 @@ GoRouter createAppRouter({
         name: 'complete-profile',
         builder: (context, state) => CompleteProfileScreen(),
       ),
-      ShellRoute(
-        builder: (context, state, child) {
-          return FeedbackShakeListener(child: MainLayoutScreen(child: child));
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) {
+          return FeedbackShakeListener(
+            child: MainLayoutScreen(navigationShell: navigationShell),
+          );
         },
-        routes: [
-          GoRoute(
-            path: AppRoutes.community,
-            name: 'community',
-            pageBuilder: (context, state) => NoTransitionPage(
-              key: state.pageKey,
-              child: const CommunityScreen(),
-            ),
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.community,
+                name: 'community',
+                pageBuilder: (context, state) => NoTransitionPage(
+                  key: state.pageKey,
+                  child: const CommunityScreen(),
+                ),
+              ),
+            ],
           ),
-          GoRoute(
-            path: MapRoutes.map,
-            name: 'map',
-            pageBuilder: (context, state) =>
-                NoTransitionPage(key: state.pageKey, child: const MapScreen()),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: MapRoutes.map,
+                name: 'map',
+                pageBuilder: (context, state) => NoTransitionPage(
+                  key: state.pageKey,
+                  child: const MapScreen(),
+                ),
+              ),
+              GoRoute(
+                path: MapRoutes.businessDetails,
+                name: 'business-details',
+                pageBuilder: (context, state) => NoTransitionPage(
+                  key: state.pageKey,
+                  child: const MapScreen(),
+                ),
+              ),
+            ],
           ),
-          GoRoute(
-            path: BusinessRoutes.panel,
-            name: 'business-panel',
-            pageBuilder: (context, state) => NoTransitionPage(
-              key: state.pageKey,
-              child: const _BusinessShellScreen(),
-            ),
-          ),
-          GoRoute(
-            path: MapRoutes.businessDetails,
-            name: 'business-details',
-            pageBuilder: (context, state) =>
-                NoTransitionPage(key: state.pageKey, child: const MapScreen()),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: BusinessRoutes.panel,
+                name: 'business-panel',
+                pageBuilder: (context, state) => NoTransitionPage(
+                  key: state.pageKey,
+                  child: const _BusinessShellScreen(),
+                ),
+              ),
+            ],
           ),
         ],
       ),
