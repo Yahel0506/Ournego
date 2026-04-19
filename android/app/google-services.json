@@ -12,7 +12,28 @@
           "package_name": "com.ournego.app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "544311850300-b7b1plgn8hr7pg88na6bi44h8itc6vtp.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ournego.app",
+            "certificate_hash": "bbb71f6a521c2c5d9567031ec6bca80cb8d45026"
+          }
+        },
+        {
+          "client_id": "544311850300-kjvg10s0di4eg1tr8isahti8j0cd7g9d.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ournego.app",
+            "certificate_hash": "1db6bdc7094eb36a2298f707b0e5caea51ea5893"
+          }
+        },
+        {
+          "client_id": "544311850300-lpgdvnvb6l2p070a6nnqkj5odk4k1qkt.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBBCkJz8auSNv9pCJTsaEo_hW-aIYB2Ly4"
@@ -20,7 +41,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "544311850300-ajutqk3e1djlccqiqs0o7a1qsuck5arl.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "544311850300-n7b48q35lsl89mlk0gpo24pema3mkumn.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.ournego.app"
+              }
+            }
+          ]
         }
       }
     }
