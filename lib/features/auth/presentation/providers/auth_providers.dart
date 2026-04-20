@@ -7,10 +7,12 @@ import 'package:ournego/features/auth/data/datasources/supabase_auth_datasource.
 import 'package:ournego/features/auth/data/repositories/supabase_auth_repository_impl.dart';
 import 'package:ournego/features/auth/domain/entities/app_user.dart';
 import 'package:ournego/features/auth/domain/repositories/auth_repository.dart';
+import 'package:ournego/features/auth/domain/usecases/email_verification_usecase.dart';
 import 'package:ournego/features/auth/domain/usecases/get_profile_usecase.dart';
 import 'package:ournego/features/auth/domain/usecases/has_profile_usecase.dart';
 import 'package:ournego/features/auth/domain/usecases/log_in_with_email_usecase.dart';
 import 'package:ournego/features/auth/domain/usecases/log_out_usecase.dart';
+import 'package:ournego/features/auth/domain/usecases/send_password_reset_email_usecase.dart';
 import 'package:ournego/features/auth/domain/usecases/sign_in_with_google_usecase.dart';
 import 'package:ournego/features/auth/domain/usecases/sign_up_with_email_usecase.dart';
 import 'package:ournego/features/auth/domain/usecases/update_profile_usecase.dart';
@@ -75,6 +77,12 @@ final logOutUsecaseProvider = Provider<LogOutUsecase>((ref) {
   return LogOutUsecase(repository: repository);
 });
 
+final sendPasswordResetEmailUsecaseProvider =
+    Provider<SendPasswordResetEmailUsecase>((ref) {
+      final repository = ref.watch(authRepositoryProvider);
+      return SendPasswordResetEmailUsecase(repository: repository);
+    });
+
 /// Usecase for getting user profile.
 final getProfileUsecaseProvider = Provider<GetProfileUsecase>((ref) {
   final repository = ref.watch(authRepositoryProvider);
@@ -91,6 +99,13 @@ final updateProfileUsecaseProvider = Provider<UpdateProfileUsecase>((ref) {
 final hasProfileUsecaseProvider = Provider<HasProfileUsecase>((ref) {
   final repository = ref.watch(authRepositoryProvider);
   return HasProfileUsecase(repository: repository);
+});
+
+final emailVerificationUsecaseProvider = Provider<EmailVerificationUsecase>((
+  ref,
+) {
+  final repository = ref.watch(authRepositoryProvider);
+  return EmailVerificationUsecase(repository: repository);
 });
 
 // |---------------------------------| \\
@@ -154,4 +169,9 @@ final userProfileByIdProvider = StreamProvider.family<AppUser, String>((
 ) {
   final repository = ref.watch(authRepositoryProvider);
   return repository.getProfile(userId: userId);
+});
+
+final emailVerificationStatusProvider = StreamProvider<bool>((ref) {
+  final usecase = ref.watch(emailVerificationUsecaseProvider);
+  return usecase.watchVerificationStatus();
 });

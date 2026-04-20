@@ -9,7 +9,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/core/routing/route_observer.dart';
-import 'package:ournego/features/auth/domain/usecases/has_profile_usecase.dart';
 import 'package:ournego/features/auth/domain/usecases/update_profile_usecase.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
 import 'package:ournego/features/onboarding/presentation/providers/onboarding_providers.dart';
@@ -177,54 +176,35 @@ class CompleteProfileScreen extends ConsumerWidget {
                           );
                         },
                         (_) async {
-                          final confirmed = await HasProfileUsecase(
-                            repository: repository,
-                          ).confirmHasProfile();
-
-                          confirmed.fold(
-                            (failure) {
-                              final message = errorMessages.getErrorMessage(
-                                failure,
-                              );
-                              // Mostrar error
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                OurnegoSnackbars.error(context, message),
-                              );
-                            },
-                            (_) async {
-                              final setHasSeenOnboarding = ref.read(
-                                setHasSeenOnboardingUsecaseProvider,
-                              );
-
-                              final firstRouteName = AppRouteObserver
-                                  .instance
-                                  .firstRoute
-                                  ?.settings
-                                  .name;
-                              final isFirstRouteOnboarding =
-                                  firstRouteName == AppRoutes.onboarding ||
-                                  firstRouteName == 'onboarding';
-
-                              if (isFirstRouteOnboarding) {
-                                await setHasSeenOnboarding();
-                                await Future.delayed(
-                                  Duration(milliseconds: 100),
-                                );
-                                context.go(MapRoutes.map);
-                                return;
-                              }
-
-                              var poppedAnyRoute = false;
-                              while (context.canPop()) {
-                                poppedAnyRoute = true;
-                                context.pop();
-                              }
-
-                              if (!poppedAnyRoute) {
-                                context.go(MapRoutes.map);
-                              }
-                            },
+                          final setHasSeenOnboarding = ref.read(
+                            setHasSeenOnboardingUsecaseProvider,
                           );
+
+                          final firstRouteName = AppRouteObserver
+                              .instance
+                              .firstRoute
+                              ?.settings
+                              .name;
+                          final isFirstRouteOnboarding =
+                              firstRouteName == AppRoutes.onboarding ||
+                              firstRouteName == 'onboarding';
+
+                          if (isFirstRouteOnboarding) {
+                            await setHasSeenOnboarding();
+                            await Future.delayed(Duration(milliseconds: 100));
+                            context.go(MapRoutes.map);
+                            return;
+                          }
+
+                          var poppedAnyRoute = false;
+                          while (context.canPop()) {
+                            poppedAnyRoute = true;
+                            context.pop();
+                          }
+
+                          if (!poppedAnyRoute) {
+                            context.go(MapRoutes.map);
+                          }
                         },
                       );
                     }

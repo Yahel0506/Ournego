@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/core/routing/route_names.dart';
-import 'package:ournego/features/auth/domain/usecases/sign_up_with_email_usecase.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
 import 'package:ournego/shared/widgets/ournego_buttons.dart';
 import 'package:ournego/shared/widgets/ournego_inputs.dart';
@@ -46,9 +45,9 @@ class _CreatePasswordScreen extends ConsumerState<CreatePasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final repository = ref.read(authRepositoryProvider);
     final errorMessages = ref.watch(authErrorMessagesProvider);
     final datasource = ref.watch(authScreenTextProvider);
+    final signUpWithEmailUsecase = ref.read(signUpWithEmailUsecaseProvider);
     final text = datasource.createPassword();
     final passwordRules = text.passwordRules ?? [];
 
@@ -199,11 +198,7 @@ class _CreatePasswordScreen extends ConsumerState<CreatePasswordScreen> {
                         minimumLenght;
                     if ((_formKey.currentState?.validate() ?? false) &&
                         isValid) {
-                      final usecase = SignUpWithEmailUsecase(
-                        repository: repository,
-                      );
-
-                      final result = await usecase(
+                      final result = await signUpWithEmailUsecase(
                         email,
                         _passwordController.text,
                       );
@@ -219,8 +214,10 @@ class _CreatePasswordScreen extends ConsumerState<CreatePasswordScreen> {
                           );
                         },
                         (user) async {
-                          // Navegar a la siguiente pantalla o mostrar éxito
-                          context.push(AuthRoutes.completeProfile);
+                          context.push(
+                            AuthRoutes.verifyEmail,
+                            extra: user.email ?? email,
+                          );
                         },
                       );
                     }

@@ -88,6 +88,7 @@ class _LoginEmailScreenState extends ConsumerState<LoginEmailScreen> {
                   child: PasswordInput(
                     text: text,
                     controller: _passwordController,
+                    emailController: _emailController,
                     inputKey: const ValueKey('loginPasswordInput'),
                   ),
                 ),
@@ -166,6 +167,11 @@ class PrimaryButton extends StatelessWidget {
               ).showSnackBar(OurnegoSnackbars.error(context, message));
               if (failure is UserProfileNotFound) {
                 context.push(AuthRoutes.completeProfile);
+              } else if (failure is EmailNotVerifiedFailure) {
+                context.push(
+                  AuthRoutes.verifyEmail,
+                  extra: emailController.text,
+                );
               }
             },
             (user) async {
@@ -237,12 +243,14 @@ class EmailInput extends StatelessWidget {
 class PasswordInput extends StatefulWidget {
   final AuthScreenText text;
   final TextEditingController controller;
+  final TextEditingController emailController;
   final Key inputKey;
 
   const PasswordInput({
     super.key,
     required this.text,
     required this.controller,
+    required this.emailController,
     required this.inputKey,
   });
 
@@ -294,9 +302,17 @@ class _PasswordInputState extends State<PasswordInput> {
           obscureText: _isObscure,
         ),
         SizedBox(height: 15),
-        Text(
-          widget.text.forgotPassword.toString(),
-          style: OurnegoTextStyles.link.copyWith(fontSize: 14),
+        InkWell(
+          onTap: () {
+            context.push(
+              AuthRoutes.passwordRecovery,
+              extra: widget.emailController.text.trim(),
+            );
+          },
+          child: Text(
+            widget.text.forgotPassword.toString(),
+            style: OurnegoTextStyles.link.copyWith(fontSize: 14),
+          ),
         ),
       ],
     );

@@ -54,19 +54,14 @@ class AuthRepositoryImpl implements AuthRepository {
       // Datasource returns UserModel
       final userModel = await authDatasource.logInWithEmail(email, password);
 
-      // Check if user has completed profile
-      final bool hasProfile = await authDatasource.checkHasProfile();
-
-      if (!hasProfile) {
-        debugPrint('User has no profile');
-        return Left(UserProfileNotFound());
-      }
-
       debugPrint('Login successful for user: ${userModel.email}');
       return Right(userModel);
     } on AuthException catch (e) {
       if (e.message.contains('Invalid login credentials')) {
         return Left(InvalidCredentialsFailure());
+      }
+      if (e.message.contains('Email not confirmed')) {
+        return Left(EmailNotVerifiedFailure());
       }
       debugPrint('AuthException in logInWithEmail: ${e.message}');
       return Left(ServerFailure());
@@ -128,6 +123,54 @@ class AuthRepositoryImpl implements AuthRepository {
     // Datasource returns Stream<UserModel>, which IS-A Stream<AppUser>
     // due to inheritance, so we can return it directly
     return authDatasource.getProfileStream(id: userId);
+  }
+
+  @override
+  Stream<bool> watchEmailVerificationStatus() {
+    return authDatasource.watchEmailVerificationStatus().distinct();
+  }
+
+  @override
+  Future<Either<Failure, bool>> isEmailVerified() async {
+    try {
+      final isVerified = await authDatasource.isEmailVerified();
+      return Right(isVerified);
+    } on NoAuthenticatedUserException {
+      return Left(AuthenticationRequiredFailure());
+    } on EmailVerificationException {
+      return Left(ServerFailure());
+    } catch (e) {
+      debugPrint('Error in isEmailVerified: $e');
+      return Left(ServerFailure());
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> resendEmailVerification(String email) async {
+    try {
+      await authDatasource.resendEmailVerification(email);
+      return const Right(null);
+    } on AuthException catch (e) {
+      debugPrint('AuthException in resendEmailVerification: ${e.message}');
+      return Left(ServerFailure());
+    } catch (e) {
+      debugPrint('Error in resendEmailVerification: $e');
+      return Left(ServerFailure());
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> sendPasswordResetEmail(String email) async {
+    try {
+      await authDatasource.sendPasswordResetEmail(email);
+      return const Right(null);
+    } on AuthException catch (e) {
+      debugPrint('AuthException in sendPasswordResetEmail: ${e.message}');
+      return Left(ServerFailure());
+    } catch (e) {
+      debugPrint('Error in sendPasswordResetEmail: $e');
+      return Left(ServerFailure());
+    }
   }
 
   @override
