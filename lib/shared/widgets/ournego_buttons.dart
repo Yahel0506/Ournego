@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import 'package:ournego/core/ournego_colors.dart';
 
 class OurnegoPrimaryButton extends StatelessWidget {
@@ -45,10 +44,13 @@ class OurnegoButtonStyles {
   static ButtonStyle authOutlinedOnSurface(BuildContext context) {
     return OutlinedButton.styleFrom(
       side: BorderSide(
-        width: 3,
-        color: Theme.of(context).colorScheme.onSurface,
+        width: 1,
+        color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
       ),
       foregroundColor: Theme.of(context).colorScheme.onSurface,
+      backgroundColor: Theme.of(
+        context,
+      ).colorScheme.surface.withValues(alpha: 0.6),
     );
   }
 
