@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import 'package:ournego/core/theme/tokens/ournego_color_tokens.dart';
 
 class OurnegoButtonStyles {
@@ -24,7 +23,7 @@ class OurnegoButtonStyles {
   static OutlinedButtonThemeData outlinedButtonTheme(ColorScheme colorScheme) {
     return OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        side: BorderSide(width: 3, color: colorScheme.onSurface),
+        side: BorderSide(width: 1, color: colorScheme.onSurface),
         foregroundColor: colorScheme.onSurface,
       ),
     );
