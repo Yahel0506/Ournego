@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ournego/features/navigation/presentation/providers/navigation_provider.dart';
@@ -49,49 +47,46 @@ class AppNavigationBar extends ConsumerWidget {
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(borderRadius),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaY: 0, sigmaX: 0),
-              child: Container(
-                padding: paddingR,
-                width: kIsWideScreen ? 400 : double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(borderRadius),
-                  border: Border.all(
-                    width: 1,
-                    color: colorScheme.outline.withValues(alpha: 0.3),
-                  ),
-                  color: colorScheme.surface.withValues(alpha: 1),
+            child: Container(
+              padding: paddingR,
+              width: kIsWideScreen ? 400 : double.infinity,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(borderRadius),
+                border: Border.all(
+                  width: 1,
+                  color: colorScheme.outline.withValues(alpha: 0.3),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Row(
-                    children: [
-                      _CrystalNavItem(
-                        icon: icons[0],
-                        isSelected: currentIndex == 0,
-                        selectedColor: colorScheme.primary,
-                        selectedIconColor: colorScheme.surface,
-                        unselectedIconColor: colorScheme.onSurface,
-                        onTap: () => onTap(0),
-                      ),
-                      _CrystalNavItem(
-                        icon: icons[1],
-                        isSelected: currentIndex == 1,
-                        selectedColor: colorScheme.primary,
-                        selectedIconColor: colorScheme.surface,
-                        unselectedIconColor: colorScheme.onSurface,
-                        onTap: () => onTap(1),
-                      ),
-                      _CrystalNavItem(
-                        icon: icons[2],
-                        isSelected: currentIndex == 2,
-                        selectedColor: colorScheme.primary,
-                        selectedIconColor: colorScheme.surface,
-                        unselectedIconColor: colorScheme.onSurface,
-                        onTap: () => onTap(2),
-                      ),
-                    ],
-                  ),
+                color: colorScheme.surface,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Row(
+                  children: [
+                    _CrystalNavItem(
+                      icon: icons[0],
+                      isSelected: currentIndex == 0,
+                      selectedColor: colorScheme.primary,
+                      selectedIconColor: colorScheme.surface,
+                      unselectedIconColor: colorScheme.onSurface,
+                      onTap: () => onTap(0),
+                    ),
+                    _CrystalNavItem(
+                      icon: icons[1],
+                      isSelected: currentIndex == 1,
+                      selectedColor: colorScheme.primary,
+                      selectedIconColor: colorScheme.surface,
+                      unselectedIconColor: colorScheme.onSurface,
+                      onTap: () => onTap(1),
+                    ),
+                    _CrystalNavItem(
+                      icon: icons[2],
+                      isSelected: currentIndex == 2,
+                      selectedColor: colorScheme.primary,
+                      selectedIconColor: colorScheme.surface,
+                      unselectedIconColor: colorScheme.onSurface,
+                      onTap: () => onTap(2),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -132,16 +127,16 @@ class _CrystalNavItem extends StatelessWidget {
           child: Center(
             child: TweenAnimationBuilder<double>(
               tween: Tween<double>(begin: 0, end: isSelected ? 1 : 0),
-              duration: const Duration(milliseconds: 280),
-              curve: Curves.easeOutCubic,
+              duration: const Duration(milliseconds: 120),
+              curve: Curves.easeOut,
               builder: (context, value, _) {
-                final iconScale = 1 + (0.12 * value);
+                final iconScale = 1 + (0.06 * value);
 
                 return Transform.scale(
                   scale: iconScale,
                   child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 240),
-                    curve: Curves.easeOutCubic,
+                    duration: const Duration(milliseconds: 120),
+                    curve: Curves.easeOut,
                     width: 68,
                     height: 68,
                     decoration: BoxDecoration(
@@ -154,7 +149,7 @@ class _CrystalNavItem extends StatelessWidget {
                     ),
                     child: Icon(
                       icon,
-                      size: 40 + (4 * value),
+                      size: 38 + (2 * value),
                       color: Color.lerp(
                         unselectedIconColor,
                         selectedIconColor,

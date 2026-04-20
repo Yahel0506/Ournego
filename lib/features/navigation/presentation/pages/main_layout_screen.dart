@@ -18,7 +18,22 @@ class MainLayoutScreen extends ConsumerWidget {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       extendBody: true,
-      body: navigationShell,
+      body: TweenAnimationBuilder<double>(
+        key: ValueKey<int>(currentIndex),
+        tween: Tween<double>(begin: 0, end: 1),
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeInOut,
+        child: navigationShell,
+        builder: (context, value, child) {
+          final opacity = 0.75 + (0.25 * value);
+          final dx = (1 - value) * 8;
+
+          return Opacity(
+            opacity: opacity,
+            child: Transform.translate(offset: Offset(dx, 0), child: child),
+          );
+        },
+      ),
       bottomNavigationBar: AppNavigationBar(
         currentIndex: currentIndex,
         onTap: (index) {
