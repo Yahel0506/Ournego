@@ -2,10 +2,9 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:ournego/features/auth/data/models/user_model.dart';
 import 'package:path/path.dart' as p;
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-import 'package:ournego/features/auth/data/models/user_model.dart';
 
 /// Datasource for authentication operations using Supabase.
 ///
@@ -183,7 +182,7 @@ class SupabaseAuthDatasource {
       // For web, use Supabase's native OAuth flow
       await _supabase.auth.signInWithOAuth(
         OAuthProvider.google,
-        redirectTo: null,
+        redirectTo: "https://beta.ournego.com",
       );
       // On web, OAuth redirects so code below won't execute
       // Profile verification should happen after redirect in the app
