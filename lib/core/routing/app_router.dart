@@ -13,7 +13,9 @@ import 'package:ournego/features/auth/presentation/pages/auth_selection_screen.d
 import 'package:ournego/features/auth/presentation/pages/complete_profile_screen.dart';
 import 'package:ournego/features/auth/presentation/pages/create_password_screen.dart';
 import 'package:ournego/features/auth/presentation/pages/login_email_screen.dart';
+import 'package:ournego/features/auth/presentation/pages/password_recovery_screen.dart';
 import 'package:ournego/features/auth/presentation/pages/signup_email_screen.dart';
+import 'package:ournego/features/auth/presentation/pages/verify_email_screen.dart';
 import 'package:ournego/features/business/presentation/pages/business_form_screen.dart';
 import 'package:ournego/features/business/presentation/pages/business_panel_screen.dart';
 import 'package:ournego/features/business/presentation/pages/register_business_screen.dart';
@@ -33,7 +35,7 @@ GoRouter createAppRouter({
   return GoRouter(
     initialLocation:
         initialLocation ?? (startOnMap ? MapRoutes.map : AppRoutes.onboarding),
-    debugLogDiagnostics: true,
+    debugLogDiagnostics: false,
     observers: [AppRouteObserver.instance],
     refreshListenable: GoRouterRefreshStream(refreshStream),
     routes: [
@@ -53,6 +55,14 @@ GoRouter createAppRouter({
         builder: (context, state) => const LoginEmailScreen(),
       ),
       GoRoute(
+        path: AuthRoutes.passwordRecovery,
+        name: 'password-recovery',
+        builder: (context, state) {
+          final email = state.extra as String?;
+          return PasswordRecoveryScreen(initialEmail: email);
+        },
+      ),
+      GoRoute(
         path: AuthRoutes.signupEmail,
         name: 'signup-email',
         builder: (context, state) => const SignupEmailScreen(),
@@ -68,6 +78,14 @@ GoRouter createAppRouter({
           }
 
           return CreatePasswordScreen(email: email);
+        },
+      ),
+      GoRoute(
+        path: AuthRoutes.verifyEmail,
+        name: 'verify-email',
+        builder: (context, state) {
+          final email = state.extra as String?;
+          return VerifyEmailScreen(email: email);
         },
       ),
       GoRoute(
@@ -143,11 +161,18 @@ GoRouter createAppRouter({
       final path = state.uri.path;
       final container = ProviderScope.containerOf(context, listen: false);
       final isLoggedIn = container.read(authSessionStatusProvider);
-      final isAuthRoute =
+      final isPublicAuthRoute =
           path == AuthRoutes.authSelection ||
           path == AuthRoutes.loginEmail ||
+          path == AuthRoutes.passwordRecovery ||
           path == AuthRoutes.signupEmail ||
           path == AuthRoutes.createPassword;
+      final isVerifyRoute = path == AuthRoutes.verifyEmail;
+      final isShellRoute =
+          path == AppRoutes.community ||
+          path == MapRoutes.map ||
+          path == BusinessRoutes.panel ||
+          path.startsWith('/business/');
       final isGuestAllowedRoute =
           path == AppRoutes.onboarding ||
           path == MapRoutes.map ||
@@ -157,8 +182,30 @@ GoRouter createAppRouter({
           path.startsWith('/business/');
 
       if (!isLoggedIn) {
-        if (!isAuthRoute && !isGuestAllowedRoute) {
+        if (!isPublicAuthRoute && !isGuestAllowedRoute && !isVerifyRoute) {
           return AuthRoutes.authSelection;
+        }
+
+        return null;
+      }
+
+      if (isShellRoute) {
+        return null;
+      }
+
+      final emailVerificationUsecase = container.read(
+        emailVerificationUsecaseProvider,
+      );
+      final isEmailVerifiedResult = await emailVerificationUsecase
+          .isEmailVerified();
+      final isEmailVerified = isEmailVerifiedResult.fold(
+        (_) => false,
+        (value) => value,
+      );
+
+      if (!isEmailVerified) {
+        if (!isVerifyRoute) {
+          return AuthRoutes.verifyEmail;
         }
 
         return null;
@@ -168,14 +215,18 @@ GoRouter createAppRouter({
       final hasProfileResult = await hasProfileUsecase.checkHasProfile();
       final hasProfile = hasProfileResult.fold((_) => false, (value) => value);
 
-      if (!hasProfile && path != AuthRoutes.completeProfile) {
-        return AuthRoutes.completeProfile;
+      if (!hasProfile) {
+        if (path != AuthRoutes.completeProfile) {
+          return AuthRoutes.completeProfile;
+        }
+
+        return null;
       }
 
-      if (hasProfile &&
-          (isAuthRoute ||
-              path == AuthRoutes.completeProfile ||
-              path == AppRoutes.onboarding)) {
+      if (isVerifyRoute ||
+          isPublicAuthRoute ||
+          path == AuthRoutes.completeProfile ||
+          path == AppRoutes.onboarding) {
         return MapRoutes.map;
       }
 

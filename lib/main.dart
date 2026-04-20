@@ -1,5 +1,5 @@
 import 'package:feedback/feedback.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -48,7 +48,7 @@ Future<void> main() async {
     final onboardingDatasource = LocalOnboardingDatasource();
     hasSeenOnboarding = await onboardingDatasource.hasSeenOnboarding();
   } catch (e) {
-    print('Error loading environment variables: $e');
+    debugPrint('Error loading environment variables: $e');
     // Continue with default value for hasSeenOnboarding
   }
 
@@ -67,11 +67,7 @@ class MyApp extends StatelessWidget {
   final bool startOnMap;
   final Stream<dynamic>? authStateChanges;
 
-  const MyApp({
-    super.key,
-    required this.startOnMap,
-    this.authStateChanges,
-  });
+  const MyApp({super.key, required this.startOnMap, this.authStateChanges});
 
   @override
   Widget build(BuildContext context) {
@@ -117,8 +113,18 @@ class _AuthStateListenerState extends State<AuthStateListener> {
 
   Future<void> _checkAndCreateProfile() async {
     try {
-      final userId = Supabase.instance.client.auth.currentUser?.id;
+      final user = Supabase.instance.client.auth.currentUser;
+      final userId = user?.id;
       if (userId == null) return;
+
+      final identities = user?.identities ?? const [];
+      final hasGoogleIdentity = identities.any(
+        (identity) => identity.provider == 'google',
+      );
+
+      if (!hasGoogleIdentity) {
+        return;
+      }
 
       final data = await Supabase.instance.client
           .from('users')
@@ -128,7 +134,6 @@ class _AuthStateListenerState extends State<AuthStateListener> {
 
       if (data == null) {
         // No existe el usuario en la tabla, crearlo
-        final user = Supabase.instance.client.auth.currentUser;
         await Supabase.instance.client.from('users').insert({
           'id': userId,
           'name':
@@ -137,7 +142,7 @@ class _AuthStateListenerState extends State<AuthStateListener> {
         });
       }
     } catch (e) {
-      print('Error al verificar/crear perfil: $e');
+      debugPrint('Error al verificar/crear perfil: $e');
     }
   }
 

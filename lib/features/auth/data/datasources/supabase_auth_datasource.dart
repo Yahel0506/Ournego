@@ -25,7 +25,6 @@ class SupabaseAuthDatasource {
   }
 
   /// Signs up a new user with email and password.
-  /// Creates an entry in the 'users' table with has_profile = false.
   /// Returns [UserModel] on success.
   Future<UserModel> signUpWithEmail(String email, String password) async {
     final AuthResponse res = await _supabase.auth.signUp(
@@ -36,10 +35,6 @@ class SupabaseAuthDatasource {
     final rawUser = res.user;
 
     if (rawUser != null) {
-      await _supabase.from('users').insert({
-        'id': rawUser.id,
-        'has_profile': false,
-      });
       return UserModel.fromSupabaseUser(rawUser);
     } else {
       throw SignupException('signup-error');
@@ -66,13 +61,63 @@ class SupabaseAuthDatasource {
   /// Checks if the current user has completed their profile.
   Future<bool> checkHasProfile() async {
     final String userId = _requireUserId();
+
     final data = await _supabase
         .from('users')
         .select('has_profile')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
-    return data['has_profile'] as bool;
+    if (data == null) {
+      return false;
+    }
+
+    return (data['has_profile'] as bool?) ?? false;
+  }
+
+  Future<void> resendEmailVerification(String email) async {
+    await _supabase.auth.resend(type: OtpType.signup, email: email);
+  }
+
+  Future<void> sendPasswordResetEmail(String email) async {
+    await _supabase.auth.resetPasswordForEmail(email);
+  }
+
+  Future<bool> isEmailVerified() async {
+    return _supabase.auth.currentUser?.emailConfirmedAt != null;
+  }
+
+  Stream<bool> watchEmailVerificationStatus() async* {
+    yield await _syncEmailVerificationStatus();
+
+    await for (final _ in Stream<void>.periodic(const Duration(seconds: 3))) {
+      yield await _syncEmailVerificationStatus();
+    }
+  }
+
+  Future<bool> _syncEmailVerificationStatus() async {
+    final currentUser = _supabase.auth.currentUser;
+    if (currentUser == null) {
+      return false;
+    }
+
+    try {
+      final UserResponse userResponse = await _supabase.auth.getUser();
+      final user = userResponse.user;
+
+      if (user == null || user.id != currentUser.id) {
+        return false;
+      }
+
+      if (user.emailConfirmedAt != null &&
+          _supabase.auth.currentUser?.emailConfirmedAt == null) {
+        await _supabase.auth.refreshSession();
+      }
+
+      return user.emailConfirmedAt != null;
+    } catch (_) {
+      return _supabase.auth.currentUser?.emailConfirmedAt != null;
+    }
   }
 
   /// Gets a stream of user profile data.
@@ -109,16 +154,20 @@ class SupabaseAuthDatasource {
   /// Updates the user's display name.
   Future<void> updateUserName(String name) async {
     final userId = _requireUserId();
-    await _supabase.from('users').update({'name': name}).eq('id', userId);
+    await _supabase.from('users').upsert({
+      'id': userId,
+      'name': name,
+      'has_profile': true,
+    }, onConflict: 'id');
   }
 
   /// Marks the current user's profile as complete.
   Future<void> confirmHasProfile() async {
     final userId = _requireUserId();
-    await _supabase
-        .from('users')
-        .update({'has_profile': true})
-        .eq('id', userId);
+    await _supabase.from('users').upsert({
+      'id': userId,
+      'has_profile': true,
+    }, onConflict: 'id');
   }
 
   /// Signs out the current user.
@@ -247,6 +296,15 @@ class ProfileNotFoundException implements Exception {
 class GoogleSignInException implements Exception {
   final String message;
   GoogleSignInException(this.message);
+
+  @override
+  String toString() => message;
+}
+
+/// Thrown when email verification flow fails.
+class EmailVerificationException implements Exception {
+  final String message;
+  EmailVerificationException(this.message);
 
   @override
   String toString() => message;
