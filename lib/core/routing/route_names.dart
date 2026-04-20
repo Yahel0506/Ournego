@@ -20,8 +20,10 @@ class AuthRoutes {
 
   static const authSelection = '/auth-selection';
   static const loginEmail = '/login-email';
+  static const passwordRecovery = '/password-recovery';
   static const signupEmail = '/signup-email';
   static const createPassword = '/create-password';
+  static const verifyEmail = '/verify-email';
   static const completeProfile = '/complete-profile';
 }
 

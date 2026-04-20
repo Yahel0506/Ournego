@@ -31,6 +31,14 @@ abstract class AuthRepository {
   // to propagate errors through the stream.
   Stream<AppUser> getProfile({String? userId});
 
+  Stream<bool> watchEmailVerificationStatus();
+
+  Future<Either<Failure, bool>> isEmailVerified();
+
+  Future<Either<Failure, void>> resendEmailVerification(String email);
+
+  Future<Either<Failure, void>> sendPasswordResetEmail(String email);
+
   Future<Either<Failure, void>> confirmHasProfile();
 
   Future<Either<Failure, bool>> checkHasProfile();

@@ -24,6 +24,9 @@ class EmailAlreadyInUseFailure extends Failure {}
 // Si el nombre ya está en uso
 class UsernameAlreadyInUseFailure extends Failure {}
 
+// Si el correo aún no ha sido verificado
+class EmailNotVerifiedFailure extends Failure {}
+
 // Si no se encontró el perfil del usuario
 class UserProfileNotFound extends Failure {}
 
