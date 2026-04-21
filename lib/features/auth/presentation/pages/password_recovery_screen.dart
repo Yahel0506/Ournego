@@ -6,6 +6,7 @@ import 'package:string_validator/string_validator.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
 import 'package:ournego/shared/widgets/ournego_buttons.dart';
+import 'package:ournego/shared/widgets/ournego_content_container.dart';
 import 'package:ournego/shared/widgets/ournego_inputs.dart';
 import 'package:ournego/shared/widgets/ournego_page_layout.dart';
 import 'package:ournego/shared/widgets/ournego_snackbars.dart';
@@ -86,24 +87,26 @@ class _PasswordRecoveryScreenState
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
-          Form(
-            key: _formKey,
-            child: OurnegoLabeledInputSection(
-              label: 'Introduce tu correo electrónico:',
-              input: OurnegoInputField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  final email = value?.trim() ?? '';
-                  if (email.isEmpty) {
-                    return 'Introduce tu correo electrónico';
-                  }
-                  if (!email.isEmail) {
-                    return 'El correo no es válido';
-                  }
-                  return null;
-                },
-                hint: const Text('nombre@dominio.com'),
+          OurnegoContentContainer(
+            child: Form(
+              key: _formKey,
+              child: OurnegoLabeledInputSection(
+                label: 'Introduce tu correo electrónico:',
+                input: OurnegoInputField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (value) {
+                    final email = value?.trim() ?? '';
+                    if (email.isEmpty) {
+                      return 'Introduce tu correo electrónico';
+                    }
+                    if (!email.isEmail) {
+                      return 'El correo no es válido';
+                    }
+                    return null;
+                  },
+                  hint: const Text('nombre@dominio.com'),
+                ),
               ),
             ),
           ),

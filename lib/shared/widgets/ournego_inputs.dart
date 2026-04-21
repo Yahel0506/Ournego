@@ -26,7 +26,9 @@ class OurnegoInputDecorations {
       border: const OutlineInputBorder(
         borderRadius: BorderRadius.all(Radius.circular(OurnegoRadiusTokens.xl)),
       ),
-      fillColor: context != null ? Theme.of(context).colorScheme.surface : null,
+      fillColor: context != null
+          ? Theme.of(context).colorScheme.surface.withValues(alpha: 0.6)
+          : null,
     );
   }
 }
@@ -86,12 +88,30 @@ class OurnegoInputField extends StatelessWidget {
         hintStyle: hintStyle,
         icon: icon,
         filled: true,
+        fillColor: Theme.of(context).colorScheme.surface.withValues(alpha: 0.5),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.all(
+            Radius.circular(OurnegoRadiusTokens.xl),
+          ),
+          borderSide: BorderSide(
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.all(
+            Radius.circular(OurnegoRadiusTokens.xl),
+          ),
+          borderSide: BorderSide(
+            color: Theme.of(context).colorScheme.outline,
+            width: 1.2,
+          ),
+        ),
+        suffixIcon: suffixIcon,
         border: const OutlineInputBorder(
           borderRadius: BorderRadius.all(
             Radius.circular(OurnegoRadiusTokens.xl),
           ),
         ),
-        suffixIcon: suffixIcon,
       ),
     );
   }
