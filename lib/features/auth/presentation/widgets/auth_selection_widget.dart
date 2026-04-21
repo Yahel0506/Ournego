@@ -7,6 +7,7 @@ import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
 import 'package:ournego/features/onboarding/presentation/providers/onboarding_providers.dart';
 import 'package:ournego/shared/widgets/ournego_buttons.dart';
+import 'package:ournego/shared/widgets/ournego_content_container.dart';
 import 'package:ournego/shared/widgets/ournego_snackbars.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -26,47 +27,36 @@ class AuthSelectionWidget extends ConsumerWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 108.0),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.5),
-          border: BoxBorder.all(
-            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
-            width: 1,
-          ),
-          borderRadius: BorderRadius.circular(30),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(18.0),
-          child: Column(
-            children: [
-              const Spacer(),
-              // Logo de Ournego
-              Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Image(image: AssetImage(themedImagePath)),
-              ),
-              const SizedBox(height: 30),
-              // Título de la Sección
-              Text('Empieza a crecer.', style: OurnegoTextStyles.header),
-              const SizedBox(height: 30),
-              // Columna de botones
-              Column(
-                children: [
-                  GoogleLoginButton(config: this),
-                  const SizedBox(height: 15),
-                  MailLoginButton(config: this),
-                  const SizedBox(height: 15),
-                  // PhoneLoginButton(config: this),
-                  const SizedBox(height: 30),
-                  GuestAccessButton(config: this),
-                ],
-              ),
-              const SizedBox(height: 60),
-              // Términos y condiciones
-              TermsRichText(config: this),
-              const Spacer(),
-            ],
-          ),
+      child: OurnegoContentContainer(
+        child: Column(
+          children: [
+            const Spacer(),
+            // Logo de Ournego
+            Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Image(image: AssetImage(themedImagePath)),
+            ),
+            const SizedBox(height: 30),
+            // Título de la Sección
+            Text('Empieza a crecer.', style: OurnegoTextStyles.header),
+            const SizedBox(height: 30),
+            // Columna de botones
+            Column(
+              children: [
+                GoogleLoginButton(config: this),
+                const SizedBox(height: 15),
+                MailLoginButton(config: this),
+                const SizedBox(height: 15),
+                // PhoneLoginButton(config: this),
+                const SizedBox(height: 30),
+                GuestAccessButton(config: this),
+              ],
+            ),
+            const SizedBox(height: 60),
+            // Términos y condiciones
+            TermsRichText(config: this),
+            const Spacer(),
+          ],
         ),
       ),
     );

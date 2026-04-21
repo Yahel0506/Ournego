@@ -7,15 +7,20 @@ class OurnegoInputStyles {
   static InputDecorationTheme inputDecorationTheme(ColorScheme colorScheme) {
     return InputDecorationTheme(
       filled: true,
-      fillColor: colorScheme.surface,
+      fillColor: colorScheme.surface.withValues(alpha: 0.5),
       border: const OutlineInputBorder(
         borderRadius: BorderRadius.all(Radius.circular(OurnegoRadiusTokens.xl)),
       ),
       enabledBorder: OutlineInputBorder(
-        borderSide: BorderSide(color: colorScheme.outline),
+        borderSide: BorderSide(
+          color: colorScheme.outline.withValues(alpha: 0.3),
+        ),
       ),
       focusedBorder: OutlineInputBorder(
-        borderSide: BorderSide(color: colorScheme.primary, width: 1.2),
+        borderSide: BorderSide(
+          color: colorScheme.outline.withValues(alpha: 0.3),
+          width: 1.2,
+        ),
       ),
       errorBorder: OutlineInputBorder(
         borderSide: BorderSide(color: colorScheme.error),

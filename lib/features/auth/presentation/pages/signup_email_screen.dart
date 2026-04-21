@@ -7,6 +7,7 @@ import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
 import 'package:ournego/shared/widgets/ournego_buttons.dart';
+import 'package:ournego/shared/widgets/ournego_content_container.dart';
 import 'package:ournego/shared/widgets/ournego_inputs.dart';
 import 'package:ournego/shared/widgets/ournego_page_layout.dart';
 
@@ -50,47 +51,49 @@ class _SignupEmailScreenState extends ConsumerState<SignupEmailScreen> {
           ),
           Spacer(),
           // Campos de texto
-          Form(
-            key: _formKey,
-            child: Column(
-              children: [
-                // Introducir email
-                AutofillGroup(
-                  child: OurnegoLabeledInputSection(
-                    label: text.primaryInstruction,
-                    input: OurnegoInputField(
-                      controller: _emailController,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Introduce tu correo electrónico';
-                        }
-                        if (value.isEmail == false) {
-                          return 'Este correo electrónico no es válido. Asegúrate de que tenga un formato como este: ejemplo@email.com';
-                        } else {
-                          return null;
-                        }
-                      },
-                      onChanged: (value) {
-                        _formKey.currentState?.validate();
-                      },
-                      hint: Text(text.primaryHint),
+          OurnegoContentContainer(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                children: [
+                  // Introducir email
+                  AutofillGroup(
+                    child: OurnegoLabeledInputSection(
+                      label: text.primaryInstruction,
+                      input: OurnegoInputField(
+                        controller: _emailController,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Introduce tu correo electrónico';
+                          }
+                          if (value.isEmail == false) {
+                            return 'Este correo electrónico no es válido. Asegúrate de que tenga un formato como este: ejemplo@email.com';
+                          } else {
+                            return null;
+                          }
+                        },
+                        onChanged: (value) {
+                          _formKey.currentState?.validate();
+                        },
+                        hint: Text(text.primaryHint),
+                      ),
                     ),
                   ),
-                ),
-                SizedBox(height: 30),
-                // Botón SignUp
-                OurnegoPrimaryButton(
-                  onPressed: () {
-                    if (_formKey.currentState?.validate() ?? false) {
-                      context.push(
-                        AuthRoutes.createPassword,
-                        extra: _emailController.text,
-                      );
-                    }
-                  },
-                  child: Text(text.primaryButton),
-                ),
-              ],
+                  SizedBox(height: 30),
+                  // Botón SignUp
+                  OurnegoPrimaryButton(
+                    onPressed: () {
+                      if (_formKey.currentState?.validate() ?? false) {
+                        context.push(
+                          AuthRoutes.createPassword,
+                          extra: _emailController.text,
+                        );
+                      }
+                    },
+                    child: Text(text.primaryButton),
+                  ),
+                ],
+              ),
             ),
           ),
           Spacer(),
