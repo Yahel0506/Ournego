@@ -27,11 +27,10 @@ class OurnegoPrimaryButton extends StatelessWidget {
             return OurnegoColors.azulVerde;
           }
 
-          return OurnegoColors.azulCielo;
+          return Theme.of(context).colorScheme.primary;
         }),
-        foregroundColor: WidgetStatePropertyAll(
-          Theme.of(context).colorScheme.onPrimary,
-        ),
+        foregroundColor: WidgetStatePropertyAll(OurnegoColors.noche),
+        elevation: WidgetStateProperty.all(0),
       ),
       child: child,
     );
@@ -47,17 +46,20 @@ class OurnegoButtonStyles {
         width: 1,
         color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
       ),
-      foregroundColor: Theme.of(context).colorScheme.onSurface,
+      foregroundColor: Theme.of(
+        context,
+      ).colorScheme.onSurface.withValues(alpha: 0.9),
       backgroundColor: Theme.of(
         context,
-      ).colorScheme.surface.withValues(alpha: 0.6),
+      ).colorScheme.surface.withValues(alpha: 0.7),
     );
   }
 
   static ButtonStyle authFilledOnSurface(BuildContext context) {
     return ElevatedButton.styleFrom(
-      backgroundColor: Theme.of(context).colorScheme.onSurface,
-      foregroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: OurnegoColors.blanco,
+      foregroundColor: OurnegoColors.noche,
+      elevation: 2,
     );
   }
 

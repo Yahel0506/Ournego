@@ -19,6 +19,7 @@ import 'package:ournego/features/onboarding/domain/usecases/get_has_seen_onboard
 import 'package:ournego/features/onboarding/domain/usecases/set_has_seen_onboarding_usecase.dart';
 import 'package:ournego/features/onboarding/presentation/providers/onboarding_providers.dart';
 import 'package:ournego/shared/widgets/ournego_buttons.dart';
+import 'package:ournego/shared/widgets/ournego_content_container.dart';
 import 'package:ournego/shared/widgets/ournego_inputs.dart';
 import 'package:ournego/shared/widgets/ournego_page_layout.dart';
 import 'package:ournego/shared/widgets/ournego_snackbars.dart';
@@ -70,42 +71,44 @@ class _LoginEmailScreenState extends ConsumerState<LoginEmailScreen> {
           Text(text.title, style: OurnegoTextStyles.header),
           Spacer(),
           // Campos de texto
-          Form(
-            key: _formKey,
-            child: Column(
-              children: [
-                // Introducir email
-                AutofillGroup(
-                  child: EmailInput(
-                    text: text,
-                    controller: _emailController,
-                    inputKey: const ValueKey('loginEmailInput'),
+          OurnegoContentContainer(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                children: [
+                  // Introducir email
+                  AutofillGroup(
+                    child: EmailInput(
+                      text: text,
+                      controller: _emailController,
+                      inputKey: const ValueKey('loginEmailInput'),
+                    ),
                   ),
-                ),
-                SizedBox(height: 30),
-                // Introducir contraseña
-                AutofillGroup(
-                  child: PasswordInput(
+                  SizedBox(height: 30),
+                  // Introducir contraseña
+                  AutofillGroup(
+                    child: PasswordInput(
+                      text: text,
+                      controller: _passwordController,
+                      emailController: _emailController,
+                      inputKey: const ValueKey('loginPasswordInput'),
+                    ),
+                  ),
+                  SizedBox(height: 30),
+                  // Botón Login
+                  PrimaryButton(
                     text: text,
-                    controller: _passwordController,
+                    repository: repository,
+                    errorMessages: errorMessages,
+                    formKey: _formKey,
                     emailController: _emailController,
-                    inputKey: const ValueKey('loginPasswordInput'),
+                    passwordController: _passwordController,
+                    getHasSeenOnboarding: getHasSeenOnboarding,
+                    setHasSeenOnboarding: setHasSeenOnboarding,
+                    buttonKey: const ValueKey('loginSubmitButton'),
                   ),
-                ),
-                SizedBox(height: 30),
-                // Botón Login
-                PrimaryButton(
-                  text: text,
-                  repository: repository,
-                  errorMessages: errorMessages,
-                  formKey: _formKey,
-                  emailController: _emailController,
-                  passwordController: _passwordController,
-                  getHasSeenOnboarding: getHasSeenOnboarding,
-                  setHasSeenOnboarding: setHasSeenOnboarding,
-                  buttonKey: const ValueKey('loginSubmitButton'),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           Spacer(),
