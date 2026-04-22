@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ournego/shared/widgets/ournego_content_container.dart';
 
 import '../../core/ournego_text_styles.dart';
 import '../../core/theme/tokens/ournego_spacing_tokens.dart';
@@ -9,17 +10,21 @@ class InformationCardWidget extends StatelessWidget {
     required this.title,
     required this.description,
     required this.imagePath,
+    this.blur = false,
+    this.contentContainer = true,
   });
 
   final String title;
   final String description;
   final String imagePath;
+  final bool blur;
+  final bool contentContainer;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Padding(
+    final informationCard = Padding(
       padding: const EdgeInsets.all(OurnegoSpacingTokens.xl),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -48,5 +53,11 @@ class InformationCardWidget extends StatelessWidget {
         ],
       ),
     );
+
+    if (contentContainer) {
+      return OurnegoContentContainer(hasBlur: blur, child: informationCard);
+    } else {
+      return informationCard;
+    }
   }
 }

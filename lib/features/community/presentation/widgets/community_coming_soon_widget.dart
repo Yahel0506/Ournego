@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import 'package:ournego/shared/widgets/information_card_widget.dart';
 
 class CommunityComingSoonWidget extends StatelessWidget {
@@ -15,6 +14,7 @@ class CommunityComingSoonWidget extends StatelessWidget {
             description:
                 'Hacemos todo lo posible para que puedas conectar con tu comunidad. ¡Mantente atento a las actualizaciones!',
             imagePath: 'assets/images/waiting_telescope.png',
+            contentContainer: false,
           ),
         ),
       ),
