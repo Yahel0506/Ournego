@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 
 class OurnegoContentContainer extends StatelessWidget {
@@ -6,11 +8,17 @@ class OurnegoContentContainer extends StatelessWidget {
     required this.child,
     this.margin,
     this.borderRadius = 30,
+    this.hasBlur = false,
+    this.customHorizontalPadding,
+    this.customVerticalPadding,
   });
 
   final Widget child;
   final EdgeInsetsGeometry? margin;
   final double borderRadius;
+  final bool hasBlur;
+  final double? customHorizontalPadding;
+  final double? customVerticalPadding;
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +34,7 @@ class OurnegoContentContainer extends StatelessWidget {
             ? 20.0
             : (width < 420 ? 18.0 : 24.0);
 
-        return Container(
+        final contentContainer = Container(
           margin: margin,
           decoration: BoxDecoration(
             color: colorScheme.surface.withValues(alpha: 0.5),
@@ -38,12 +46,24 @@ class OurnegoContentContainer extends StatelessWidget {
           ),
           child: Padding(
             padding: EdgeInsets.symmetric(
-              horizontal: horizontalPadding,
-              vertical: verticalPadding,
+              horizontal: customHorizontalPadding ?? horizontalPadding,
+              vertical: customVerticalPadding ?? verticalPadding,
             ),
             child: child,
           ),
         );
+
+        if (!hasBlur) {
+          return contentContainer;
+        } else {
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(borderRadius),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: contentContainer,
+            ),
+          );
+        }
       },
     );
   }
