@@ -75,11 +75,18 @@ class SupabaseAuthDatasource {
   }
 
   Future<void> resendEmailVerification(String email) async {
-    await _supabase.auth.resend(type: OtpType.signup, email: email);
+    await _supabase.auth.resend(
+      type: OtpType.signup,
+      email: email,
+      emailRedirectTo: "https://www.ournego.com/auth/callback",
+    );
   }
 
   Future<void> sendPasswordResetEmail(String email) async {
-    await _supabase.auth.resetPasswordForEmail(email);
+    await _supabase.auth.resetPasswordForEmail(
+      email,
+      redirectTo: "https://www.ournego.com/auth/callback",
+    );
   }
 
   Future<bool> isEmailVerified() async {
