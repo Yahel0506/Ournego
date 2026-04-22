@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ournego/shared/widgets/ournego_content_container.dart';
 
 class OurnegoAlertDialog extends StatelessWidget {
   final String title;
@@ -18,13 +19,24 @@ class OurnegoAlertDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(title),
-      content: Text(content),
-      actions: [
-        TextButton(onPressed: onAction, child: Text(actionLabel)),
-        ...trailingActions,
-      ],
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 300, maxHeight: 400),
+        child: OurnegoContentContainer(
+          customVerticalPadding: 0,
+          customHorizontalPadding: 0,
+          hasBlur: true,
+          child: AlertDialog(
+            backgroundColor: Colors.transparent,
+            title: Text(title),
+            content: Text(content),
+            actions: [
+              TextButton(onPressed: onAction, child: Text(actionLabel)),
+              ...trailingActions,
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
