@@ -36,6 +36,7 @@ class MapRoutes {
 
   static const map = '/map';
   static const businessDetails = '/business/:id';
+  static const negocioDeeplink = '/negocio/:id';
 }
 
 // |---------------------------------| \\
@@ -68,4 +69,9 @@ class AppRoutes {
 /// Helper to generate business details route with ID
 String businessDetailsRoute(String businessId) {
   return '/business/$businessId';
+}
+
+/// Helper to generate public deep link route with ID
+String negocioDeepLinkRoute(String businessId) {
+  return '/negocio/$businessId';
 }

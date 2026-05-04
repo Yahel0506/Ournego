@@ -14,6 +14,7 @@ import 'package:ournego/core/mapbox_config.dart';
 import 'package:ournego/core/ournego_colors.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/core/routing/route_names.dart';
+import 'package:ournego/features/map/domain/entities/business.dart';
 import 'package:ournego/features/map/presentation/mappers/business_marker_ui_mapper.dart';
 import 'package:ournego/features/map/presentation/models/business_marker_ui_model.dart';
 import 'package:ournego/features/map/presentation/providers/map_providers.dart';
@@ -26,11 +27,14 @@ import 'package:ournego/features/navigation/presentation/widgets/navigation_bar_
 import 'package:ournego/shared/widgets/information_card_widget.dart';
 import 'package:ournego/shared/widgets/ournego_alert_dialog.dart';
 import 'package:ournego/shared/widgets/ournego_snackbars.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
-  const MapScreen({super.key});
+  final String? initialBusinessId;
+
+  const MapScreen({super.key, this.initialBusinessId});
 
   @override
   ConsumerState<MapScreen> createState() => _MapScreenState();
@@ -50,6 +54,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
   late final _animatedMapController = AnimatedMapController(vsync: this);
   late ProviderSubscription<AsyncValue<AppPosition>> _providerSubscription;
+  late ProviderSubscription<AsyncValue<List<Business>>> _businessesSubscription;
   late final FloatingSheetController _floatingSheetController;
 
   final _businessMarkerUiMapper = BusinessMarkerUiMapper();
@@ -57,6 +62,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
   LatLng? _initialCenter;
   double? _initialZoom;
   bool _isLocationModalOpen = false;
+  String? _pendingDeepLinkBusinessId;
+  bool _didReportMissingDeepLinkBusiness = false;
 
   double get _expandedHeight {
     final mq = MediaQuery.of(context);
@@ -343,9 +350,65 @@ class _MapScreenState extends ConsumerState<MapScreen>
     _isLocationModalOpen = false;
   }
 
+  void _openBusinessSheet(Business business, {bool animateToBusiness = true}) {
+    if (_floatingSheetController.isComparisonMode) {
+      return;
+    }
+
+    final favoriteAsync = ref.read(
+      isBusinessFavoriteStreamProvider(business.id),
+    );
+    final isFavorite = favoriteAsync.value ?? false;
+
+    _floatingSheetController.openBusiness(
+      SheetBusinessData.fromBusiness(business, isFavorite: isFavorite),
+    );
+
+    if (animateToBusiness) {
+      _animatedMapController.animateTo(
+        dest: LatLng(business.latitude, business.longitude),
+        zoom: 18,
+      );
+    }
+  }
+
+  void _handleDeepLinkBusinessOpen(List<Business> businesses) {
+    final targetId = _pendingDeepLinkBusinessId;
+    if (targetId == null || targetId.isEmpty) {
+      return;
+    }
+
+    Business? matchedBusiness;
+    for (final business in businesses) {
+      if (business.id == targetId) {
+        matchedBusiness = business;
+        break;
+      }
+    }
+
+    if (matchedBusiness == null) {
+      if (!_didReportMissingDeepLinkBusiness &&
+          businesses.isNotEmpty &&
+          mounted) {
+        _didReportMissingDeepLinkBusiness = true;
+        ScaffoldMessenger.of(context).showSnackBar(
+          OurnegoSnackbars.info('No encontramos el negocio solicitado'),
+        );
+      }
+      return;
+    }
+
+    _pendingDeepLinkBusinessId = null;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _openBusinessSheet(matchedBusiness!);
+    });
+  }
+
   @override
   void initState() {
     super.initState();
+    _pendingDeepLinkBusinessId = widget.initialBusinessId;
     _floatingSheetController = FloatingSheetController();
     _floatingSheetController.addListener(_persistMapAndSheetState);
 
@@ -369,8 +432,37 @@ class _MapScreenState extends ConsumerState<MapScreen>
         );
       },
     );
+
+    _businessesSubscription = ref.listenManual<AsyncValue<List<Business>>>(
+      businessesStreamProvider,
+      (previous, next) {
+        next.whenOrNull(data: _handleDeepLinkBusinessOpen);
+      },
+    );
+
+    final currentBusinesses = ref.read(businessesStreamProvider).asData?.value;
+    if (currentBusinesses != null) {
+      _handleDeepLinkBusinessOpen(currentBusinesses);
+    }
+
     _restoreCamera();
     _restoreSheetStateFromPrefs();
+  }
+
+  @override
+  void didUpdateWidget(covariant MapScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialBusinessId == widget.initialBusinessId) {
+      return;
+    }
+
+    _pendingDeepLinkBusinessId = widget.initialBusinessId;
+    _didReportMissingDeepLinkBusiness = false;
+
+    final currentBusinesses = ref.read(businessesStreamProvider).asData?.value;
+    if (currentBusinesses != null) {
+      _handleDeepLinkBusinessOpen(currentBusinesses);
+    }
   }
 
   @override
@@ -378,6 +470,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
     _floatingSheetController.removeListener(_persistMapAndSheetState);
     _animatedMapController.dispose();
     _providerSubscription.close();
+    _businessesSubscription.close();
     _floatingSheetController.dispose();
     super.dispose();
   }
@@ -514,29 +607,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                           point: LatLng(business.latitude, business.longitude),
                           child: GestureDetector(
                             onTap: () {
-                              if (_floatingSheetController.isComparisonMode) {
-                                return;
-                              }
-
-                              final favoriteAsync = ref.read(
-                                isBusinessFavoriteStreamProvider(business.id),
-                              );
-                              final isFavorite = favoriteAsync.value ?? false;
-
-                              _floatingSheetController.openBusiness(
-                                SheetBusinessData.fromBusiness(
-                                  business,
-                                  isFavorite: isFavorite,
-                                ),
-                              );
-
-                              _animatedMapController.animateTo(
-                                dest: LatLng(
-                                  business.latitude,
-                                  business.longitude,
-                                ),
-                                zoom: 18,
-                              );
+                              _openBusinessSheet(business);
                             },
                             child: Container(
                               key: ValueKey('businessMarker-${business.id}'),
@@ -564,29 +635,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                           point: LatLng(business.latitude, business.longitude),
                           child: GestureDetector(
                             onTap: () {
-                              if (_floatingSheetController.isComparisonMode) {
-                                return;
-                              }
-
-                              final favoriteAsync = ref.read(
-                                isBusinessFavoriteStreamProvider(business.id),
-                              );
-                              final isFavorite = favoriteAsync.value ?? false;
-
-                              _floatingSheetController.openBusiness(
-                                SheetBusinessData.fromBusiness(
-                                  business,
-                                  isFavorite: isFavorite,
-                                ),
-                              );
-
-                              _animatedMapController.animateTo(
-                                dest: LatLng(
-                                  business.latitude,
-                                  business.longitude,
-                                ),
-                                zoom: 18,
-                              );
+                              _openBusinessSheet(business);
                             },
                             child: Container(
                               key: ValueKey('businessMarker-${business.id}'),
@@ -821,6 +870,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
             onContact: _onContact,
             onCatalog: _onCatalog,
             onReviews: _onReviews,
+            onShare: _onShare,
           ),
         ],
       ),
@@ -896,6 +946,17 @@ class _MapScreenState extends ConsumerState<MapScreen>
       OurnegoSnackbars.info(
         'Reseñas de ${business.name} próximamente disponibles',
       ),
+    );
+  }
+
+  Future<void> _onShare(SheetBusinessData business) async {
+    if (business.id.isEmpty) {
+      return;
+    }
+
+    await Share.share(
+      'https://ournego.com/negocio/${business.id}',
+      subject: business.name,
     );
   }
 }
