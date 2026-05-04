@@ -93,6 +93,14 @@ GoRouter createAppRouter({
         name: 'complete-profile',
         builder: (context, state) => CompleteProfileScreen(),
       ),
+      GoRoute(
+        path: MapRoutes.negocioDeeplink,
+        name: 'negocio-deeplink',
+        builder: (context, state) {
+          final businessId = state.pathParameters['id']!;
+          return MapScreen(initialBusinessId: businessId);
+        },
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           return FeedbackShakeListener(
@@ -119,16 +127,19 @@ GoRouter createAppRouter({
                 name: 'map',
                 pageBuilder: (context, state) => NoTransitionPage(
                   key: state.pageKey,
-                  child: const MapScreen(),
+                  child: const MapScreen(initialBusinessId: null),
                 ),
               ),
               GoRoute(
                 path: MapRoutes.businessDetails,
                 name: 'business-details',
-                pageBuilder: (context, state) => NoTransitionPage(
-                  key: state.pageKey,
-                  child: const MapScreen(),
-                ),
+                pageBuilder: (context, state) {
+                  final businessId = state.pathParameters['id'];
+                  return NoTransitionPage(
+                    key: state.pageKey,
+                    child: MapScreen(initialBusinessId: businessId),
+                  );
+                },
               ),
             ],
           ),
@@ -172,6 +183,7 @@ GoRouter createAppRouter({
           path == AppRoutes.community ||
           path == MapRoutes.map ||
           path == BusinessRoutes.panel ||
+          path.startsWith('/negocio/') ||
           path.startsWith('/business/');
       final isGuestAllowedRoute =
           path == AppRoutes.onboarding ||
@@ -179,6 +191,7 @@ GoRouter createAppRouter({
           path == AppRoutes.community ||
           path == BusinessRoutes.panel ||
           path == BusinessRoutes.register ||
+          path.startsWith('/negocio/') ||
           path.startsWith('/business/');
 
       if (!isLoggedIn) {
