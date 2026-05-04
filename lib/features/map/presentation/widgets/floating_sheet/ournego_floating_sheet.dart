@@ -42,6 +42,7 @@ class OurnegoFloatingSheet extends StatefulWidget {
   final Future<void> Function(SheetBusinessData business) onContact;
   final void Function(SheetBusinessData business) onCatalog;
   final void Function(SheetBusinessData business) onReviews;
+  final Future<void> Function(SheetBusinessData business) onShare;
 
   const OurnegoFloatingSheet({
     super.key,
@@ -55,6 +56,7 @@ class OurnegoFloatingSheet extends StatefulWidget {
     required this.onContact,
     required this.onCatalog,
     required this.onReviews,
+    required this.onShare,
   });
 
   @override
@@ -289,6 +291,11 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     SheetControlButton(
+                      icon: Icons.share_outlined,
+                      onTap: () => widget.onShare(business),
+                    ),
+                    const SizedBox(width: 8),
+                    SheetControlButton(
                       icon: business.isFavorite
                           ? Icons.favorite_rounded
                           : Icons.favorite_border_rounded,
@@ -351,6 +358,7 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet> {
                 onContact: () => widget.onContact(business),
                 onCatalog: () => widget.onCatalog(business),
                 onReviews: () => widget.onReviews(business),
+                onShare: () => widget.onShare(business),
               ),
             ),
           ],
@@ -471,6 +479,11 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 SheetControlButton(
+                                  icon: Icons.share_outlined,
+                                  onTap: () => widget.onShare(activeBusiness),
+                                ),
+                                const SizedBox(width: 8),
+                                SheetControlButton(
                                   icon: activeBusiness.isFavorite
                                       ? Icons.favorite_rounded
                                       : Icons.favorite_border_rounded,
@@ -532,6 +545,7 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet> {
                             onContact: () => widget.onContact(activeBusiness),
                             onCatalog: () => widget.onCatalog(activeBusiness),
                             onReviews: () => widget.onReviews(activeBusiness),
+                            onShare: () => widget.onShare(activeBusiness),
                           )
                         else
                           Expanded(
@@ -540,6 +554,7 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet> {
                               onContact: () => widget.onContact(activeBusiness),
                               onCatalog: () => widget.onCatalog(activeBusiness),
                               onReviews: () => widget.onReviews(activeBusiness),
+                              onShare: () => widget.onShare(activeBusiness),
                             ),
                           ),
                       ],
@@ -675,11 +690,13 @@ class _LegacyCollapsedActions extends StatelessWidget {
   final VoidCallback onContact;
   final VoidCallback onCatalog;
   final VoidCallback onReviews;
+  final VoidCallback onShare;
 
   const _LegacyCollapsedActions({
     required this.onContact,
     required this.onCatalog,
     required this.onReviews,
+    required this.onShare,
   });
 
   @override
@@ -688,16 +705,21 @@ class _LegacyCollapsedActions extends StatelessWidget {
       children: [
         Expanded(
           child: _LegacyActionButton(
+            icon: Icons.share_outlined,
+            onTap: onShare,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _LegacyActionButton(
             icon: Icons.emoji_emotions,
             onTap: onReviews,
           ),
         ),
         const SizedBox(width: 8),
         Expanded(
-          flex: 2,
           child: _LegacyActionButton(
             icon: Icons.search_rounded,
-            label: 'Buscar Productos',
             onTap: onCatalog,
           ),
         ),
@@ -715,14 +737,9 @@ class _LegacyCollapsedActions extends StatelessWidget {
 
 class _LegacyActionButton extends StatelessWidget {
   final IconData icon;
-  final String? label;
   final VoidCallback onTap;
 
-  const _LegacyActionButton({
-    required this.icon,
-    required this.onTap,
-    this.label,
-  });
+  const _LegacyActionButton({required this.icon, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -734,25 +751,7 @@ class _LegacyActionButton extends StatelessWidget {
           context: context,
           radius: 12,
         ),
-        child: label == null
-            ? Icon(icon, size: 18)
-            : Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(icon, size: 18),
-                  const SizedBox(width: 6),
-                  Flexible(
-                    child: Text(
-                      label!,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+        child: Icon(icon, size: 18),
       ),
     );
   }
@@ -763,12 +762,14 @@ class _LegacyExpandedContent extends ConsumerWidget {
   final VoidCallback onContact;
   final VoidCallback onCatalog;
   final VoidCallback onReviews;
+  final VoidCallback onShare;
 
   const _LegacyExpandedContent({
     required this.business,
     required this.onContact,
     required this.onCatalog,
     required this.onReviews,
+    required this.onShare,
   });
 
   @override
@@ -834,6 +835,12 @@ class _LegacyExpandedContent extends ConsumerWidget {
             ),
           ),
         if (business.images.isNotEmpty) const SizedBox(height: 16),
+        _LegacyWideButton(
+          icon: Icons.share_outlined,
+          text: 'Compartir negocio',
+          onTap: onShare,
+        ),
+        const SizedBox(height: 12),
         _LegacyWideButton(
           icon: Icons.emoji_emotions_outlined,
           text: 'Opinión General',
