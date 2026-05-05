@@ -403,21 +403,18 @@ class _MapScreenState extends ConsumerState<MapScreen>
       return;
     }
 
-    result.fold(
-      (_) => _reportMissingDeepLinkBusiness(),
-      (business) {
-        if (business == null) {
-          _reportMissingDeepLinkBusiness();
-          return;
-        }
+    result.fold((_) => _reportMissingDeepLinkBusiness(), (business) {
+      if (business == null) {
+        _reportMissingDeepLinkBusiness();
+        return;
+      }
 
-        _pendingDeepLinkBusinessId = null;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) return;
-          _openBusinessSheet(business);
-        });
-      },
-    );
+      _pendingDeepLinkBusinessId = null;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _openBusinessSheet(business);
+      });
+    });
 
     _isResolvingDeepLink = false;
   }
@@ -957,10 +954,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
       return;
     }
 
-    await Share.share(
-      negocioDeepLinkUrl(business.id),
-      subject: business.name,
-    );
+    await Share.share(negocioDeepLinkUrl(business.id), subject: business.name);
   }
 }
 
