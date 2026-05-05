@@ -64,14 +64,8 @@ void main() {
   });
 
   testWidgets('deep link overrides stored sheet state', (tester) async {
-    final deepLinkBusiness = _buildBusiness(
-      id: 'biz-1',
-      name: 'Panaderia Sol',
-    );
-    final storedBusiness = _buildBusiness(
-      id: 'biz-2',
-      name: 'Cafe Guardado',
-    );
+    final deepLinkBusiness = _buildBusiness(id: 'biz-1', name: 'Panaderia Sol');
+    final storedBusiness = _buildBusiness(id: 'biz-2', name: 'Cafe Guardado');
 
     final storedSheet = SheetBusinessData.fromBusiness(storedBusiness);
 
@@ -131,9 +125,6 @@ void main() {
     await tester.pump(const Duration(milliseconds: 120));
     await tester.pumpAndSettle(const Duration(milliseconds: 200));
 
-    expect(
-      find.text('No encontramos el negocio solicitado'),
-      findsOneWidget,
-    );
+    expect(find.text('No encontramos el negocio solicitado'), findsOneWidget);
   });
 }
