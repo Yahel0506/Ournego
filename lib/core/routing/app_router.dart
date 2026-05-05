@@ -93,14 +93,6 @@ GoRouter createAppRouter({
         name: 'complete-profile',
         builder: (context, state) => CompleteProfileScreen(),
       ),
-      GoRoute(
-        path: MapRoutes.negocioDeeplink,
-        name: 'negocio-deeplink',
-        builder: (context, state) {
-          final businessId = state.pathParameters['id']!;
-          return MapScreen(initialBusinessId: businessId);
-        },
-      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           return FeedbackShakeListener(
@@ -129,6 +121,17 @@ GoRouter createAppRouter({
                   key: state.pageKey,
                   child: const MapScreen(initialBusinessId: null),
                 ),
+              ),
+              GoRoute(
+                path: MapRoutes.negocioDeeplink,
+                name: 'negocio-deeplink',
+                pageBuilder: (context, state) {
+                  final businessId = state.pathParameters['id'];
+                  return NoTransitionPage(
+                    key: state.pageKey,
+                    child: MapScreen(initialBusinessId: businessId),
+                  );
+                },
               ),
               GoRoute(
                 path: MapRoutes.businessDetails,
