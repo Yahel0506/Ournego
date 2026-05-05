@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ournego/features/map/domain/entities/business.dart';
 import 'package:ournego/features/map/domain/entities/business_type.dart';
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/models/sheet_business_data.dart';
+import 'package:ournego/features/navigation/presentation/widgets/navigation_bar_widget.dart';
 
 import '../../../fakes/fake_auth_repository.dart';
 import '../../../fakes/fake_map_repository.dart';
@@ -61,6 +62,7 @@ void main() {
     await tester.pumpAndSettle(const Duration(milliseconds: 200));
 
     expect(find.text(business.name), findsWidgets);
+    expect(find.byKey(appNavigationBarKey), findsOneWidget);
   });
 
   testWidgets('deep link overrides stored sheet state', (tester) async {
@@ -101,6 +103,7 @@ void main() {
 
     expect(find.text(deepLinkBusiness.name), findsWidgets);
     expect(find.text(storedBusiness.name), findsNothing);
+    expect(find.byKey(appNavigationBarKey), findsOneWidget);
   });
 
   testWidgets('missing business shows not found message', (tester) async {
@@ -126,5 +129,6 @@ void main() {
     await tester.pumpAndSettle(const Duration(milliseconds: 200));
 
     expect(find.text('No encontramos el negocio solicitado'), findsOneWidget);
+    expect(find.byKey(appNavigationBarKey), findsOneWidget);
   });
 }
