@@ -52,9 +52,7 @@ class MapRepositoryImpl implements MapRepository {
   }
 
   @override
-  Future<Either<Failure, Business?>> getBusinessById(
-    String businessId,
-  ) async {
+  Future<Either<Failure, Business?>> getBusinessById(String businessId) async {
     try {
       final data = await businessesDatasource.getBusinessById(businessId);
       if (data == null) {

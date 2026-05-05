@@ -54,9 +54,7 @@ class FakeMapRepository implements MapRepository {
   Stream<List<Business>> getBusinesses() => _businessesController.stream;
 
   @override
-  Future<Either<Failure, Business?>> getBusinessById(
-    String businessId,
-  ) async {
+  Future<Either<Failure, Business?>> getBusinessById(String businessId) async {
     return Right(_businessById[businessId]);
   }
 
