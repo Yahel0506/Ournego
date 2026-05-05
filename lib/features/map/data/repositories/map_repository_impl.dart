@@ -52,6 +52,23 @@ class MapRepositoryImpl implements MapRepository {
   }
 
   @override
+  Future<Either<Failure, Business?>> getBusinessById(
+    String businessId,
+  ) async {
+    try {
+      final data = await businessesDatasource.getBusinessById(businessId);
+      if (data == null) {
+        return const Right(null);
+      }
+
+      final business = BusinessModel.fromSupabase(data);
+      return Right(business);
+    } catch (_) {
+      return Left(ServerFailure());
+    }
+  }
+
+  @override
   Future<Either<Failure, void>> addBusinessToFavorites(
     String businessId,
   ) async {
