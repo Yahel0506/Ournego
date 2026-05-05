@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -127,6 +128,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
   }
 
   Future<void> _restoreSheetStateFromPrefs() async {
+    // If a deep link is pending, skip restoring previous sheet state.
+    // The target business sheet will be opened by _handleDeepLinkBusinessOpen.
+    if (_pendingDeepLinkBusinessId != null) return;
+
     final prefs = await SharedPreferences.getInstance();
     final rawState = prefs.getString(_sheetStateKey);
     final rawActiveBusiness = prefs.getString(_sheetActiveBusinessKey);
@@ -374,17 +379,11 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
   void _handleDeepLinkBusinessOpen(List<Business> businesses) {
     final targetId = _pendingDeepLinkBusinessId;
-    if (targetId == null || targetId.isEmpty) {
-      return;
-    }
+    if (targetId == null || targetId.isEmpty) return;
 
-    Business? matchedBusiness;
-    for (final business in businesses) {
-      if (business.id == targetId) {
-        matchedBusiness = business;
-        break;
-      }
-    }
+    final matchedBusiness = businesses
+        .where((b) => b.id == targetId)
+        .firstOrNull;
 
     if (matchedBusiness == null) {
       if (!_didReportMissingDeepLinkBusiness &&
@@ -401,7 +400,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
     _pendingDeepLinkBusinessId = null;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _openBusinessSheet(matchedBusiness!);
+      _openBusinessSheet(matchedBusiness);
     });
   }
 
