@@ -66,6 +66,8 @@ class AppRoutes {
 // |------- HELPER METHODS ----------| \\
 // |---------------------------------| \\
 
+const String _negocioDeepLinkHost = 'www.ournego.com';
+
 /// Helper to generate business details route with ID
 String businessDetailsRoute(String businessId) {
   return '/business/$businessId';
@@ -74,4 +76,14 @@ String businessDetailsRoute(String businessId) {
 /// Helper to generate public deep link route with ID
 String negocioDeepLinkRoute(String businessId) {
   return '/negocio/$businessId';
+}
+
+/// Helper to generate the canonical deep link URL for sharing.
+Uri negocioDeepLinkUri(String businessId) {
+  return Uri.https(_negocioDeepLinkHost, negocioDeepLinkRoute(businessId));
+}
+
+/// Helper to generate the canonical deep link URL string for sharing.
+String negocioDeepLinkUrl(String businessId) {
+  return negocioDeepLinkUri(businessId).toString();
 }
