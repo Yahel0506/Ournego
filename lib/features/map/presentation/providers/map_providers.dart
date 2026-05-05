@@ -9,6 +9,7 @@ import 'package:ournego/features/map/data/datasources/supabase_map_datasource.da
 import 'package:ournego/features/map/data/repositories/map_repository_impl.dart';
 import 'package:ournego/features/map/domain/entities/business.dart';
 import 'package:ournego/features/map/domain/repositories/map_repository.dart';
+import 'package:ournego/features/map/domain/usecases/get_business_by_id_usecase.dart';
 import 'package:ournego/features/map/domain/usecases/get_businesses_usecase.dart';
 import 'package:ournego/features/map/domain/usecases/get_current_location_usecase.dart';
 import 'package:ournego/features/map/presentation/providers/notifiers/map_notifier.dart';
@@ -39,6 +40,16 @@ final getCurrentLocationUsecaseProvider = Provider((ref) {
   return GetCurrentLocationUsecase(repository: repository);
 });
 
+final getBusinessByIdUsecaseProvider = Provider((ref) {
+  final repository = ref.read(mapRepositoryProvider);
+  return GetBusinessByIdUsecase(repository: repository);
+});
+
+final businessFavoritesUsecaseProvider = Provider((ref) {
+  final repository = ref.read(mapRepositoryProvider);
+  return BusinessFavoritesUsecase(repository: repository);
+});
+
 final mapProvider = AsyncNotifierProvider<MapNotifier, AppPosition>(
   MapNotifier.new,
 );
@@ -61,8 +72,3 @@ final isBusinessFavoriteStreamProvider = StreamProvider.autoDispose
         repository: repository,
       ).isFavorite(businessId);
     });
-
-final businessFavoritesUsecaseProvider = Provider((ref) {
-  final repository = ref.read(mapRepositoryProvider);
-  return BusinessFavoritesUsecase(repository: repository);
-});

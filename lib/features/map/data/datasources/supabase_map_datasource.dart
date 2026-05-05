@@ -14,7 +14,21 @@ class SupabaseMapDatasource {
   }
 
   Stream<List<Map<String, dynamic>>> getBusinesses() {
-    return _supabase.from('businesses').stream(primaryKey: ['id']);
+    return _supabase.from('businesses').stream(primaryKey: ['business_id']);
+  }
+
+  Future<Map<String, dynamic>?> getBusinessById(String businessId) async {
+    final data = await _supabase
+        .from('businesses')
+        .select()
+        .eq('business_id', businessId)
+        .maybeSingle();
+
+    if (data == null) {
+      return null;
+    }
+
+    return Map<String, dynamic>.from(data);
   }
 
   Future<void> addBusinessToFavorites(String businessId) async {

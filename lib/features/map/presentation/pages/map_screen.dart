@@ -1,4 +1,3 @@
-import 'dart:collection';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -55,7 +54,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
   late final _animatedMapController = AnimatedMapController(vsync: this);
   late ProviderSubscription<AsyncValue<AppPosition>> _providerSubscription;
-  late ProviderSubscription<AsyncValue<List<Business>>> _businessesSubscription;
   late final FloatingSheetController _floatingSheetController;
 
   final _businessMarkerUiMapper = BusinessMarkerUiMapper();
@@ -65,6 +63,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
   bool _isLocationModalOpen = false;
   String? _pendingDeepLinkBusinessId;
   bool _didReportMissingDeepLinkBusiness = false;
+  bool _isResolvingDeepLink = false;
 
   double get _expandedHeight {
     final mq = MediaQuery.of(context);
@@ -377,31 +376,50 @@ class _MapScreenState extends ConsumerState<MapScreen>
     }
   }
 
-  void _handleDeepLinkBusinessOpen(List<Business> businesses) {
-    final targetId = _pendingDeepLinkBusinessId;
-    if (targetId == null || targetId.isEmpty) return;
-
-    final matchedBusiness = businesses
-        .where((b) => b.id == targetId)
-        .firstOrNull;
-
-    if (matchedBusiness == null) {
-      if (!_didReportMissingDeepLinkBusiness &&
-          businesses.isNotEmpty &&
-          mounted) {
-        _didReportMissingDeepLinkBusiness = true;
-        ScaffoldMessenger.of(context).showSnackBar(
-          OurnegoSnackbars.info('No encontramos el negocio solicitado'),
-        );
-      }
+  void _reportMissingDeepLinkBusiness() {
+    if (_didReportMissingDeepLinkBusiness || !mounted) {
       return;
     }
 
+    _didReportMissingDeepLinkBusiness = true;
     _pendingDeepLinkBusinessId = null;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      _openBusinessSheet(matchedBusiness);
-    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      OurnegoSnackbars.info('No encontramos el negocio solicitado'),
+    );
+  }
+
+  Future<void> _resolveDeepLinkBusiness() async {
+    final targetId = _pendingDeepLinkBusinessId;
+    if (targetId == null || targetId.isEmpty || _isResolvingDeepLink) {
+      return;
+    }
+
+    _isResolvingDeepLink = true;
+    final usecase = ref.read(getBusinessByIdUsecaseProvider);
+    final result = await usecase(targetId);
+
+    if (!mounted) {
+      _isResolvingDeepLink = false;
+      return;
+    }
+
+    result.fold(
+      (_) => _reportMissingDeepLinkBusiness(),
+      (business) {
+        if (business == null) {
+          _reportMissingDeepLinkBusiness();
+          return;
+        }
+
+        _pendingDeepLinkBusinessId = null;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          _openBusinessSheet(business);
+        });
+      },
+    );
+
+    _isResolvingDeepLink = false;
   }
 
   @override
@@ -432,17 +450,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
       },
     );
 
-    _businessesSubscription = ref.listenManual<AsyncValue<List<Business>>>(
-      businessesStreamProvider,
-      (previous, next) {
-        next.whenOrNull(data: _handleDeepLinkBusinessOpen);
-      },
-    );
-
-    final currentBusinesses = ref.read(businessesStreamProvider).asData?.value;
-    if (currentBusinesses != null) {
-      _handleDeepLinkBusinessOpen(currentBusinesses);
-    }
+    _resolveDeepLinkBusiness();
 
     _restoreCamera();
     _restoreSheetStateFromPrefs();
@@ -458,10 +466,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
     _pendingDeepLinkBusinessId = widget.initialBusinessId;
     _didReportMissingDeepLinkBusiness = false;
 
-    final currentBusinesses = ref.read(businessesStreamProvider).asData?.value;
-    if (currentBusinesses != null) {
-      _handleDeepLinkBusinessOpen(currentBusinesses);
-    }
+    _resolveDeepLinkBusiness();
   }
 
   @override
@@ -469,7 +474,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
     _floatingSheetController.removeListener(_persistMapAndSheetState);
     _animatedMapController.dispose();
     _providerSubscription.close();
-    _businessesSubscription.close();
     _floatingSheetController.dispose();
     super.dispose();
   }
@@ -954,7 +958,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
     }
 
     await Share.share(
-      'https://ournego.com/negocio/${business.id}',
+      negocioDeepLinkUrl(business.id),
       subject: business.name,
     );
   }
