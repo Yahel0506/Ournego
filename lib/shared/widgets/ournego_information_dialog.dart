@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+
 import 'package:ournego/shared/widgets/information_card_widget.dart';
+import 'package:ournego/shared/widgets/ournego_content_container.dart';
 
 class OurnegoInformationDialog extends StatelessWidget {
   final String title;
@@ -25,16 +27,19 @@ class OurnegoInformationDialog extends StatelessWidget {
       backgroundColor: Colors.transparent,
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: maxWidth),
-        child: SizedBox(
-          height: 550,
-          child: Stack(
+        child: OurnegoContentContainer(
+          hasBlur: true,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               InformationCardWidget(
                 title: title,
                 description: description,
                 imagePath: imagePath,
-                blur: true,
+                blur: false,
+                contentContainer: false,
               ),
+              Padding(padding: actionsPadding, child: actions),
             ],
           ),
         ),
