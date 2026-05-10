@@ -1,0 +1,46 @@
+{
+  "colors": {
+    "azulCielo": "OurnegoColorTokens.azulCielo",
+    "cianClaro": "OurnegoColorTokens.cianClaro",
+    "azulVerde": "OurnegoColorTokens.azulVerde",
+    "aguamarina": "OurnegoColorTokens.aguamarina",
+    "verdeMenta": "OurnegoColorTokens.verdeMenta",
+    "mentaOscuro": "OurnegoColorTokens.mentaOscuro",
+    "verdeCastleton": "OurnegoColorTokens.verdeCastleton",
+    "verdeBrunswick": "OurnegoColorTokens.verdeBrunswick",
+    "noche": "OurnegoColorTokens.noche",
+    "blanco": "OurnegoColorTokens.blanco"
+  },
+  "spacing": {
+    "xxs": "OurnegoSpacingTokens.xxs",
+    "xs": "OurnegoSpacingTokens.xs",
+    "sm": "OurnegoSpacingTokens.sm",
+    "md": "OurnegoSpacingTokens.md",
+    "lg": "OurnegoSpacingTokens.lg",
+    "xl": "OurnegoSpacingTokens.xl",
+    "xxl": "OurnegoSpacingTokens.xxl"
+  },
+  "radius": {
+    "sm": "OurnegoRadiusTokens.sm",
+    "md": "OurnegoRadiusTokens.md",
+    "lg": "OurnegoRadiusTokens.lg",
+    "xl": "OurnegoRadiusTokens.xl",
+    "full": "OurnegoRadiusTokens.full"
+  },
+  "typography": {
+    "header": "OurnegoTextStyles.header",
+    "body": "OurnegoTextStyles.body",
+    "link": "OurnegoTextStyles.link",
+    "errorText": "OurnegoTextStyles.errorText"
+  },
+  "themes": {
+    "light": "OurnegoTheme.light",
+    "dark": "OurnegoTheme.dark"
+  },
+  "components": {
+    "primaryButton": "OurnegoPrimaryButton",
+    "onboardingButton": "OurnegoOnboardingPrimaryButton",
+    "inputField": "OurnegoInputField",
+    "labeledInput": "OurnegoLabeledInputSection"
+  }
+}
