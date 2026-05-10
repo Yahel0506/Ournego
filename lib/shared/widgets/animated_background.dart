@@ -7,8 +7,31 @@ import 'package:flutter/material.dart';
 import 'package:ournego/core/ournego_colors.dart';
 import 'package:ournego/core/routing/route_observer.dart';
 
+class AnimatedBackgroundBlob {
+  const AnimatedBackgroundBlob({
+    required this.color,
+    required this.width,
+    required this.height,
+    this.opacity = 0.4,
+  });
+
+  final Color color;
+  final double width;
+  final double height;
+  final double opacity;
+}
+
 class AnimatedBackground extends StatefulWidget {
-  const AnimatedBackground({super.key});
+  const AnimatedBackground({
+    super.key,
+    this.blobs,
+    this.animationDuration = const Duration(seconds: 4),
+    this.blurSigma = 80,
+  });
+
+  final List<AnimatedBackgroundBlob>? blobs;
+  final Duration animationDuration;
+  final double blurSigma;
 
   @override
   State<AnimatedBackground> createState() => _AnimatedBackgroundState();
@@ -17,18 +40,32 @@ class AnimatedBackground extends StatefulWidget {
 class _AnimatedBackgroundState extends State<AnimatedBackground>
     with WidgetsBindingObserver, RouteAware {
   Timer? timerAnimation;
+  final Random _random = Random();
+  Size _canvasSize = Size.zero;
+  List<Offset> _positions = [];
 
-  // TODO: Reuse a single Random instance instead of creating many.
-  // Perspective: Create `final _random = Random()` and use it in
-  // `_updatePositions` for slightly better performance and testability.
-
-  // Posiciones
-  double top1 = 0;
-  double left1 = 0;
-  double top2 = 0;
-  double left2 = 0;
-  double top3 = 0;
-  double left3 = 0;
+  List<AnimatedBackgroundBlob> get _blobs =>
+      widget.blobs ??
+      const [
+        AnimatedBackgroundBlob(
+          color: OurnegoColors.aguamarina,
+          width: 300,
+          height: 300,
+          opacity: 0.4,
+        ),
+        AnimatedBackgroundBlob(
+          color: OurnegoColors.azulCielo,
+          width: 350,
+          height: 350,
+          opacity: 0.3,
+        ),
+        AnimatedBackgroundBlob(
+          color: OurnegoColors.verdeCastleton,
+          width: 250,
+          height: 250,
+          opacity: 0.1,
+        ),
+      ];
 
   @override
   void initState() {
@@ -53,7 +90,7 @@ class _AnimatedBackgroundState extends State<AnimatedBackground>
   void _startTimer() {
     if (timerAnimation != null && (timerAnimation?.isActive ?? false)) return;
 
-    timerAnimation = Timer.periodic(const Duration(seconds: 4), (timer) {
+    timerAnimation = Timer.periodic(widget.animationDuration, (timer) {
       _updatePositions();
     });
   }
@@ -67,18 +104,19 @@ class _AnimatedBackgroundState extends State<AnimatedBackground>
   void _updatePositions() {
     if (!mounted) return;
 
+    final Size fallbackSize = MediaQuery.of(context).size;
+    final Size size = _canvasSize == Size.zero ? fallbackSize : _canvasSize;
+
     setState(() {
-      double w = MediaQuery.of(context).size.width;
-      double h = MediaQuery.of(context).size.height;
-      // TODO: Consider making these deltas configurable and testable.
-      top1 = (Random().nextDouble() * h) - 150;
-      left1 = (Random().nextDouble() * w) - 150;
-
-      top2 = (Random().nextDouble() * h) - 175;
-      left2 = (Random().nextDouble() * w) - 175;
-
-      top3 = (Random().nextDouble() * h) - 125;
-      left3 = (Random().nextDouble() * w) - 125;
+      _positions = _blobs
+          .map((blob) {
+            final double dx =
+                (_random.nextDouble() * size.width) - (blob.width / 2);
+            final double dy =
+                (_random.nextDouble() * size.height) - (blob.height / 2);
+            return Offset(dx, dy);
+          })
+          .toList(growable: false);
     });
   }
 
@@ -113,61 +151,58 @@ class _AnimatedBackgroundState extends State<AnimatedBackground>
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        AnimatedPositioned(
-          duration: const Duration(seconds: 4),
-          curve: Curves.easeInOut,
-          top: top1,
-          left: left1,
-          child: Container(
-            width: 300,
-            height: 300,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: OurnegoColors.aguamarina.withOpacity(0.4),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final Size newSize = Size(constraints.maxWidth, constraints.maxHeight);
+        if (_canvasSize != newSize) {
+          _canvasSize = newSize;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              _updatePositions();
+            }
+          });
+        }
+
+        final List<Widget> layers = [];
+        for (int index = 0; index < _blobs.length; index++) {
+          final blob = _blobs[index];
+          final position = _positions.length > index
+              ? _positions[index]
+              : Offset.zero;
+          layers.add(
+            AnimatedPositioned(
+              duration: widget.animationDuration,
+              curve: Curves.easeInOut,
+              top: position.dy,
+              left: position.dx,
+              child: Container(
+                width: blob.width,
+                height: blob.height,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: blob.color.withValues(alpha: blob.opacity),
+                ),
+              ),
+            ),
+          );
+        }
+
+        layers.add(
+          BackdropFilter(
+            filter: imageUrl.ImageFilter.blur(
+              sigmaX: widget.blurSigma,
+              sigmaY: widget.blurSigma,
+            ),
+            child: Container(
+              color: Colors.transparent,
+              width: double.infinity,
+              height: double.infinity,
             ),
           ),
-        ),
-        // CAPA 2
-        AnimatedPositioned(
-          duration: const Duration(seconds: 4),
-          curve: Curves.easeInOut,
-          top: top2,
-          left: left2,
-          child: Container(
-            width: 350,
-            height: 350,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: OurnegoColors.azulCielo.withOpacity(0.3),
-            ),
-          ),
-        ),
-        // CAPA 3
-        AnimatedPositioned(
-          duration: const Duration(seconds: 4),
-          curve: Curves.easeInOut,
-          top: top3,
-          left: left3,
-          child: Container(
-            width: 250,
-            height: 250,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: OurnegoColors.verdeCastleton.withOpacity(0.1),
-            ),
-          ),
-        ),
-        BackdropFilter(
-          filter: imageUrl.ImageFilter.blur(sigmaX: 80, sigmaY: 80),
-          child: Container(
-            color: Colors.transparent,
-            width: double.infinity,
-            height: double.infinity,
-          ),
-        ),
-      ],
+        );
+
+        return Stack(children: layers);
+      },
     );
   }
 }
