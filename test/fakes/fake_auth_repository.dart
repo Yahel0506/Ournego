@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:dartz/dartz.dart';
-
 import 'package:ournego/core/failures.dart';
 import 'package:ournego/features/auth/domain/entities/app_user.dart';
 import 'package:ournego/features/auth/domain/repositories/auth_repository.dart';
@@ -14,11 +13,6 @@ enum FakeAuthState {
   authenticatedAsOwnerWithBusiness,
   authenticatedAsOwnerWithoutBusiness,
   expiredToken,
-}
-
-enum FakeEmailState {
-  verificated
-  notVerificated
 }
 
 class FakeAuthRepository implements AuthRepository {
@@ -88,7 +82,9 @@ class FakeAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<Either<Failure, void>> updateProfilePicture(File profilePicture) async {
+  Future<Either<Failure, void>> updateProfilePicture(
+    File profilePicture,
+  ) async {
     return const Right(null);
   }
 
