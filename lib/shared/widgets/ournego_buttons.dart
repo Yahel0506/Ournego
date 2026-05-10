@@ -37,6 +37,45 @@ class OurnegoPrimaryButton extends StatelessWidget {
   }
 }
 
+class OurnegoNeutralPrimaryButton extends StatelessWidget {
+  const OurnegoNeutralPrimaryButton({
+    super.key,
+    required this.onPressed,
+    required this.child,
+    this.minimumSize = const Size(double.infinity, 56),
+    this.radius = 24,
+    this.elevation = 6,
+  });
+
+  final VoidCallback? onPressed;
+  final Widget child;
+  final Size minimumSize;
+  final double radius;
+  final double elevation;
+
+  @override
+  Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    final isDark = brightness == Brightness.dark;
+    final background = isDark ? OurnegoColors.blanco : OurnegoColors.noche;
+    final foreground = isDark ? OurnegoColors.noche : OurnegoColors.blanco;
+
+    return ElevatedButton(
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        minimumSize: minimumSize,
+        backgroundColor: background,
+        foregroundColor: foreground,
+        elevation: elevation,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radius),
+        ),
+      ),
+      child: child,
+    );
+  }
+}
+
 class OurnegoButtonStyles {
   OurnegoButtonStyles._();
 
