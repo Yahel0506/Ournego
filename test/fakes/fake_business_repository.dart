@@ -1,17 +1,12 @@
-import 'dart:io';
-
 import 'package:dartz/dartz.dart';
-
 import 'package:ournego/core/failures.dart';
 import 'package:ournego/core/location/app_position.dart';
 import 'package:ournego/features/business/domain/entities/app_schedule.dart';
+import 'package:ournego/features/business/domain/entities/business_image_data.dart';
 import 'package:ournego/features/business/domain/repositories/business_repository.dart';
 
 class FakeBusinessRepository implements BusinessRepository {
-  FakeBusinessRepository({
-    this.isOwner = false,
-    this.failOwnerCheck = false,
-  });
+  FakeBusinessRepository({this.isOwner = false, this.failOwnerCheck = false});
 
   bool isOwner;
   bool failOwnerCheck;
@@ -31,7 +26,7 @@ class FakeBusinessRepository implements BusinessRepository {
     required String address,
     required double latitude,
     required double longitude,
-    required File image,
+    required BusinessImageData image,
     required String phoneNumber,
     required List<AppSchedule> hours,
   }) async {
@@ -45,5 +40,70 @@ class FakeBusinessRepository implements BusinessRepository {
     }
 
     return Right(isOwner);
+  }
+
+  @override
+  Future<Either<Failure, void>> upsertBusinessName({
+    required String businessId,
+    required String name,
+  }) async {
+    return const Right(null);
+  }
+
+  @override
+  Future<Either<Failure, void>> upsertBusinessDescription({
+    required String businessId,
+    required String description,
+  }) async {
+    return const Right(null);
+  }
+
+  @override
+  Future<Either<Failure, void>> upsertBusinessLocation({
+    required String businessId,
+    required String address,
+    required double latitude,
+    required double longitude,
+  }) async {
+    return const Right(null);
+  }
+
+  @override
+  Future<Either<Failure, void>> upsertBusinessCategory({
+    required String businessId,
+    required int category,
+  }) async {
+    return const Right(null);
+  }
+
+  @override
+  Future<Either<Failure, void>> insertBusinessImage({
+    required String businessId,
+    required BusinessImageData image,
+  }) async {
+    return const Right(null);
+  }
+
+  @override
+  Future<Either<Failure, void>> deleteBusinessImage({
+    required String businessId,
+    required String imageUrl,
+  }) async {
+    return const Right(null);
+  }
+
+  @override
+  Future<Either<Failure, void>> upsertBusinessPhoneNumber({
+    required String businessId,
+    required String phoneNumber,
+  }) async {
+    return const Right(null);
+  }
+
+  @override
+  Future<Either<Failure, void>> deleteBusinessPhoneNumber({
+    required String businessId,
+  }) async {
+    return const Right(null);
   }
 }
