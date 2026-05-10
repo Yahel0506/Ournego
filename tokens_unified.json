@@ -1,0 +1,119 @@
+{
+  "global": {
+    "color": {
+      "azulCielo": { "value": "#3BCFED", "type": "color" },
+      "cianClaro": { "value": "#D8F7FD", "type": "color" },
+      "azulVerde": { "value": "#009ABE", "type": "color" },
+      "aguamarina": { "value": "#7EEFC2", "type": "color" },
+      "verdeMenta": { "value": "#DFFDF1", "type": "color" },
+      "mentaOscuro": { "value": "#3EBF89", "type": "color" },
+      "verdeCastleton": { "value": "#055F46", "type": "color" },
+      "verdeBrunswick": { "value": "#034E3A", "type": "color" },
+      "noche": { "value": "#161616", "type": "color" },
+      "blanco": { "value": "#FFFFFF", "type": "color" }
+    },
+    "spacing": {
+      "xxs": { "value": "4", "type": "spacing" },
+      "xs": { "value": "8", "type": "spacing" },
+      "sm": { "value": "12", "type": "spacing" },
+      "md": { "value": "16", "type": "spacing" },
+      "lg": { "value": "24", "type": "spacing" },
+      "xl": { "value": "32", "type": "spacing" },
+      "xxl": { "value": "48", "type": "spacing" }
+    },
+    "borderRadius": {
+      "sm": { "value": "8", "type": "borderRadius" },
+      "md": { "value": "12", "type": "borderRadius" },
+      "lg": { "value": "14", "type": "borderRadius" },
+      "xl": { "value": "30", "type": "borderRadius" },
+      "full": { "value": "1000", "type": "borderRadius" }
+    },
+    "typography": {
+      "header": {
+        "value": {
+          "fontSize": "24",
+          "fontWeight": "bold",
+          "fontFamily": "Inter"
+        },
+        "type": "typography"
+      },
+      "body": {
+        "value": {
+          "fontSize": "16",
+          "fontWeight": "normal",
+          "fontFamily": "Inter"
+        },
+        "type": "typography"
+      },
+      "link": {
+        "value": {
+          "fontSize": "16",
+          "textDecoration": "underline",
+          "fontFamily": "Inter"
+        },
+        "type": "typography"
+      },
+      "errorText": {
+        "value": {
+          "fontSize": "16",
+          "fontFamily": "Inter"
+        },
+        "type": "typography"
+      }
+    },
+    "other": {
+      "sheetTransitionDuration": { "value": "420", "type": "number" }
+    }
+  },
+  "light": {
+    "color": {
+      "primary": { "value": "{global.color.azulCielo}", "type": "color" },
+      "onPrimary": { "value": "{global.color.blanco}", "type": "color" },
+      "primaryContainer": { "value": "{global.color.cianClaro}", "type": "color" },
+      "onPrimaryContainer": { "value": "{global.color.azulVerde}", "type": "color" },
+      "secondary": { "value": "{global.color.aguamarina}", "type": "color" },
+      "onSecondary": { "value": "{global.color.verdeCastleton}", "type": "color" },
+      "secondaryContainer": { "value": "{global.color.verdeMenta}", "type": "color" },
+      "tertiary": { "value": "{global.color.verdeCastleton}", "type": "color" },
+      "surface": { "value": "#F4FBF9", "type": "color" },
+      "onSurface": { "value": "{global.color.noche}", "type": "color" },
+      "error": { "value": "#BA1A1A", "type": "color" },
+      "surfaceVariant": { "value": "#9DEFFF", "type": "color" },
+      "background": { "value": "{global.color.blanco}", "type": "color" }
+    }
+  },
+  "dark": {
+    "color": {
+      "primary": { "value": "{global.color.azulCielo}", "type": "color" },
+      "onPrimary": { "value": "{global.color.noche}", "type": "color" },
+      "primaryContainer": { "value": "{global.color.verdeBrunswick}", "type": "color" },
+      "onPrimaryContainer": { "value": "{global.color.cianClaro}", "type": "color" },
+      "secondary": { "value": "{global.color.mentaOscuro}", "type": "color" },
+      "onSecondary": { "value": "{global.color.noche}", "type": "color" },
+      "secondaryContainer": { "value": "{global.color.verdeCastleton}", "type": "color" },
+      "surface": { "value": "#1E2625", "type": "color" },
+      "onSurface": { "value": "#E1E3E1", "type": "color" },
+      "outline": { "value": "#89938F", "type": "color" },
+      "surfaceVariant": { "value": "#001320", "type": "color" },
+      "background": { "value": "{global.color.noche}", "type": "color" }
+    }
+  },
+  "$themes": [
+    {
+      "id": "light_theme",
+      "name": "Light",
+      "selectedTokenSets": {
+        "global": "enabled",
+        "light": "enabled"
+      }
+    },
+    {
+      "id": "dark_theme",
+      "name": "Dark",
+      "selectedTokenSets": {
+        "global": "enabled",
+        "dark": "enabled"
+      }
+    }
+  ]
+}
