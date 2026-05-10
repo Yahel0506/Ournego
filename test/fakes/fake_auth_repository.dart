@@ -16,6 +16,11 @@ enum FakeAuthState {
   expiredToken,
 }
 
+enum FakeEmailState {
+  verificated
+  notVerificated
+}
+
 class FakeAuthRepository implements AuthRepository {
   FakeAuthRepository({
     this.state = FakeAuthState.unauthenticated,
@@ -105,6 +110,26 @@ class FakeAuthRepository implements AuthRepository {
     };
 
     return Stream<AppUser>.value(user);
+  }
+
+  @override
+  Stream<bool> watchEmailVerificationStatus() {
+    return Stream<bool>.value(true);
+  }
+
+  @override
+  Future<Either<Failure, bool>> isEmailVerified() async {
+    return const Right(true);
+  }
+
+  @override
+  Future<Either<Failure, void>> resendEmailVerification(String email) async {
+    return const Right(null);
+  }
+
+  @override
+  Future<Either<Failure, void>> sendPasswordResetEmail(String email) async {
+    return const Right(null);
   }
 
   @override
