@@ -11,6 +11,9 @@ class OurnegoContentContainer extends StatelessWidget {
     this.hasBlur = false,
     this.customHorizontalPadding,
     this.customVerticalPadding,
+    this.backgroundColor,
+    this.borderColor,
+    this.blurSigma = 10,
   });
 
   final Widget child;
@@ -19,6 +22,9 @@ class OurnegoContentContainer extends StatelessWidget {
   final bool hasBlur;
   final double? customHorizontalPadding;
   final double? customVerticalPadding;
+  final Color? backgroundColor;
+  final Color? borderColor;
+  final double blurSigma;
 
   @override
   Widget build(BuildContext context) {
@@ -37,9 +43,10 @@ class OurnegoContentContainer extends StatelessWidget {
         final contentContainer = Container(
           margin: margin,
           decoration: BoxDecoration(
-            color: colorScheme.surface.withValues(alpha: 0.5),
+            color:
+                backgroundColor ?? colorScheme.surface.withValues(alpha: 0.5),
             border: Border.all(
-              color: colorScheme.outline.withValues(alpha: 0.3),
+              color: borderColor ?? colorScheme.outline.withValues(alpha: 0.3),
               width: 1,
             ),
             borderRadius: BorderRadius.circular(borderRadius),
@@ -59,7 +66,7 @@ class OurnegoContentContainer extends StatelessWidget {
           return ClipRRect(
             borderRadius: BorderRadius.circular(borderRadius),
             child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
               child: contentContainer,
             ),
           );
