@@ -43,7 +43,7 @@ void main() {
         await $.pumpAndSettle();
 
         await $.tester.tap(
-          find.byKey(const ValueKey('onboardingGenericContinueButton')),
+          find.byKey(const ValueKey('onboardingDiscoverContinueButton')),
         );
         await $.pumpAndSettle();
 
