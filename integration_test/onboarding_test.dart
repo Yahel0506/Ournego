@@ -37,10 +37,14 @@ void main() {
 
         expect(find.byKey(const ValueKey('onboardingScreen')), findsOneWidget);
 
-        await $.tester.tap(find.byKey(const ValueKey('onboardingNextButton')));
+        await $.tester.tap(
+          find.byKey(const ValueKey('onboardingExploreContinueButton')),
+        );
         await $.pumpAndSettle();
 
-        await $.tester.tap(find.byKey(const ValueKey('onboardingNextButton')));
+        await $.tester.tap(
+          find.byKey(const ValueKey('onboardingGenericContinueButton')),
+        );
         await $.pumpAndSettle();
 
         await $.tester.tap(
@@ -176,7 +180,9 @@ void main() {
           ], startOnMap: false),
         );
 
-        await $.tester.tap(find.byKey(const ValueKey('onboardingNextButton')));
+        await $.tester.tap(
+          find.byKey(const ValueKey('onboardingExploreContinueButton')),
+        );
         await $.pumpAndSettle();
 
         final prefsBefore = await SharedPreferences.getInstance();

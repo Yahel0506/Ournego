@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
-import 'package:ournego/shared/widgets/nego/nego.dart';
 
 class ExploreOnboardingScreen extends StatelessWidget {
   const ExploreOnboardingScreen({
     super.key,
     required this.title,
     required this.description,
+    required this.onNext,
   });
 
   final String title;
   final String description;
+  final VoidCallback onNext;
 
   @override
   Widget build(BuildContext context) {
@@ -20,16 +21,7 @@ class ExploreOnboardingScreen extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Spacer(),
-          Center(
-            child: NegoAvatar(
-              size: 232,
-              mood: NegoMood.idle,
-              lookAngle: NegoTokens.lookAngleDefault,
-              lookVertical: NegoLookVertical.down,
-              interactive: true,
-            ),
-          ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 280),
           Text(
             title,
             style: OurnegoTextStyles.header,
@@ -40,6 +32,16 @@ class ExploreOnboardingScreen extends StatelessWidget {
             description,
             style: OurnegoTextStyles.body,
             textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: FilledButton(
+              key: const ValueKey('onboardingExploreContinueButton'),
+              onPressed: onNext,
+              child: const Text('Continuar'),
+            ),
           ),
           const Spacer(),
         ],
