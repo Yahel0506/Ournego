@@ -779,6 +779,11 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   Column(
                     children: [
                       _MapControlButton(
+                        icon: Icons.bug_report,
+                        onPressed: () async {},
+                      ),
+                      SizedBox(height: 12),
+                      _MapControlButton(
                         icon: Icons.add,
                         onPressed: () async {
                           final double currentZoom =
