@@ -1,14 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
 import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/core/routing/route_observer.dart';
-import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
 import 'package:ournego/features/auth/presentation/pages/auth_selection_screen.dart';
 import 'package:ournego/features/auth/presentation/pages/complete_profile_screen.dart';
 import 'package:ournego/features/auth/presentation/pages/create_password_screen.dart';
@@ -16,6 +12,7 @@ import 'package:ournego/features/auth/presentation/pages/login_email_screen.dart
 import 'package:ournego/features/auth/presentation/pages/password_recovery_screen.dart';
 import 'package:ournego/features/auth/presentation/pages/signup_email_screen.dart';
 import 'package:ournego/features/auth/presentation/pages/verify_email_screen.dart';
+import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
 import 'package:ournego/features/business/presentation/pages/business_form_screen.dart';
 import 'package:ournego/features/business/presentation/pages/business_panel_screen.dart';
 import 'package:ournego/features/business/presentation/pages/register_business_screen.dart';
@@ -24,6 +21,9 @@ import 'package:ournego/features/community/presentation/pages/community_screen.d
 import 'package:ournego/features/map/presentation/pages/map_screen.dart';
 import 'package:ournego/features/navigation/presentation/pages/main_layout_screen.dart';
 import 'package:ournego/features/onboarding/presentation/pages/onboarding_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../debugging/presentation/pages/debug_panel_screen.dart';
 
 GoRouter createAppRouter({
   required bool startOnMap,
@@ -155,6 +155,15 @@ GoRouter createAppRouter({
                   key: state.pageKey,
                   child: const _BusinessShellScreen(),
                 ),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: DebuggingRoutes.debugPanel,
+                name: 'debug-panel',
+                builder: (context, state) => const DebugPanel(),
               ),
             ],
           ),
