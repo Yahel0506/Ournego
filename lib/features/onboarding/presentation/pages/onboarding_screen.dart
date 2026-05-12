@@ -1,3 +1,5 @@
+import 'dart:ui' show lerpDouble;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +9,7 @@ import 'package:ournego/features/onboarding/presentation/pages/components/generi
 import 'package:ournego/features/onboarding/presentation/pages/components/location_slide.dart';
 import 'package:ournego/features/onboarding/presentation/providers/onboarding_providers.dart';
 import 'package:ournego/shared/widgets/animated_background.dart';
+import 'package:ournego/shared/widgets/nego/nego.dart';
 import 'package:ournego/shared/widgets/ournego_information_dialog.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -24,6 +27,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   int _currentPage = 0;
   PermissionStatus _locationPermissionStatus = PermissionStatus.denied;
   bool _isShowingLocationDialog = false;
+
+  static const Duration _pageAnimationDuration = Duration(milliseconds: 220);
+  static const Curve _pageAnimationCurve = Curves.easeIn;
+
+  late final List<OnboardingNegoPose> _negoPoses;
 
   Future<void> _showLocationRequiredDialog(
     BuildContext context, {
@@ -79,6 +87,44 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   void initState() {
     super.initState();
     _controller = PageController();
+    _negoPoses = const [
+      OnboardingNegoPose(
+        size: 232,
+        alignment: Alignment.topCenter,
+        offset: Offset(0, 84),
+        mood: NegoMood.idle,
+        lookAngle: NegoTokens.lookAngleDefault,
+        lookVertical: NegoLookVertical.down,
+        interactive: true,
+      ),
+      OnboardingNegoPose(
+        size: 212,
+        alignment: Alignment.topCenter,
+        offset: Offset(-56, 56),
+        mood: NegoMood.looking,
+        lookAngle: -12,
+        lookVertical: NegoLookVertical.down,
+        interactive: true,
+      ),
+      OnboardingNegoPose(
+        size: 196,
+        alignment: Alignment.topCenter,
+        offset: Offset(64, 56),
+        mood: NegoMood.looking,
+        lookAngle: 10,
+        lookVertical: NegoLookVertical.down,
+        interactive: true,
+      ),
+      OnboardingNegoPose(
+        size: 176,
+        alignment: Alignment.topCenter,
+        offset: Offset(0, 44),
+        mood: NegoMood.excited,
+        lookAngle: 0,
+        lookVertical: NegoLookVertical.down,
+        interactive: false,
+      ),
+    ];
   }
 
   @override
@@ -87,29 +133,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     super.dispose();
   }
 
-  Future<void> _goToNextPage(
-    BuildContext context,
-    int totalPages, {
-    required bool enforceLocationPermission,
-  }) async {
-    if (_currentPage >= totalPages - 1) {
-      return;
-    }
-
-    if (enforceLocationPermission &&
-        _currentPage == 2 &&
-        !_locationPermissionStatus.isGranted) {
-      await _showLocationRequiredDialog(
-        context,
-        isDeniedForever: _locationPermissionStatus.isPermanentlyDenied,
-      );
-      return;
-    }
+  Future<void> _goToNextPage(int totalPages) async {
+    if (_currentPage >= totalPages - 1) return;
 
     await _controller.animateToPage(
       _currentPage + 1,
-      duration: const Duration(milliseconds: 220),
-      curve: Curves.easeIn,
+      duration: _pageAnimationDuration,
+      curve: _pageAnimationCurve,
     );
   }
 
@@ -120,8 +150,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
     await _controller.animateToPage(
       _currentPage - 1,
-      duration: const Duration(milliseconds: 220),
-      curve: Curves.easeIn,
+      duration: _pageAnimationDuration,
+      curve: _pageAnimationCurve,
     );
   }
 
@@ -132,45 +162,49 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
     final slides = ref.watch(slidesListProvider);
 
+    const totalPages = 4;
     final pages = [
-      // Slide 0: Nego y bienvenida
       ExploreOnboardingScreen(
         title: slides[0].title,
         description: slides[0].description.toString(),
+        onNext: () => _goToNextPage(totalPages),
       ),
-      // Slide 1: Funciones de la App
       GenericSlide(
         title: slides[1].title,
         description: slides[1].description.toString(),
         imagePath: slides[1].imagePath.toString(),
+        onNext: () => _goToNextPage(totalPages),
       ),
-      // Slide 2: Acceso a la Ubicacion
       LocationSlide(
         title: slides[2].title,
         description: slides[2].description.toString(),
         imagePath: slides[2].imagePath.toString(),
         buttonText: slides[2].buttonText,
+        onNext: () => _goToNextPage(totalPages),
+        onPermissionRequired: () async {
+          if (!enforceLocationPermission || _currentPage != 2) return;
+          if (_locationPermissionStatus.isGranted) return;
+
+          await _showLocationRequiredDialog(
+            context,
+            isDeniedForever: _locationPermissionStatus.isPermanentlyDenied,
+          );
+        },
         onPermissionStatusChanged: (status) {
           final wasGranted = _locationPermissionStatus.isGranted;
-          setState(() {
-            _locationPermissionStatus = status;
-          });
+          setState(() => _locationPermissionStatus = status);
 
-          // Avanza automaticamente cuando el permiso se concede en la slide de ubicacion.
-          if (!wasGranted && status.isGranted && _currentPage == 2) {
-            _controller.animateToPage(
-              3,
-              duration: const Duration(milliseconds: 220),
-              curve: Curves.easeIn,
-            );
+          if (enforceLocationPermission &&
+              status.isPermanentlyDenied &&
+              _currentPage == 2) {
+            _showLocationRequiredDialog(context, isDeniedForever: true);
           }
 
-          if (status.isPermanentlyDenied && _currentPage == 2) {
-            _showLocationRequiredDialog(context, isDeniedForever: true);
+          if (!wasGranted && status.isGranted && _currentPage == 2 && mounted) {
+            _goToNextPage(totalPages);
           }
         },
       ),
-      // Slide 3: Inicio de sesion
       AuthSelectionWidget(
         onSuccess: () {
           context.go(MapRoutes.map);
@@ -182,58 +216,150 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       key: const ValueKey('onboardingScreen'),
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: Stack(
-        alignment: Alignment.bottomCenter,
         children: [
-          // Fondo Colores Desenfocados
-          AnimatedBackground(),
+          const AnimatedBackground(),
           Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 500),
               child: PageView(
                 controller: _controller,
                 physics: const NeverScrollableScrollPhysics(),
-                onPageChanged: (index) {
-                  setState(() {
-                    _currentPage = index;
-                  });
-                },
+                onPageChanged: (index) => setState(() => _currentPage = index),
                 children: pages,
               ),
             ),
           ),
-          // ------ Contador de paginas ------
-          Column(
-            children: [
-              const Spacer(),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  FilledButton.tonalIcon(
-                    key: const ValueKey('onboardingPreviousButton'),
-                    onPressed: _currentPage > 0 ? _goToPreviousPage : null,
-                    icon: const Icon(Icons.arrow_back),
-                    label: const Text('Anterior'),
-                  ),
-                  const SizedBox(width: 12),
-                  FilledButton.icon(
-                    key: const ValueKey('onboardingNextButton'),
-                    onPressed: _currentPage < pages.length - 1
-                        ? () => _goToNextPage(
-                            context,
-                            pages.length,
-                            enforceLocationPermission:
-                                enforceLocationPermission,
-                          )
-                        : null,
-                    icon: const Icon(Icons.arrow_forward),
-                    label: const Text('Siguiente'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 30),
-            ],
+          _OnboardingSharedNego(
+            controller: _controller,
+            currentIndex: _currentPage,
+            poses: _negoPoses,
+          ),
+          _OnboardingBackArrow(
+            isVisible: _currentPage >= 1,
+            onBack: _goToPreviousPage,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class OnboardingNegoPose {
+  const OnboardingNegoPose({
+    required this.size,
+    required this.alignment,
+    required this.offset,
+    required this.mood,
+    required this.lookAngle,
+    required this.lookVertical,
+    required this.interactive,
+  });
+
+  final double size;
+  final Alignment alignment;
+  final Offset offset;
+  final NegoMood mood;
+  final double lookAngle;
+  final NegoLookVertical lookVertical;
+  final bool interactive;
+
+  static OnboardingNegoPose lerp(
+    OnboardingNegoPose a,
+    OnboardingNegoPose b,
+    double t,
+  ) {
+    return OnboardingNegoPose(
+      size: lerpDouble(a.size, b.size, t) ?? b.size,
+      alignment: Alignment.lerp(a.alignment, b.alignment, t) ?? b.alignment,
+      offset: Offset.lerp(a.offset, b.offset, t) ?? b.offset,
+      mood: t < 0.5 ? a.mood : b.mood,
+      lookAngle: lerpDouble(a.lookAngle, b.lookAngle, t) ?? b.lookAngle,
+      lookVertical: t < 0.5 ? a.lookVertical : b.lookVertical,
+      interactive: t < 0.5 ? a.interactive : b.interactive,
+    );
+  }
+}
+
+class _OnboardingSharedNego extends StatelessWidget {
+  const _OnboardingSharedNego({
+    required this.controller,
+    required this.currentIndex,
+    required this.poses,
+  });
+
+  final PageController controller;
+  final int currentIndex;
+  final List<OnboardingNegoPose> poses;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, child) {
+        final double rawPage = controller.hasClients
+            ? (controller.page ?? currentIndex.toDouble())
+            : currentIndex.toDouble();
+        final double clampedPage = rawPage.clamp(
+          0.0,
+          (poses.length - 1).toDouble(),
+        );
+
+        final int lowerIndex = clampedPage.floor();
+        final int upperIndex = clampedPage.ceil();
+        final double t = (upperIndex == lowerIndex)
+            ? 0
+            : (clampedPage - lowerIndex);
+
+        final OnboardingNegoPose pose = (lowerIndex == upperIndex)
+            ? poses[lowerIndex]
+            : OnboardingNegoPose.lerp(poses[lowerIndex], poses[upperIndex], t);
+
+        return Positioned.fill(
+          child: Align(
+            alignment: pose.alignment,
+            child: Transform.translate(
+              offset: pose.offset,
+              child: NegoAvatar(
+                size: pose.size,
+                mood: pose.mood,
+                lookAngle: pose.lookAngle,
+                lookVertical: pose.lookVertical,
+                interactive: pose.interactive,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _OnboardingBackArrow extends StatelessWidget {
+  const _OnboardingBackArrow({required this.isVisible, required this.onBack});
+
+  final bool isVisible;
+  final VoidCallback onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    final topPadding = MediaQuery.of(context).padding.top;
+
+    return Positioned(
+      top: topPadding + 12,
+      left: 12,
+      child: AnimatedOpacity(
+        opacity: isVisible ? 1 : 0,
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOut,
+        child: IgnorePointer(
+          ignoring: !isVisible,
+          child: IconButton(
+            key: const ValueKey('onboardingBackButton'),
+            tooltip: 'Regresar',
+            onPressed: onBack,
+            icon: const Icon(Icons.arrow_back),
+          ),
+        ),
       ),
     );
   }

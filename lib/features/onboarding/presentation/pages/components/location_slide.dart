@@ -7,7 +7,9 @@ class LocationSlide extends StatefulWidget {
   final String description;
   final String imagePath;
   final String? buttonText;
+  final VoidCallback onNext;
   final ValueChanged<PermissionStatus>? onPermissionStatusChanged;
+  final Future<void> Function()? onPermissionRequired;
 
   const LocationSlide({
     super.key,
@@ -15,7 +17,9 @@ class LocationSlide extends StatefulWidget {
     required this.description,
     required this.imagePath,
     required this.buttonText,
+    required this.onNext,
     this.onPermissionStatusChanged,
+    this.onPermissionRequired,
   });
 
   @override
@@ -57,6 +61,19 @@ class _LocationSlideState extends State<LocationSlide> {
       _permissionStatus = status;
     });
     widget.onPermissionStatusChanged?.call(status);
+
+    if (status.isGranted) {
+      widget.onNext();
+    }
+  }
+
+  Future<void> _continue() async {
+    if (_isPermissionGranted) {
+      widget.onNext();
+      return;
+    }
+
+    await widget.onPermissionRequired?.call();
   }
 
   @override
@@ -100,6 +117,19 @@ class _LocationSlideState extends State<LocationSlide> {
           child: Text(
             _isPermissionGranted ? 'UBICACION ACTIVADA' : 'ACTIVAR UBICACION',
             style: OurnegoTextStyles.body,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: FilledButton(
+              key: const ValueKey('onboardingLocationContinueButton'),
+              onPressed: _continue,
+              child: const Text('Continuar'),
+            ),
           ),
         ),
         if (!_isPermissionGranted)
