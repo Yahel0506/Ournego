@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:riverpod/src/internals.dart' show Override;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:ournego/core/ournego_colors.dart';
@@ -19,7 +20,7 @@ import 'package:ournego/features/onboarding/domain/repositories/onboarding_repos
 import 'package:ournego/features/onboarding/presentation/providers/onboarding_providers.dart';
 
 Widget buildTestApp(
-  dynamic overrides, {
+  List<Override> overrides, {
   required bool startOnMap,
   String? initialLocation,
   Stream<dynamic>? authStateChanges,
@@ -54,7 +55,7 @@ Future<void> resetAppState() async {
   }
 }
 
-List onboardingOverrides(
+List<Override> onboardingOverrides(
   OnboardingRepository repository, {
   bool enforceLocationPermission = false,
 }) {
@@ -66,7 +67,7 @@ List onboardingOverrides(
   ];
 }
 
-List authOverrides(
+List<Override> authOverrides(
   AuthRepository repository, {
   Stream<bool>? sessionStream,
   bool initialSessionStatus = false,
@@ -91,11 +92,14 @@ List authOverrides(
   ];
 }
 
-List businessOverrides(BusinessRepository repository) {
+List<Override> businessOverrides(BusinessRepository repository) {
   return [businessRepositoryProvider.overrideWith((ref) => repository)];
 }
 
-List mapOverrides(MapRepository repository, {bool mapTilesEnabled = false}) {
+List<Override> mapOverrides(
+  MapRepository repository, {
+  bool mapTilesEnabled = false,
+}) {
   return [
     mapRepositoryProvider.overrideWith((ref) => repository),
     mapTilesEnabledProvider.overrideWith((ref) => mapTilesEnabled),
