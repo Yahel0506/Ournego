@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ournego/core/routing/route_names.dart';
+import 'package:ournego/features/onboarding/presentation/pages/components/explore_onboarding_screen.dart';
 import 'package:ournego/features/onboarding/presentation/pages/components/generic_slide.dart';
 import 'package:ournego/features/onboarding/presentation/pages/components/location_slide.dart';
 import 'package:ournego/features/onboarding/presentation/providers/onboarding_providers.dart';
@@ -132,11 +133,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     final slides = ref.watch(slidesListProvider);
 
     final pages = [
-      // Slide 0: Bienvenida
-      GenericSlide(
+      // Slide 0: Nego y bienvenida
+      ExploreOnboardingScreen(
         title: slides[0].title,
         description: slides[0].description.toString(),
-        imagePath: slides[0].imagePath.toString(),
       ),
       // Slide 1: Funciones de la App
       GenericSlide(
