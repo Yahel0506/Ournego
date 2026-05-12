@@ -28,8 +28,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   PermissionStatus _locationPermissionStatus = PermissionStatus.denied;
   bool _isShowingLocationDialog = false;
 
-  static const Duration _pageAnimationDuration = Duration(milliseconds: 220);
-  static const Curve _pageAnimationCurve = Curves.easeIn;
+  static const Duration _pageAnimationDuration = Duration(milliseconds: 600);
+  static const Curve _pageAnimationCurve = Curves.easeOutQuart;
 
   late final List<OnboardingNegoPose> _negoPoses;
 
@@ -89,10 +89,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     _controller = PageController();
     _negoPoses = const [
       OnboardingNegoPose(
-        size: 232,
-        alignment: Alignment.topCenter,
-        offset: Offset(0, 84),
-        mood: NegoMood.idle,
+        size: 120,
+        alignment: Alignment.bottomCenter,
+        offset: Offset(0, -100),
+        mood: NegoMood.winking,
         lookAngle: NegoTokens.lookAngleDefault,
         lookVertical: NegoLookVertical.down,
         interactive: true,
@@ -165,8 +165,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     const totalPages = 4;
     final pages = [
       ExploreOnboardingScreen(
-        title: slides[0].title,
-        description: slides[0].description.toString(),
+        title: 'Tu colonia tiene más de lo que crees',
         onNext: () => _goToNextPage(totalPages),
       ),
       GenericSlide(
