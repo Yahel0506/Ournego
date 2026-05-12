@@ -540,23 +540,34 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet> {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        if (!isExpanded)
-                          _LegacyCollapsedActions(
-                            onContact: () => widget.onContact(activeBusiness),
-                            onCatalog: () => widget.onCatalog(activeBusiness),
-                            onReviews: () => widget.onReviews(activeBusiness),
-                            onShare: () => widget.onShare(activeBusiness),
-                          )
-                        else
-                          Expanded(
-                            child: _LegacyExpandedContent(
-                              business: activeBusiness,
-                              onContact: () => widget.onContact(activeBusiness),
-                              onCatalog: () => widget.onCatalog(activeBusiness),
-                              onReviews: () => widget.onReviews(activeBusiness),
-                              onShare: () => widget.onShare(activeBusiness),
-                            ),
-                          ),
+                        Expanded(
+                          child: isExpanded
+                              ? _LegacyExpandedContent(
+                                  business: activeBusiness,
+                                  onContact: () => widget.onContact(activeBusiness),
+                                  onCatalog: () => widget.onCatalog(activeBusiness),
+                                  onReviews: () => widget.onReviews(activeBusiness),
+                                  onShare: () => widget.onShare(activeBusiness),
+                                )
+                              : SingleChildScrollView(
+                                  // In the collapsed state, available height can
+                                  // be smaller than the actions' intrinsic size
+                                  // (especially in widget tests). Scrolling/clip
+                                  // avoids RenderFlex overflow without changing
+                                  // the visible layout in normal use.
+                                  physics:
+                                      const NeverScrollableScrollPhysics(),
+                                  child: _LegacyCollapsedActions(
+                                    onContact: () =>
+                                        widget.onContact(activeBusiness),
+                                    onCatalog: () =>
+                                        widget.onCatalog(activeBusiness),
+                                    onReviews: () =>
+                                        widget.onReviews(activeBusiness),
+                                    onShare: () => widget.onShare(activeBusiness),
+                                  ),
+                                ),
+                        ),
                       ],
                     ),
                   ),

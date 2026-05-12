@@ -487,14 +487,17 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final bool isDarkModeOn =
         MediaQuery.of(context).platformBrightness == Brightness.dark;
 
-    final String myAccessToken = MapboxConfig.accessToken;
-    final String myUsername = MapboxConfig.username;
-
-    final String styleIdDark = MapboxConfig.styleIdDark;
-    final String styleIdLight = MapboxConfig.styleIdLight;
+    // In tests (and in some environments), MapboxConfig may be uninitialized.
+    // Only read it when tiles are actually enabled.
+    final String myAccessToken =
+        mapTilesEnabled ? MapboxConfig.accessToken : '';
+    final String myUsername = mapTilesEnabled ? MapboxConfig.username : '';
+    final String styleIdDark = mapTilesEnabled ? MapboxConfig.styleIdDark : '';
+    final String styleIdLight =
+        mapTilesEnabled ? MapboxConfig.styleIdLight : '';
 
     final String currentStyleId = isDarkModeOn ? styleIdDark : styleIdLight;
-    final bool hasMapboxConfig =
+    final bool hasMapboxConfig = mapTilesEnabled &&
         myAccessToken.isNotEmpty &&
         myUsername.isNotEmpty &&
         currentStyleId.isNotEmpty;
@@ -778,11 +781,15 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   Spacer(),
                   Column(
                     children: [
-                      _MapControlButton(
-                        icon: Icons.bug_report,
-                        onPressed: () async {},
-                      ),
-                      SizedBox(height: 12),
+                      if (kDebugMode) ...[
+                        _MapControlButton(
+                          icon: Icons.bug_report,
+                          onPressed: () async {
+                            context.go(DebuggingRoutes.debugPanel);
+                          },
+                        ),
+                        SizedBox(height: 12),
+                      ],
                       _MapControlButton(
                         icon: Icons.add,
                         onPressed: () async {

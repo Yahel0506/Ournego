@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:riverpod/src/internals.dart' show Override;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:ournego/features/map/domain/entities/business.dart';
@@ -41,7 +42,7 @@ void main() {
       businessById: {business.id: business},
     );
 
-    final overrides = [
+    final overrides = <Override>[
       ...mapOverrides(repository, mapTilesEnabled: false),
       ...authOverrides(
         FakeAuthRepository(state: FakeAuthState.unauthenticated),
@@ -81,7 +82,7 @@ void main() {
       businessById: {deepLinkBusiness.id: deepLinkBusiness},
     );
 
-    final overrides = [
+    final overrides = <Override>[
       ...mapOverrides(repository, mapTilesEnabled: false),
       ...authOverrides(
         FakeAuthRepository(state: FakeAuthState.unauthenticated),
@@ -108,7 +109,7 @@ void main() {
 
   testWidgets('missing business shows not found message', (tester) async {
     final repository = FakeMapRepository();
-    final overrides = [
+    final overrides = <Override>[
       ...mapOverrides(repository, mapTilesEnabled: false),
       ...authOverrides(
         FakeAuthRepository(state: FakeAuthState.unauthenticated),
