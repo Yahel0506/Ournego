@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
 class OurnegoTextStyles {
+  static const TextStyle onboardingHeader = TextStyle(
+    fontSize: 32,
+    fontWeight: FontWeight.bold,
+  );
   static const TextStyle header = TextStyle(
     fontSize: 24,
     fontWeight: FontWeight.bold,
