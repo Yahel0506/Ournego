@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
 import 'package:ournego/core/routing/route_observer.dart';
+import 'package:ournego/core/theme/tokens/ournego_color_tokens.dart';
 
 class AnimatedParticles extends StatefulWidget {
   const AnimatedParticles({
@@ -115,9 +116,9 @@ class _AnimatedParticlesState extends State<AnimatedParticles>
       < 0.75 => _randomRange(8, 13),
       _ => _randomRange(12, 18),
     };
-    final velocityDepthFactor = 0.45 + depth;
+    final velocityDepthFactor = 10 + depth;
     final colors = widget.colors.isEmpty
-        ? const [Color(0xFF009ABE), Color(0xFF3EBF89)]
+        ? const [OurnegoColorTokens.azulVerde, OurnegoColorTokens.verdeMenta]
         : widget.colors;
 
     return _Particle(
