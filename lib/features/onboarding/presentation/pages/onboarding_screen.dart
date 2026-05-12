@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/features/onboarding/presentation/pages/components/explore_onboarding_screen.dart';
 import 'package:ournego/features/onboarding/presentation/pages/components/discover_onboarding_screen.dart';
+import 'package:ournego/features/onboarding/presentation/pages/components/location_onboarding_screen.dart';
 import 'package:ournego/features/onboarding/presentation/pages/components/location_slide.dart';
 import 'package:ournego/features/onboarding/presentation/providers/onboarding_providers.dart';
 import 'package:ournego/shared/widgets/animated_background.dart';
@@ -107,18 +108,27 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         interactive: true,
       ),
       OnboardingNegoPose(
-        size: 196,
+        size: 200,
         alignment: Alignment.topCenter,
-        offset: Offset(64, 56),
-        mood: NegoMood.looking,
-        lookAngle: 10,
-        lookVertical: NegoLookVertical.down,
+        offset: Offset(0, 540),
+        mood: NegoMood.excited,
+        lookAngle: 0,
+        lookVertical: NegoLookVertical.up,
         interactive: true,
       ),
       OnboardingNegoPose(
-        size: 176,
+        size: 160,
         alignment: Alignment.topCenter,
-        offset: Offset(0, 44),
+        offset: Offset(0, 340),
+        mood: NegoMood.happy,
+        lookAngle: 0,
+        lookVertical: NegoLookVertical.up,
+        interactive: true,
+      ),
+      OnboardingNegoPose(
+        size: 0,
+        alignment: Alignment.topCenter,
+        offset: Offset(0, 1000),
         mood: NegoMood.excited,
         lookAngle: 0,
         lookVertical: NegoLookVertical.down,
@@ -169,35 +179,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         onNext: () => _goToNextPage(totalPages),
       ),
       DiscoverOnboardingScreen(onNext: () => _goToNextPage(totalPages)),
-      LocationSlide(
-        title: slides[2].title,
-        description: slides[2].description.toString(),
-        imagePath: slides[2].imagePath.toString(),
-        buttonText: slides[2].buttonText,
+      LocationOnboardingScreen(
+        title: 'Ve lo que hay a tu alrededor',
+        subtitle: 'Activa tu ubicación para descubrir lo que tienes cerca.',
         onNext: () => _goToNextPage(totalPages),
-        onPermissionRequired: () async {
-          if (!enforceLocationPermission || _currentPage != 2) return;
-          if (_locationPermissionStatus.isGranted) return;
-
-          await _showLocationRequiredDialog(
-            context,
-            isDeniedForever: _locationPermissionStatus.isPermanentlyDenied,
-          );
-        },
-        onPermissionStatusChanged: (status) {
-          final wasGranted = _locationPermissionStatus.isGranted;
-          setState(() => _locationPermissionStatus = status);
-
-          if (enforceLocationPermission &&
-              status.isPermanentlyDenied &&
-              _currentPage == 2) {
-            _showLocationRequiredDialog(context, isDeniedForever: true);
-          }
-
-          if (!wasGranted && status.isGranted && _currentPage == 2 && mounted) {
-            _goToNextPage(totalPages);
-          }
-        },
       ),
       AuthSelectionWidget(
         onSuccess: () {
