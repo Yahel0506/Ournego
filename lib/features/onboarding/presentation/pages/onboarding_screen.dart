@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/features/onboarding/presentation/pages/components/explore_onboarding_screen.dart';
-import 'package:ournego/features/onboarding/presentation/pages/components/generic_slide.dart';
+import 'package:ournego/features/onboarding/presentation/pages/components/discover_onboarding_screen.dart';
 import 'package:ournego/features/onboarding/presentation/pages/components/location_slide.dart';
 import 'package:ournego/features/onboarding/presentation/providers/onboarding_providers.dart';
 import 'package:ournego/shared/widgets/animated_background.dart';
@@ -98,12 +98,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         interactive: true,
       ),
       OnboardingNegoPose(
-        size: 212,
-        alignment: Alignment.topCenter,
-        offset: Offset(-56, 56),
+        size: 120,
+        alignment: Alignment.bottomRight,
+        offset: Offset(-20, -100),
         mood: NegoMood.looking,
-        lookAngle: -12,
-        lookVertical: NegoLookVertical.down,
+        lookAngle: 18,
+        lookVertical: NegoLookVertical.up,
         interactive: true,
       ),
       OnboardingNegoPose(
@@ -168,12 +168,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         title: 'Tu colonia tiene más de lo que crees',
         onNext: () => _goToNextPage(totalPages),
       ),
-      GenericSlide(
-        title: slides[1].title,
-        description: slides[1].description.toString(),
-        imagePath: slides[1].imagePath.toString(),
-        onNext: () => _goToNextPage(totalPages),
-      ),
+      DiscoverOnboardingScreen(onNext: () => _goToNextPage(totalPages)),
       LocationSlide(
         title: slides[2].title,
         description: slides[2].description.toString(),
