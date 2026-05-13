@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ournego/core/routing/route_names.dart';
+import 'package:ournego/core/routing/route_sources.dart';
+import 'package:ournego/features/onboarding/presentation/onboarding_flow_state.dart';
 import 'package:ournego/features/onboarding/presentation/pages/components/explore_onboarding_screen.dart';
 import 'package:ournego/features/onboarding/presentation/pages/components/discover_onboarding_screen.dart';
 import 'package:ournego/features/onboarding/presentation/pages/components/exit_transition_onboarding_screen.dart';
@@ -31,8 +33,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   static const Duration _pageAnimationDuration = Duration(milliseconds: 600);
   static const Curve _pageAnimationCurve = Curves.easeOutQuart;
-
-  late final List<OnboardingNegoPose> _negoPoses;
 
   Future<void> _showLocationRequiredDialog(
     BuildContext context, {
@@ -88,58 +88,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   void initState() {
     super.initState();
     _controller = PageController();
-    _negoPoses = const [
-      // Screens 1: Explore
-      OnboardingNegoPose(
-        size: 120,
-        alignment: Alignment.bottomCenter,
-        offset: Offset(0, -100),
-        mood: NegoMood.winking,
-        lookAngle: NegoTokens.lookAngleDefault,
-        lookVertical: NegoLookVertical.down,
-        interactive: true,
-      ),
-      // Screen 2: Discover
-      OnboardingNegoPose(
-        size: 120,
-        alignment: Alignment.bottomRight,
-        offset: Offset(-20, -100),
-        mood: NegoMood.looking,
-        lookAngle: 18,
-        lookVertical: NegoLookVertical.up,
-        interactive: false,
-      ),
-      // Screen 3: Location
-      OnboardingNegoPose(
-        size: 180,
-        alignment: Alignment.topCenter,
-        offset: Offset(0, 540),
-        mood: NegoMood.excited,
-        lookAngle: 0,
-        lookVertical: NegoLookVertical.up,
-        interactive: true,
-      ),
-      // Screen 4: Role selection
-      OnboardingNegoPose(
-        size: 140,
-        alignment: Alignment.topCenter,
-        offset: Offset(0, 360),
-        mood: NegoMood.happy,
-        lookAngle: 0,
-        lookVertical: NegoLookVertical.up,
-        interactive: true,
-      ),
-      // Screen 5: Exit transition
-      OnboardingNegoPose(
-        size: 0,
-        alignment: Alignment.topCenter,
-        offset: Offset(0, 1000),
-        mood: NegoMood.excited,
-        lookAngle: 0,
-        lookVertical: NegoLookVertical.down,
-        interactive: false,
-      ),
-    ];
   }
 
   @override
@@ -170,44 +118,115 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 
+  Future<void> _finishOnboarding() async {
+    final setHasSeenOnboarding = ref.read(setHasSeenOnboardingUsecaseProvider);
+    await setHasSeenOnboarding();
+
+    if (!mounted) return;
+
+    context.go(
+      AuthRoutes.authSelection,
+      extra: AuthSelectionRouteSource.onboarding,
+    );
+  }
+
+  List<OnboardingNegoPose> _buildNegoPoses(Size screenSize) {
+    final locationOffsetY = (screenSize.height - 260)
+        .clamp(300.0, 540.0)
+        .toDouble();
+    final roleOffsetY = (screenSize.height - 280)
+        .clamp(240.0, 360.0)
+        .toDouble();
+
+    return [
+      const OnboardingNegoPose(
+        size: 120,
+        alignment: Alignment.bottomCenter,
+        offset: Offset(0, -100),
+        mood: NegoMood.winking,
+        lookAngle: NegoTokens.lookAngleDefault,
+        lookVertical: NegoLookVertical.down,
+        interactive: true,
+      ),
+      const OnboardingNegoPose(
+        size: 120,
+        alignment: Alignment.bottomRight,
+        offset: Offset(-20, -100),
+        mood: NegoMood.looking,
+        lookAngle: 18,
+        lookVertical: NegoLookVertical.up,
+        interactive: false,
+      ),
+      OnboardingNegoPose(
+        size: 180,
+        alignment: Alignment.topCenter,
+        offset: Offset(0, locationOffsetY),
+        mood: NegoMood.excited,
+        lookAngle: 0,
+        lookVertical: NegoLookVertical.up,
+        interactive: true,
+      ),
+      OnboardingNegoPose(
+        size: 140,
+        alignment: Alignment.topCenter,
+        offset: Offset(0, roleOffsetY),
+        mood: NegoMood.happy,
+        lookAngle: 0,
+        lookVertical: NegoLookVertical.up,
+        interactive: true,
+      ),
+      const OnboardingNegoPose(
+        size: 0,
+        alignment: Alignment.topCenter,
+        offset: Offset(0, 1000),
+        mood: NegoMood.excited,
+        lookAngle: 0,
+        lookVertical: NegoLookVertical.down,
+        interactive: false,
+      ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final enforceLocationPermission = ref.watch(
       onboardingEnforceLocationPermissionProvider,
     );
 
-    const totalPages = 5;
-    final pages = [
+    late final List<Widget> pages;
+    void goNext() => _goToNextPage(pages.length);
+
+    pages = [
       ExploreOnboardingScreen(
         title: 'Tu colonia tiene más de lo que crees',
-        onNext: () => _goToNextPage(totalPages),
+        isActive: _currentPage == 0,
+        onNext: goNext,
       ),
-      DiscoverOnboardingScreen(onNext: () => _goToNextPage(totalPages)),
+      DiscoverOnboardingScreen(isActive: _currentPage == 1, onNext: goNext),
       LocationOnboardingScreen(
         title: 'Ve lo que hay a tu alrededor',
         subtitle: 'Activa tu ubicación para descubrir lo que tienes cerca.',
-        onNext: () => _goToNextPage(totalPages),
-        onPermissionRequired: () async {
-          if (!enforceLocationPermission || _currentPage != 2) return;
-          if (_locationPermissionStatus.isGranted) return;
+        onNext: goNext,
+        onPermissionRequired: (status) async {
+          if (_currentPage != 2) return;
+          if (status.isGranted || _locationPermissionStatus.isGranted) return;
+
+          if (!enforceLocationPermission) {
+            goNext();
+            return;
+          }
 
           await _showLocationRequiredDialog(
             context,
-            isDeniedForever: _locationPermissionStatus.isPermanentlyDenied,
+            isDeniedForever: status.isPermanentlyDenied,
           );
         },
         onPermissionStatusChanged: (status) {
           final wasGranted = _locationPermissionStatus.isGranted;
           setState(() => _locationPermissionStatus = status);
 
-          if (enforceLocationPermission &&
-              status.isPermanentlyDenied &&
-              _currentPage == 2) {
-            _showLocationRequiredDialog(context, isDeniedForever: true);
-          }
-
           if (!wasGranted && status.isGranted && _currentPage == 2 && mounted) {
-            _goToNextPage(totalPages);
+            goNext();
           }
         },
       ),
@@ -215,14 +234,18 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         title: '¿Cómo quieres usar Ournego?',
         onRoleSelected: (role) {
           setState(() => _selectedUserRole = role);
-          _goToNextPage(totalPages);
+          goNext();
         },
       ),
       ExitTransitionOnboardingScreen(
         selectedRole: _selectedUserRole ?? OnboardingUserRole.discover,
-        onFinished: () => context.go(AuthRoutes.authSelection),
+        onFinished: _finishOnboarding,
       ),
     ];
+
+    final totalPages = pages.length;
+    final negoPoses = _buildNegoPoses(MediaQuery.sizeOf(context));
+    assert(pages.length == negoPoses.length);
 
     return Scaffold(
       key: const ValueKey('onboardingScreen'),
@@ -244,7 +267,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           _OnboardingSharedNego(
             controller: _controller,
             currentIndex: _currentPage,
-            poses: _negoPoses,
+            poses: negoPoses,
           ),
           _OnboardingBackArrow(
             isVisible: _currentPage >= 1 && _currentPage <= totalPages - 2,

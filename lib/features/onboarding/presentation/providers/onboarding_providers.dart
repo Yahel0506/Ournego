@@ -12,6 +12,7 @@ final onboardingRepositoryProvider = Provider<OnboardingRepository>((ref) {
   return OnboardingRepositoryImpl(localDataSource);
 });
 
+@Deprecated('Legacy slide data from the previous generic onboarding flow.')
 final slidesListProvider = Provider<List<Slide>>((ref) {
   final repository = ref.watch(onboardingRepositoryProvider);
   return repository.getSlides();
