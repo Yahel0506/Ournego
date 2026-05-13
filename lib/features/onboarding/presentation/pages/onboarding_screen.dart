@@ -89,6 +89,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     super.initState();
     _controller = PageController();
     _negoPoses = const [
+      // Screens 1: Explore
       OnboardingNegoPose(
         size: 120,
         alignment: Alignment.bottomCenter,
@@ -98,6 +99,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         lookVertical: NegoLookVertical.down,
         interactive: true,
       ),
+      // Screen 2: Discover
       OnboardingNegoPose(
         size: 120,
         alignment: Alignment.bottomRight,
@@ -107,8 +109,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         lookVertical: NegoLookVertical.up,
         interactive: false,
       ),
+      // Screen 3: Location
       OnboardingNegoPose(
-        size: 200,
+        size: 180,
         alignment: Alignment.topCenter,
         offset: Offset(0, 540),
         mood: NegoMood.excited,
@@ -116,6 +119,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         lookVertical: NegoLookVertical.up,
         interactive: true,
       ),
+      // Screen 4: Role selection
       OnboardingNegoPose(
         size: 140,
         alignment: Alignment.topCenter,
@@ -125,6 +129,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         lookVertical: NegoLookVertical.up,
         interactive: true,
       ),
+      // Screen 5: Exit transition
       OnboardingNegoPose(
         size: 0,
         alignment: Alignment.topCenter,
