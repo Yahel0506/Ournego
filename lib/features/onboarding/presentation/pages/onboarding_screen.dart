@@ -2,8 +2,11 @@ import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/features/onboarding/presentation/pages/components/explore_onboarding_screen.dart';
 import 'package:ournego/features/onboarding/presentation/pages/components/discover_onboarding_screen.dart';
+import 'package:ournego/features/onboarding/presentation/pages/components/exit_transition_onboarding_screen.dart';
 import 'package:ournego/features/onboarding/presentation/pages/components/location_onboarding_screen.dart';
 import 'package:ournego/features/onboarding/presentation/pages/components/role_selection_onboarding_screen.dart';
 import 'package:ournego/features/onboarding/presentation/providers/onboarding_providers.dart';
@@ -23,8 +26,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   late final PageController _controller;
   int _currentPage = 0;
   PermissionStatus _locationPermissionStatus = PermissionStatus.denied;
-  // Se conserva en memoria para la siguiente pantalla del onboarding.
-  // ignore: unused_field
   OnboardingUserRole? _selectedUserRole;
   bool _isShowingLocationDialog = false;
 
@@ -170,7 +171,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       onboardingEnforceLocationPermissionProvider,
     );
 
-    const totalPages = 4;
+    const totalPages = 5;
     final pages = [
       ExploreOnboardingScreen(
         title: 'Tu colonia tiene más de lo que crees',
@@ -211,6 +212,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           setState(() => _selectedUserRole = role);
           _goToNextPage(totalPages);
         },
+      ),
+      ExitTransitionOnboardingScreen(
+        selectedRole: _selectedUserRole ?? OnboardingUserRole.discover,
+        onFinished: () => context.go(AuthRoutes.authSelection),
       ),
     ];
 
