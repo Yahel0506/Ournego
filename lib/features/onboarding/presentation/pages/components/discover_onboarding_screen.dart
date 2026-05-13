@@ -6,59 +6,81 @@ import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/shared/widgets/ournego_buttons.dart';
 
 class DiscoverOnboardingScreen extends StatelessWidget {
-  const DiscoverOnboardingScreen({super.key, required this.onNext});
+  const DiscoverOnboardingScreen({
+    super.key,
+    required this.onNext,
+    this.isActive = true,
+  });
 
   final VoidCallback onNext;
+  final bool isActive;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(18),
-      child: Stack(
-        children: [
-          const Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [SizedBox(height: 64), _FloatingOrb()],
-          ),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Encuentra lo que necesitas, cerca de ti.',
-                textAlign: TextAlign.left,
-                style: OurnegoTextStyles.onboardingHeader,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Desde comida hasta servicios, todo en tu zona.',
-                textAlign: TextAlign.left,
-                style: OurnegoTextStyles.body,
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: 160,
-                height: 56,
-                child: OurnegoNeutralPrimaryButton(
-                  key: const ValueKey('onboardingDiscoverContinueButton'),
-                  onPressed: onNext,
-                  child: const Text(
-                    'Continuar',
-                    style: OurnegoTextStyles.header,
+    final screenHeight = MediaQuery.sizeOf(context).height;
+    final orbHeight = (screenHeight * 0.32).clamp(200.0, 256.0).toDouble();
+    final orbSize = (orbHeight * 0.66).clamp(132.0, 170.0).toDouble();
+    final bottomGap = (screenHeight * 0.16).clamp(88.0, 136.0).toDouble();
+    final disableAnimations = MediaQuery.disableAnimationsOf(context);
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Stack(
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const SizedBox(height: 64),
+                TickerMode(
+                  enabled: isActive && !disableAnimations,
+                  child: _FloatingOrb(height: orbHeight, orbSize: orbSize),
+                ),
+              ],
+            ),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Encuentra lo que necesitas, cerca de ti.',
+                  textAlign: TextAlign.left,
+                  style: OurnegoTextStyles.onboardingHeader,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Desde comida hasta servicios, todo en tu zona.',
+                  textAlign: TextAlign.left,
+                  style: OurnegoTextStyles.body,
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: 160,
+                  height: 56,
+                  child: OurnegoNeutralPrimaryButton(
+                    key: const ValueKey('onboardingDiscoverContinueButton'),
+                    onPressed: onNext,
+                    child: const Text(
+                      'Continuar',
+                      style: OurnegoTextStyles.header,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 136),
-            ],
-          ),
-        ],
+                SizedBox(height: bottomGap),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
 class _FloatingOrb extends StatefulWidget {
-  const _FloatingOrb();
+  const _FloatingOrb({required this.height, required this.orbSize});
+
+  final double height;
+  final double orbSize;
 
   @override
   State<_FloatingOrb> createState() => _FloatingOrbState();
@@ -66,7 +88,6 @@ class _FloatingOrb extends StatefulWidget {
 
 class _FloatingOrbState extends State<_FloatingOrb>
     with SingleTickerProviderStateMixin {
-  static const double _orbSize = 170;
   static const double _bubbleBaseFactor = 0.2;
   static const double _iconFactor = 0.46;
 
@@ -173,7 +194,7 @@ class _FloatingOrbState extends State<_FloatingOrb>
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 256,
+      height: widget.height,
       width: double.infinity,
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -201,19 +222,19 @@ class _FloatingOrbState extends State<_FloatingOrb>
                         farGlowBreath: farGlowBreath,
                         ringBreath: ringBreath,
                         rotation: t,
-                        orbSize: _orbSize,
+                        orbSize: widget.orbSize,
                       ),
                     ),
                   ),
                   ...List<Widget>.generate(_configs.length, (index) {
                     final config = _configs[index];
                     final bubbleSize =
-                        _orbSize * _bubbleBaseFactor * config.sizeFactor;
+                        widget.orbSize * _bubbleBaseFactor * config.sizeFactor;
                     final bubbleCenter = _bubbleCenter(
                       config: config,
                       t: t,
                       center: center,
-                      orbSize: _orbSize,
+                      orbSize: widget.orbSize,
                     );
                     final bubblePulse =
                         1 +
