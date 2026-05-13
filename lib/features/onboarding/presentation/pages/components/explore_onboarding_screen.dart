@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
+import 'package:ournego/features/onboarding/presentation/pages/components/onboarding_responsive_layout.dart';
 import 'package:ournego/shared/widgets/animated_particles.dart';
 import 'package:ournego/shared/widgets/ournego_buttons.dart';
 
@@ -8,10 +9,12 @@ class ExploreOnboardingScreen extends StatelessWidget {
     super.key,
     required this.title,
     required this.onNext,
+    this.isActive = true,
   });
 
   final String title;
   final VoidCallback onNext;
+  final bool isActive;
 
   @override
   Widget build(BuildContext context) {
@@ -22,23 +25,29 @@ class ExploreOnboardingScreen extends StatelessWidget {
         ? 'assets/images/ournego_white.png'
         : 'assets/images/ournego.png';
 
+    final disableAnimations = MediaQuery.disableAnimationsOf(context);
+    final screenHeight = MediaQuery.sizeOf(context).height;
+    final topGap = (screenHeight * 0.08).clamp(32.0, 64.0).toDouble();
+    final titleGap = (screenHeight * 0.14).clamp(72.0, 128.0).toDouble();
+
     return Stack(
       children: [
-        AnimatedParticles(),
-        Padding(
-          padding: const EdgeInsets.all(28),
+        if (!disableAnimations)
+          TickerMode(enabled: isActive, child: const AnimatedParticles()),
+        OnboardingResponsiveLayout(
+          scrollBelowHeight: 680,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const SizedBox(height: 64),
+              SizedBox(height: topGap),
               Image.asset(themedImagePath, height: 48),
-              const SizedBox(height: 128),
+              SizedBox(height: titleGap),
               Text(
                 title,
                 style: OurnegoTextStyles.onboardingHeader,
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 64),
+              const SizedBox(height: 48),
               SizedBox(
                 width: 200,
                 height: 56,

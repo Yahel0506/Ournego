@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
+import 'package:ournego/features/onboarding/presentation/pages/components/onboarding_responsive_layout.dart';
 import 'package:ournego/shared/widgets/ournego_buttons.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -17,14 +18,15 @@ class LocationOnboardingScreen extends StatefulWidget {
   final String subtitle;
   final VoidCallback onNext;
   final ValueChanged<PermissionStatus>? onPermissionStatusChanged;
-  final Future<void> Function()? onPermissionRequired;
+  final Future<void> Function(PermissionStatus status)? onPermissionRequired;
 
   @override
   State<LocationOnboardingScreen> createState() =>
       _LocationOnboardingScreenState();
 }
 
-class _LocationOnboardingScreenState extends State<LocationOnboardingScreen> {
+class _LocationOnboardingScreenState extends State<LocationOnboardingScreen>
+    with WidgetsBindingObserver {
   PermissionStatus _permissionStatus = PermissionStatus.denied;
 
   bool get _isPermissionGranted => _permissionStatus.isGranted;
@@ -32,7 +34,21 @@ class _LocationOnboardingScreenState extends State<LocationOnboardingScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _syncPermissionStatus();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _syncPermissionStatus();
+    }
   }
 
   Future<void> _syncPermissionStatus() async {
@@ -52,7 +68,10 @@ class _LocationOnboardingScreenState extends State<LocationOnboardingScreen> {
 
     if (status.isGranted) {
       widget.onNext();
+      return;
     }
+
+    await widget.onPermissionRequired?.call(status);
   }
 
   Future<void> _onPrimaryAction() async {
@@ -65,8 +84,12 @@ class _LocationOnboardingScreenState extends State<LocationOnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    final screenHeight = MediaQuery.sizeOf(context).height;
+    final iconSize = (screenHeight * 0.22).clamp(120.0, 180.0).toDouble();
+
+    return OnboardingResponsiveLayout(
       padding: const EdgeInsets.all(48),
+      scrollBelowHeight: 700,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -96,14 +119,14 @@ class _LocationOnboardingScreenState extends State<LocationOnboardingScreen> {
             ),
           ),
           const SizedBox(height: 32),
-          const Icon(Icons.location_on, size: 180, color: Colors.redAccent),
+          Icon(Icons.location_on, size: iconSize, color: Colors.redAccent),
           const Spacer(),
           if (!_isPermissionGranted)
-            Text(
+            const Text(
               'Debes habilitar la ubicacion para continuar.',
               textAlign: TextAlign.center,
             ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
         ],
       ),
     );

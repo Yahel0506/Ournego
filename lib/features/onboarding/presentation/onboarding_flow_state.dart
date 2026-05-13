@@ -1,0 +1,1 @@
+enum OnboardingUserRole { discover, business }

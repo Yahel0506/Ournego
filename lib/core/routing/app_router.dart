@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/core/routing/route_observer.dart';
+import 'package:ournego/core/routing/route_sources.dart';
 import 'package:ournego/features/auth/presentation/pages/auth_selection_screen.dart';
 import 'package:ournego/features/auth/presentation/pages/complete_profile_screen.dart';
 import 'package:ournego/features/auth/presentation/pages/create_password_screen.dart';
@@ -47,24 +48,35 @@ GoRouter createAppRouter({
       GoRoute(
         path: AuthRoutes.authSelection,
         name: 'auth-selection',
-        pageBuilder: (context, state) => CustomTransitionPage<void>(
-          key: state.pageKey,
-          child: const AuthSelectionScreen(),
-          transitionDuration: const Duration(milliseconds: 450),
-          reverseTransitionDuration: const Duration(milliseconds: 300),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            final offsetTween = Tween<Offset>(
-              begin: const Offset(0, 1),
-              end: Offset.zero,
+        pageBuilder: (context, state) {
+          final source = state.extra;
+          if (source != AuthSelectionRouteSource.onboarding) {
+            return MaterialPage<void>(
+              key: state.pageKey,
+              child: const AuthSelectionScreen(),
             );
-            return SlideTransition(
-              position: animation.drive(
-                offsetTween.chain(CurveTween(curve: Curves.easeOutCubic)),
-              ),
-              child: child,
-            );
-          },
-        ),
+          }
+
+          return CustomTransitionPage<void>(
+            key: state.pageKey,
+            child: const AuthSelectionScreen(),
+            transitionDuration: const Duration(milliseconds: 450),
+            reverseTransitionDuration: const Duration(milliseconds: 300),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+                  final offsetTween = Tween<Offset>(
+                    begin: const Offset(0, 1),
+                    end: Offset.zero,
+                  );
+                  return SlideTransition(
+                    position: animation.drive(
+                      offsetTween.chain(CurveTween(curve: Curves.easeOutCubic)),
+                    ),
+                    child: child,
+                  );
+                },
+          );
+        },
       ),
       GoRoute(
         path: AuthRoutes.loginEmail,

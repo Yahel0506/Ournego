@@ -5,6 +5,7 @@ import 'package:ournego/features/onboarding/data/models/slide_model.dart';
 class LocalOnboardingDatasource {
   static const _hasSeenOnboardingKey = 'hasSeenOnboarding';
 
+  // Legacy slide data from the previous generic onboarding flow.
   List<SlideModel> getHardcodedSlides() {
     return [
       const SlideModel(

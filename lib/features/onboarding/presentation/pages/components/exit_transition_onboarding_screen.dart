@@ -2,8 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
-import 'package:ournego/core/theme/tokens/ournego_color_tokens.dart';
-import 'package:ournego/features/onboarding/presentation/pages/components/role_selection_onboarding_screen.dart';
+import 'package:ournego/features/onboarding/presentation/onboarding_flow_state.dart';
 
 class ExitTransitionOnboardingScreen extends StatefulWidget {
   const ExitTransitionOnboardingScreen({
@@ -13,7 +12,7 @@ class ExitTransitionOnboardingScreen extends StatefulWidget {
   });
 
   final OnboardingUserRole selectedRole;
-  final VoidCallback onFinished;
+  final FutureOr<void> Function() onFinished;
 
   @override
   State<ExitTransitionOnboardingScreen> createState() =>
@@ -83,14 +82,19 @@ class _ExitTransitionOnboardingScreenState
   @override
   Widget build(BuildContext context) {
     final title = switch (widget.selectedRole) {
-      OnboardingUserRole.discover => 'Ya hay lugares esperandote',
+      OnboardingUserRole.discover => 'Ya hay lugares esperándote',
       OnboardingUserRole.business => 'Vamos a ayudarte a crecer',
     };
 
     final description = switch (widget.selectedRole) {
-      OnboardingUserRole.discover => 'Exploralos ahora',
+      OnboardingUserRole.discover => 'Explóralos ahora',
       OnboardingUserRole.business => 'Crea tu cuenta para empezar',
     };
+
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    final showTitle = reduceMotion || _showTitle;
+    final showDescription = reduceMotion || _showDescription;
+    final duration = reduceMotion ? Duration.zero : _entranceDuration;
 
     return Stack(
       children: [
@@ -101,12 +105,12 @@ class _ExitTransitionOnboardingScreenState
               mainAxisSize: MainAxisSize.min,
               children: [
                 AnimatedSlide(
-                  offset: _showTitle ? Offset.zero : const Offset(0, 0.35),
-                  duration: _entranceDuration,
+                  offset: showTitle ? Offset.zero : const Offset(0, 0.35),
+                  duration: duration,
                   curve: _entranceCurve,
                   child: AnimatedOpacity(
-                    opacity: _showTitle ? 1 : 0,
-                    duration: _entranceDuration,
+                    opacity: showTitle ? 1 : 0,
+                    duration: duration,
                     curve: _entranceCurve,
                     child: Text(
                       title,
@@ -117,14 +121,12 @@ class _ExitTransitionOnboardingScreenState
                 ),
                 const SizedBox(height: 16),
                 AnimatedSlide(
-                  offset: _showDescription
-                      ? Offset.zero
-                      : const Offset(0, 0.35),
-                  duration: _entranceDuration,
+                  offset: showDescription ? Offset.zero : const Offset(0, 0.35),
+                  duration: duration,
                   curve: _entranceCurve,
                   child: AnimatedOpacity(
-                    opacity: _showDescription ? 1 : 0,
-                    duration: _entranceDuration,
+                    opacity: showDescription ? 1 : 0,
+                    duration: duration,
                     curve: _entranceCurve,
                     child: Text(
                       description,
@@ -134,20 +136,6 @@ class _ExitTransitionOnboardingScreenState
                   ),
                 ),
               ],
-            ),
-          ),
-        ),
-        Positioned.fill(
-          child: Align(
-            alignment: Alignment.bottomCenter,
-            child: AnimatedSlide(
-              offset: const Offset(0, 1.2),
-              duration: const Duration(milliseconds: 1),
-              child: Container(
-                height: 220,
-                width: double.infinity,
-                color: OurnegoColorTokens.noche,
-              ),
             ),
           ),
         ),
