@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:ournego/features/map/domain/entities/business.dart';
+import 'package:ournego/features/map/domain/entities/business_hours.dart';
 import 'package:ournego/features/map/presentation/mappers/business_marker_ui_mapper.dart';
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/models/sheet_business_data.dart';
 
@@ -32,6 +33,8 @@ class MinimizedStackIcon extends StatelessWidget {
         longitude: 0,
         type: business.type,
         images: business.images,
+        visitCount: 0,
+        hours: const <BusinessHours>[],
       ),
     );
 
