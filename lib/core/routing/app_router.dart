@@ -47,7 +47,24 @@ GoRouter createAppRouter({
       GoRoute(
         path: AuthRoutes.authSelection,
         name: 'auth-selection',
-        builder: (context, state) => const AuthSelectionScreen(),
+        pageBuilder: (context, state) => CustomTransitionPage<void>(
+          key: state.pageKey,
+          child: const AuthSelectionScreen(),
+          transitionDuration: const Duration(milliseconds: 450),
+          reverseTransitionDuration: const Duration(milliseconds: 300),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            final offsetTween = Tween<Offset>(
+              begin: const Offset(0, 1),
+              end: Offset.zero,
+            );
+            return SlideTransition(
+              position: animation.drive(
+                offsetTween.chain(CurveTween(curve: Curves.easeOutCubic)),
+              ),
+              child: child,
+            );
+          },
+        ),
       ),
       GoRoute(
         path: AuthRoutes.loginEmail,
