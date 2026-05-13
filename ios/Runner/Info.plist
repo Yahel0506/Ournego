@@ -53,6 +53,10 @@
 	<string>Pick an image from gallery</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Pick an image from Camera</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>El micrófono se usa para buscar negocios por voz.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>El reconocimiento de voz permite convertir tu búsqueda hablada en texto.</string>
 
 	<key>LSApplicationQueriesSchemes</key>
 	<array>

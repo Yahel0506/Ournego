@@ -15,6 +15,8 @@ import 'package:ournego/features/map/domain/usecases/get_businesses_usecase.dart
 import 'package:ournego/features/map/domain/usecases/get_current_location_usecase.dart';
 import 'package:ournego/features/map/domain/usecases/track_business_visit_usecase.dart';
 import 'package:ournego/features/map/presentation/providers/notifiers/map_notifier.dart';
+import 'package:ournego/features/map/presentation/providers/notifiers/map_voice_search_notifier.dart';
+import 'package:ournego/features/map/presentation/services/speech_to_text_voice_search_service.dart';
 
 // |---------------------------------| \\
 // |------- LAYER 1: DATASOURCES ----| \\
@@ -99,3 +101,10 @@ final isBusinessFavoriteStreamProvider = StreamProvider.autoDispose
         repository: repository,
       ).isFavorite(businessId);
     });
+
+final mapVoiceSearchProvider =
+    NotifierProvider<MapVoiceSearchNotifier, MapVoiceSearchState>(
+      () => MapVoiceSearchNotifier(
+        voiceSearchService: SpeechToTextVoiceSearchService(),
+      ),
+    );
