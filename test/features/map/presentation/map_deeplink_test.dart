@@ -5,6 +5,7 @@ import 'package:riverpod/src/internals.dart' show Override;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:ournego/features/map/domain/entities/business.dart';
+import 'package:ournego/features/map/domain/entities/business_hours.dart';
 import 'package:ournego/features/map/domain/entities/business_type.dart';
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/models/sheet_business_data.dart';
 import 'package:ournego/features/navigation/presentation/widgets/navigation_bar_widget.dart';
@@ -25,6 +26,8 @@ Business _buildBusiness({required String id, required String name}) {
     longitude: -99.1332,
     type: BusinessType.drinkAndEat,
     images: const [],
+    visitCount: 0,
+    hours: const <BusinessHours>[],
   );
 }
 
