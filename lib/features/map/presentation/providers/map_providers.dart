@@ -13,6 +13,7 @@ import 'package:ournego/features/map/domain/usecases/business_favorites_usecase.
 import 'package:ournego/features/map/domain/usecases/get_business_by_id_usecase.dart';
 import 'package:ournego/features/map/domain/usecases/get_businesses_usecase.dart';
 import 'package:ournego/features/map/domain/usecases/get_current_location_usecase.dart';
+import 'package:ournego/features/map/domain/usecases/track_business_visit_usecase.dart';
 import 'package:ournego/features/map/presentation/providers/notifiers/map_notifier.dart';
 
 // |---------------------------------| \\
@@ -61,6 +62,13 @@ final businessFavoritesUsecaseProvider = Provider<BusinessFavoritesUsecase>((
 ) {
   final repository = ref.watch(mapRepositoryProvider);
   return BusinessFavoritesUsecase(repository: repository);
+});
+
+final trackBusinessVisitUsecaseProvider = Provider<TrackBusinessVisitUsecase>((
+  ref,
+) {
+  final repository = ref.watch(mapRepositoryProvider);
+  return TrackBusinessVisitUsecase(repository: repository);
 });
 
 // |---------------------------------| \\

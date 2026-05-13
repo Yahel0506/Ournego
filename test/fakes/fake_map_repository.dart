@@ -77,6 +77,14 @@ class FakeMapRepository implements MapRepository {
     return Stream<bool>.value(false);
   }
 
+  @override
+  Future<Either<Failure, void>> trackBusinessVisit({
+    required String businessId,
+    required String source,
+  }) async {
+    return const Right(null);
+  }
+
   Future<void> dispose() async {
     await _businessesController.close();
   }

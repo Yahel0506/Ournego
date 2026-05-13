@@ -1,4 +1,5 @@
 import 'package:ournego/features/map/domain/entities/business.dart';
+import 'package:ournego/features/map/domain/entities/business_hours.dart';
 import 'package:ournego/features/map/domain/entities/business_type.dart';
 
 class BusinessModel extends Business {
@@ -13,10 +14,16 @@ class BusinessModel extends Business {
     required super.longitude,
     required super.type,
     required super.images,
+    required super.visitCount,
+    required super.hours,
   });
 
-  factory BusinessModel.fromSupabase(Map<String, dynamic> data) {
-    final rawImagesList = data['images'] as List<dynamic>;
+  factory BusinessModel.fromSupabase(
+    Map<String, dynamic> data, {
+    required int visitCount,
+    required List<BusinessHours> hours,
+  }) {
+    final rawImagesList = (data['images'] as List<dynamic>? ?? const []);
     final List<String> images = rawImagesList.map((rawImage) {
       final image = rawImage as String;
       return image;
@@ -38,6 +45,8 @@ class BusinessModel extends Business {
       longitude: data['longitude'],
       type: type,
       images: images,
+      visitCount: visitCount,
+      hours: hours,
     );
   }
 }

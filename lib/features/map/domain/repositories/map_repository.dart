@@ -12,6 +12,10 @@ abstract class MapRepository {
   Future<Either<Failure, void>> addBusinessToFavorites(String businessId);
   Future<Either<Failure, void>> removeBusinessFromFavorites(String businessId);
   Stream<bool> isBusinessFavorite(String businessId);
+  Future<Either<Failure, void>> trackBusinessVisit({
+    required String businessId,
+    required String source,
+  });
 }
 
 // TODO: Consider adding pagination/filtering to `getBusinesses`.
