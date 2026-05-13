@@ -2,18 +2,15 @@ import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/features/onboarding/presentation/pages/components/explore_onboarding_screen.dart';
 import 'package:ournego/features/onboarding/presentation/pages/components/discover_onboarding_screen.dart';
 import 'package:ournego/features/onboarding/presentation/pages/components/location_onboarding_screen.dart';
+import 'package:ournego/features/onboarding/presentation/pages/components/role_selection_onboarding_screen.dart';
 import 'package:ournego/features/onboarding/presentation/providers/onboarding_providers.dart';
 import 'package:ournego/shared/widgets/animated_background.dart';
 import 'package:ournego/shared/widgets/nego/nego.dart';
 import 'package:ournego/shared/widgets/ournego_information_dialog.dart';
 import 'package:permission_handler/permission_handler.dart';
-
-import '../../../auth/presentation/widgets/auth_selection_widget.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -26,6 +23,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   late final PageController _controller;
   int _currentPage = 0;
   PermissionStatus _locationPermissionStatus = PermissionStatus.denied;
+  // Se conserva en memoria para la siguiente pantalla del onboarding.
+  // ignore: unused_field
+  OnboardingUserRole? _selectedUserRole;
   bool _isShowingLocationDialog = false;
 
   static const Duration _pageAnimationDuration = Duration(milliseconds: 600);
@@ -116,9 +116,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         interactive: true,
       ),
       OnboardingNegoPose(
-        size: 160,
+        size: 140,
         alignment: Alignment.topCenter,
-        offset: Offset(0, 340),
+        offset: Offset(0, 360),
         mood: NegoMood.happy,
         lookAngle: 0,
         lookVertical: NegoLookVertical.up,
@@ -205,9 +205,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           }
         },
       ),
-      AuthSelectionWidget(
-        onSuccess: () {
-          context.go(MapRoutes.map);
+      RoleSelectionOnboardingScreen(
+        title: '¿Cómo quieres usar Ournego?',
+        onRoleSelected: (role) {
+          setState(() => _selectedUserRole = role);
+          _goToNextPage(totalPages);
         },
       ),
     ];
@@ -235,7 +237,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             poses: _negoPoses,
           ),
           _OnboardingBackArrow(
-            isVisible: _currentPage >= 1,
+            isVisible: _currentPage >= 1 && _currentPage <= totalPages - 2,
             onBack: _goToPreviousPage,
           ),
         ],
