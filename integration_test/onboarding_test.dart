@@ -57,11 +57,77 @@ void main() {
           await $.pumpAndSettle();
         }
 
-        await $.tester.tap(find.byKey(const ValueKey('guestAccessButton')));
+        await $.tester.tap(
+          find.byKey(const ValueKey('onboardingRoleDiscoverButton')),
+        );
+        await $.pump(const Duration(milliseconds: 1200));
+
+        expect(find.text('Ya hay lugares esperándote'), findsOneWidget);
+        expect(find.text('Explóralos ahora'), findsOneWidget);
+
+        await $.pump(const Duration(seconds: 3));
         await $.pumpAndSettle();
+
+        expect(
+          find.byKey(const ValueKey('authSelectionScreen')),
+          findsOneWidget,
+        );
 
         final prefs = await SharedPreferences.getInstance();
         expect(prefs.getBool('hasSeenOnboarding'), isTrue);
+
+        await authState.close();
+      },
+    );
+
+    patrolTest(
+      '1b) Usuario que elige negocio ve el copy de transición correcto',
+      tags: ['onboarding', 'auth'],
+      ($) async {
+        await resetAppState();
+
+        final onboardingRepository = FakeOnboardingRepository(hasSeen: false);
+        final authState = StreamController<bool>.broadcast();
+        authState.add(false);
+
+        await $.pumpWidgetAndSettle(
+          buildTestApp([
+            ...onboardingOverrides(onboardingRepository),
+            ...authOverrides(
+              FakeAuthRepository(state: FakeAuthState.unauthenticated),
+              sessionStream: authState.stream,
+            ),
+            ...mapOverrides(FakeMapRepository()),
+          ], startOnMap: false),
+        );
+
+        await $.tester.tap(
+          find.byKey(const ValueKey('onboardingExploreContinueButton')),
+        );
+        await $.pumpAndSettle();
+
+        await $.tester.tap(
+          find.byKey(const ValueKey('onboardingDiscoverContinueButton')),
+        );
+        await $.pumpAndSettle();
+
+        await $.tester.tap(
+          find.byKey(const ValueKey('activateLocationButton')),
+        );
+        await $.pumpAndSettle();
+
+        if (await $.native.isPermissionDialogVisible()) {
+          await $.native.grantPermissionWhenInUse();
+          await $.pumpAndSettle();
+        }
+
+        await $.tester.tap(
+          find.byKey(const ValueKey('onboardingRoleBusinessButton')),
+        );
+        await $.pump(const Duration(milliseconds: 1200));
+
+        expect(find.text('Vamos a ayudarte a crecer'), findsOneWidget);
+        expect(find.text('Crea tu cuenta para empezar'), findsOneWidget);
 
         await authState.close();
       },
