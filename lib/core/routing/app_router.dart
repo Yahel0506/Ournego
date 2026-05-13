@@ -212,6 +212,7 @@ GoRouter createAppRouter({
           path == AppRoutes.community ||
           path == MapRoutes.map ||
           path == BusinessRoutes.panel ||
+          path == DebuggingRoutes.debugPanel ||
           path.startsWith('/negocio/') ||
           path.startsWith('/business/');
       final isGuestAllowedRoute =
@@ -219,6 +220,7 @@ GoRouter createAppRouter({
           path == MapRoutes.map ||
           path == AppRoutes.community ||
           path == BusinessRoutes.panel ||
+          path == DebuggingRoutes.debugPanel ||
           path == BusinessRoutes.register ||
           path.startsWith('/negocio/') ||
           path.startsWith('/business/');
