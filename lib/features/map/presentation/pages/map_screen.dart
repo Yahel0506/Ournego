@@ -14,6 +14,9 @@ import 'package:ournego/core/mapbox_config.dart';
 import 'package:ournego/core/ournego_colors.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/core/routing/route_names.dart';
+import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
+import 'package:ournego/features/business/presentation/providers/business_providers.dart';
+import 'package:ournego/features/feedback/presentation/widgets/feedback_dialog_widget.dart';
 import 'package:ournego/features/map/domain/entities/business.dart';
 import 'package:ournego/features/map/presentation/mappers/business_marker_ui_mapper.dart';
 import 'package:ournego/features/map/presentation/models/business_marker_ui_model.dart';
@@ -23,9 +26,13 @@ import 'package:ournego/features/map/presentation/widgets/floating_sheet/floatin
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/models/sheet_business_data.dart';
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/ournego_floating_sheet.dart';
 import 'package:ournego/features/map/presentation/widgets/top_navigation_bar_widget.dart';
+import 'package:ournego/features/navigation/presentation/providers/navigation_provider.dart';
 import 'package:ournego/features/navigation/presentation/widgets/navigation_bar_widget.dart';
 import 'package:ournego/shared/widgets/information_card_widget.dart';
 import 'package:ournego/shared/widgets/ournego_alert_dialog.dart';
+import 'package:ournego/shared/widgets/ournego_content_container.dart';
+import 'package:ournego/shared/widgets/ournego_information_dialog.dart';
+import 'package:ournego/shared/widgets/nego/nego.dart';
 import 'package:ournego/shared/widgets/ournego_snackbars.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -354,6 +361,66 @@ class _MapScreenState extends ConsumerState<MapScreen>
     _isLocationModalOpen = false;
   }
 
+  Future<void> _showSessionErrorDialog() {
+    return showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return OurnegoInformationDialog(
+          title: 'No se pudo verificar tu sesion',
+          description:
+              'Intenta de nuevo en unos segundos. Si el problema continua, envianos feedback.',
+          imagePath: 'assets/images/generic_error.png',
+          actions: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () async {
+                    Navigator.of(dialogContext).pop();
+                    if (ref.read(isFeedbackDialogOpenProvider)) {
+                      return;
+                    }
+                    ref.read(isFeedbackDialogOpenProvider.notifier).setIsOpen();
+                    await showDialog<void>(
+                      context: context,
+                      builder: (_) => const FeedbackDialogWidget(),
+                    );
+                    ref
+                        .read(isFeedbackDialogOpenProvider.notifier)
+                        .setIsClosed();
+                  },
+                  child: const Text('Feedback'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FilledButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Entiendo'),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _onRegisterBusinessTap() async {
+    try {
+      final isLogged = ref.read(authSessionStatusProvider);
+      if (!context.mounted) return;
+
+      if (isLogged) {
+        context.push(BusinessRoutes.form);
+      } else {
+        context.push(AuthRoutes.authSelection);
+      }
+    } catch (_) {
+      if (!context.mounted) return;
+      await _showSessionErrorDialog();
+    }
+  }
+
   void _openBusinessSheet(Business business, {bool animateToBusiness = true}) {
     if (_floatingSheetController.isComparisonMode) {
       return;
@@ -481,6 +548,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final mapState = ref.watch(mapProvider);
     final location = mapState.asData?.value;
     final businessState = ref.watch(businessesStreamProvider);
+    final isOwnerState = ref.watch(isOwnerProvider);
     final topBarHeight = _readWidgetHeight(topNavigationBarKey, fallback: 68);
     final isWide = MediaQuery.of(context).size.width > 600;
 
@@ -489,15 +557,18 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
     // In tests (and in some environments), MapboxConfig may be uninitialized.
     // Only read it when tiles are actually enabled.
-    final String myAccessToken =
-        mapTilesEnabled ? MapboxConfig.accessToken : '';
+    final String myAccessToken = mapTilesEnabled
+        ? MapboxConfig.accessToken
+        : '';
     final String myUsername = mapTilesEnabled ? MapboxConfig.username : '';
     final String styleIdDark = mapTilesEnabled ? MapboxConfig.styleIdDark : '';
-    final String styleIdLight =
-        mapTilesEnabled ? MapboxConfig.styleIdLight : '';
+    final String styleIdLight = mapTilesEnabled
+        ? MapboxConfig.styleIdLight
+        : '';
 
     final String currentStyleId = isDarkModeOn ? styleIdDark : styleIdLight;
-    final bool hasMapboxConfig = mapTilesEnabled &&
+    final bool hasMapboxConfig =
+        mapTilesEnabled &&
         myAccessToken.isNotEmpty &&
         myUsername.isNotEmpty &&
         currentStyleId.isNotEmpty;
@@ -773,6 +844,39 @@ class _MapScreenState extends ConsumerState<MapScreen>
             ],
           ),
           TopNavigationBarWidget(),
+          if (isOwnerState.value == false)
+            Positioned(
+              top: topBarHeight + 8,
+              left: 16,
+              right: 16,
+              child: GestureDetector(
+                onTap: _onRegisterBusinessTap,
+                child: OurnegoContentContainer(
+                  hasBlur: true,
+                  customHorizontalPadding: 16,
+                  customVerticalPadding: 12,
+                  borderRadius: 20,
+                  child: Row(
+                    children: [
+                      const NegoAvatar(
+                        size: 36,
+                        mood: NegoMood.excited,
+                        interactive: false,
+                      ),
+                      const SizedBox(width: 18),
+                      Expanded(
+                        child: Text(
+                          'Registra tu negocio y crece.',
+                          style: OurnegoTextStyles.body.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           Column(
             children: [
               Spacer(),
