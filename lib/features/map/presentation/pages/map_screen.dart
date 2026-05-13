@@ -21,6 +21,7 @@ import 'package:ournego/features/map/presentation/controllers/search_businesses_
 import 'package:ournego/features/map/presentation/mappers/business_marker_ui_mapper.dart';
 import 'package:ournego/features/map/presentation/models/map_search_models.dart';
 import 'package:ournego/features/map/presentation/providers/map_providers.dart';
+import 'package:ournego/features/map/presentation/providers/notifiers/map_voice_search_notifier.dart';
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/floating_sheet_controller.dart';
 import 'package:ournego/features/map/presentation/widgets/map_search_overlay_widget.dart';
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/models/sheet_business_data.dart';
@@ -55,6 +56,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
   late final Animation<double> _searchPanelOpacity;
   late final Animation<Offset> _searchPanelSlide;
   late ProviderSubscription<AsyncValue<AppPosition>> _providerSubscription;
+  late ProviderSubscription<MapVoiceSearchState> _voiceSubscription;
   late final FloatingSheetController _floatingSheetController;
   late final MapViewController _viewController;
 
@@ -381,6 +383,40 @@ class _MapScreenState extends ConsumerState<MapScreen>
         );
       },
     );
+    _voiceSubscription = ref.listenManual<MapVoiceSearchState>(
+      mapVoiceSearchProvider,
+      (previous, next) {
+        if (!mounted) {
+          return;
+        }
+        if (previous?.eventId == next.eventId) {
+          return;
+        }
+
+        if (next.errorMessage != null && next.errorMessage!.isNotEmpty) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(OurnegoSnackbars.info(next.errorMessage!));
+          return;
+        }
+
+        if (previous?.isListening != next.isListening) {
+          if (next.isListening) {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            ScaffoldMessenger.of(context).showSnackBar(
+              OurnegoSnackbars.info('Escuchando... habla para buscar.'),
+            );
+          } else {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          }
+        }
+
+        if (next.transcript.trim().isNotEmpty) {
+          _applyVoiceTranscript(next.transcript);
+        }
+      },
+    );
 
     _viewController.resolveDeepLinkBusiness();
     _viewController.restoreCameraState().then((cameraState) {
@@ -416,6 +452,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
     _floatingSheetController.removeListener(_persistMapAndSheetState);
     _animatedMapController.dispose();
     _providerSubscription.close();
+    _voiceSubscription.close();
     _floatingSheetController.dispose();
     super.dispose();
   }
@@ -434,6 +471,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
       userLatitude: location?.latitude,
       userLongitude: location?.longitude,
     );
+    final voiceState = ref.watch(mapVoiceSearchProvider);
     final isOwnerState = ref.watch(isOwnerProvider);
     final topBarHeight = _readWidgetHeight(topNavigationBarKey, fallback: 68);
     final isWide = MediaQuery.of(context).size.width > 600;
@@ -635,6 +673,14 @@ class _MapScreenState extends ConsumerState<MapScreen>
           TopNavigationBarWidget(
             searchController: _searchController,
             searchFocusNode: _searchFocusNode,
+            isVoiceListening: voiceState.isListening,
+            onVoiceSearchTap: () async {
+              if (!_searchFocusNode.hasFocus) {
+                _searchFocusNode.requestFocus();
+              }
+              _syncSearchPanelVisibility();
+              await ref.read(mapVoiceSearchProvider.notifier).toggleListening();
+            },
             onSearchTap: () {
               if (!mounted) return;
               _syncSearchPanelVisibility();
@@ -796,5 +842,19 @@ class _MapScreenState extends ConsumerState<MapScreen>
     } else {
       _searchPanelAnimationController.reverse();
     }
+  }
+
+  void _applyVoiceTranscript(String transcript) {
+    _searchController.text = transcript;
+    _searchController.selection = TextSelection.fromPosition(
+      TextPosition(offset: _searchController.text.length),
+    );
+    if (!_searchFocusNode.hasFocus) {
+      _searchFocusNode.requestFocus();
+    }
+    setState(() {
+      _searchQuery = transcript;
+    });
+    _syncSearchPanelVisibility();
   }
 }
