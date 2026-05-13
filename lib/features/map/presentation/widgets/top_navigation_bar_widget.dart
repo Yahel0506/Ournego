@@ -11,7 +11,18 @@ import 'package:ournego/shared/widgets/ournego_buttons.dart';
 final GlobalKey topNavigationBarKey = GlobalKey(debugLabel: 'topNavigationBar');
 
 class TopNavigationBarWidget extends ConsumerWidget {
-  const TopNavigationBarWidget({super.key});
+  final TextEditingController? searchController;
+  final FocusNode? searchFocusNode;
+  final ValueChanged<String>? onSearchChanged;
+  final VoidCallback? onSearchTap;
+
+  const TopNavigationBarWidget({
+    super.key,
+    this.searchController,
+    this.searchFocusNode,
+    this.onSearchChanged,
+    this.onSearchTap,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -39,6 +50,10 @@ class TopNavigationBarWidget extends ConsumerWidget {
             child: _CrystalItemContainer(
               borderRadius: 30,
               child: SearchBar(
+                controller: searchController,
+                focusNode: searchFocusNode,
+                onChanged: onSearchChanged,
+                onTap: onSearchTap,
                 elevation: const WidgetStatePropertyAll(0),
                 backgroundColor: WidgetStatePropertyAll(
                   colorScheme.surface.withValues(alpha: 0.35),
