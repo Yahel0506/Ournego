@@ -7,7 +7,6 @@ import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/features/onboarding/presentation/pages/components/explore_onboarding_screen.dart';
 import 'package:ournego/features/onboarding/presentation/pages/components/discover_onboarding_screen.dart';
 import 'package:ournego/features/onboarding/presentation/pages/components/location_onboarding_screen.dart';
-import 'package:ournego/features/onboarding/presentation/pages/components/location_slide.dart';
 import 'package:ournego/features/onboarding/presentation/providers/onboarding_providers.dart';
 import 'package:ournego/shared/widgets/animated_background.dart';
 import 'package:ournego/shared/widgets/nego/nego.dart';
@@ -105,7 +104,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         mood: NegoMood.looking,
         lookAngle: 18,
         lookVertical: NegoLookVertical.up,
-        interactive: true,
+        interactive: false,
       ),
       OnboardingNegoPose(
         size: 200,
@@ -170,7 +169,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     final enforceLocationPermission = ref.watch(
       onboardingEnforceLocationPermissionProvider,
     );
-    final slides = ref.watch(slidesListProvider);
 
     const totalPages = 4;
     final pages = [
@@ -183,6 +181,29 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         title: 'Ve lo que hay a tu alrededor',
         subtitle: 'Activa tu ubicación para descubrir lo que tienes cerca.',
         onNext: () => _goToNextPage(totalPages),
+        onPermissionRequired: () async {
+          if (!enforceLocationPermission || _currentPage != 2) return;
+          if (_locationPermissionStatus.isGranted) return;
+
+          await _showLocationRequiredDialog(
+            context,
+            isDeniedForever: _locationPermissionStatus.isPermanentlyDenied,
+          );
+        },
+        onPermissionStatusChanged: (status) {
+          final wasGranted = _locationPermissionStatus.isGranted;
+          setState(() => _locationPermissionStatus = status);
+
+          if (enforceLocationPermission &&
+              status.isPermanentlyDenied &&
+              _currentPage == 2) {
+            _showLocationRequiredDialog(context, isDeniedForever: true);
+          }
+
+          if (!wasGranted && status.isGranted && _currentPage == 2 && mounted) {
+            _goToNextPage(totalPages);
+          }
+        },
       ),
       AuthSelectionWidget(
         onSuccess: () {
