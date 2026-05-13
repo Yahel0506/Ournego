@@ -15,6 +15,8 @@ class TopNavigationBarWidget extends ConsumerWidget {
   final FocusNode? searchFocusNode;
   final ValueChanged<String>? onSearchChanged;
   final VoidCallback? onSearchTap;
+  final VoidCallback? onVoiceSearchTap;
+  final bool isVoiceListening;
 
   const TopNavigationBarWidget({
     super.key,
@@ -22,6 +24,8 @@ class TopNavigationBarWidget extends ConsumerWidget {
     this.searchFocusNode,
     this.onSearchChanged,
     this.onSearchTap,
+    this.onVoiceSearchTap,
+    this.isVoiceListening = false,
   });
 
   @override
@@ -40,9 +44,15 @@ class TopNavigationBarWidget extends ConsumerWidget {
           _CrystalItemContainer(
             borderRadius: 30,
             child: ElevatedButton(
-              onPressed: () {},
+              onPressed: onVoiceSearchTap,
               style: OurnegoButtonStyles.circularSurface(context: context),
-              child: Icon(Icons.mic, size: 26, color: colorScheme.onSurface),
+              child: Icon(
+                isVoiceListening ? Icons.mic_rounded : Icons.mic_none_rounded,
+                size: 26,
+                color: isVoiceListening
+                    ? colorScheme.primary
+                    : colorScheme.onSurface,
+              ),
             ),
           ),
           const SizedBox(width: 8),
