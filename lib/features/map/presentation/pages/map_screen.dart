@@ -13,11 +13,16 @@ import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
 import 'package:ournego/features/business/presentation/providers/business_providers.dart';
 import 'package:ournego/features/feedback/presentation/widgets/feedback_dialog_widget.dart';
+import 'package:ournego/features/map/domain/entities/business.dart';
+import 'package:ournego/features/map/domain/entities/business_type.dart';
 import 'package:ournego/features/map/presentation/controllers/map_session_storage.dart';
 import 'package:ournego/features/map/presentation/controllers/map_view_controller.dart';
+import 'package:ournego/features/map/presentation/controllers/search_businesses_usecase.dart';
 import 'package:ournego/features/map/presentation/mappers/business_marker_ui_mapper.dart';
+import 'package:ournego/features/map/presentation/models/map_search_models.dart';
 import 'package:ournego/features/map/presentation/providers/map_providers.dart';
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/floating_sheet_controller.dart';
+import 'package:ournego/features/map/presentation/widgets/map_search_overlay_widget.dart';
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/models/sheet_business_data.dart';
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/ournego_floating_sheet.dart';
 import 'package:ournego/features/map/presentation/widgets/map_canvas_widget.dart';
@@ -46,13 +51,22 @@ class MapScreen extends ConsumerStatefulWidget {
 class _MapScreenState extends ConsumerState<MapScreen>
     with TickerProviderStateMixin {
   late final _animatedMapController = AnimatedMapController(vsync: this);
+  late final AnimationController _searchPanelAnimationController;
+  late final Animation<double> _searchPanelOpacity;
+  late final Animation<Offset> _searchPanelSlide;
   late ProviderSubscription<AsyncValue<AppPosition>> _providerSubscription;
   late final FloatingSheetController _floatingSheetController;
   late final MapViewController _viewController;
 
   final _businessMarkerUiMapper = BusinessMarkerUiMapper();
+  final _searchBusinessesUsecase = const SearchBusinessesUsecase();
+  final _searchController = TextEditingController();
+  final _searchFocusNode = FocusNode();
 
   bool _isLocationModalOpen = false;
+  bool _isSearchPanelVisible = false;
+  String _searchQuery = '';
+  MapSearchFilters _searchFilters = const MapSearchFilters();
 
   double get _expandedHeight {
     final mq = MediaQuery.of(context);
@@ -98,6 +112,26 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
   bool _isMarkerVisible = true;
   bool _isMarkerHidden = false;
+
+  bool get _showSearchPanel {
+    return _isSearchPanelVisible;
+  }
+
+  static const List<double> _distanceOptionsMeters = <double>[1000, 3000, 7000];
+  static const List<BusinessType> _searchCategoryOptions = <BusinessType>[
+    BusinessType.drinkAndEat,
+    BusinessType.shop,
+    BusinessType.personalService,
+    BusinessType.professionalService,
+    BusinessType.healthAndWellness,
+    BusinessType.education,
+    BusinessType.constructionAndHome,
+    BusinessType.transportation,
+    BusinessType.entertainment,
+    BusinessType.technology,
+    BusinessType.informalBusiness,
+    BusinessType.mixed,
+  ];
 
   void checkMinZoom(double zoom) {
     final bool shouldBeVisible = zoom >= 17;
@@ -283,6 +317,21 @@ class _MapScreenState extends ConsumerState<MapScreen>
   @override
   void initState() {
     super.initState();
+    _searchPanelAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 260),
+      reverseDuration: const Duration(milliseconds: 220),
+    );
+    _searchPanelOpacity = CurvedAnimation(
+      parent: _searchPanelAnimationController,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeInCubic,
+    );
+    _searchPanelSlide = Tween<Offset>(
+      begin: const Offset(0, 0.04),
+      end: Offset.zero,
+    ).animate(_searchPanelOpacity);
+
     _floatingSheetController = FloatingSheetController();
     _viewController = MapViewController(
       animatedMapController: _animatedMapController,
@@ -304,6 +353,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           OurnegoSnackbars.info('No encontramos el negocio solicitado'),
         );
+      },
+      trackBusinessVisit: ({required businessId, required source}) async {
+        final usecase = ref.read(trackBusinessVisitUsecaseProvider);
+        await usecase(businessId: businessId, source: source);
       },
     );
     _floatingSheetController.addListener(_persistMapAndSheetState);
@@ -338,6 +391,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
       });
     });
     _viewController.restoreSheetStateFromPrefs();
+    _searchFocusNode.addListener(() {
+      if (!mounted) return;
+      _syncSearchPanelVisibility();
+    });
   }
 
   @override
@@ -353,6 +410,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
   @override
   void dispose() {
+    _searchController.dispose();
+    _searchFocusNode.dispose();
+    _searchPanelAnimationController.dispose();
     _floatingSheetController.removeListener(_persistMapAndSheetState);
     _animatedMapController.dispose();
     _providerSubscription.close();
@@ -366,6 +426,14 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final mapState = ref.watch(mapProvider);
     final location = mapState.asData?.value;
     final businessState = ref.watch(businessesStreamProvider);
+    final searchResults = _searchBusinessesUsecase(
+      businesses: businessState.asData?.value ?? const <Business>[],
+      query: _searchQuery,
+      filters: _searchFilters,
+      now: DateTime.now(),
+      userLatitude: location?.latitude,
+      userLongitude: location?.longitude,
+    );
     final isOwnerState = ref.watch(isOwnerProvider);
     final topBarHeight = _readWidgetHeight(topNavigationBarKey, fallback: 68);
     final isWide = MediaQuery.of(context).size.width > 600;
@@ -418,12 +486,11 @@ class _MapScreenState extends ConsumerState<MapScreen>
               await _persistMapAndSheetState();
             },
             onBusinessTap: (business) {
-              _viewController.openBusinessSheet(business);
+              _viewController.openBusinessSheet(business, source: 'map');
             },
             markerUiMapper: _businessMarkerUiMapper.call,
           ),
-          TopNavigationBarWidget(),
-          if (isOwnerState.value == false)
+          if (!_showSearchPanel && isOwnerState.value == false)
             Positioned(
               top: topBarHeight + 8,
               left: 16,
@@ -456,54 +523,129 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 ),
               ),
             ),
-          Column(
-            children: [
-              Spacer(),
-              Row(
-                children: [
-                  Spacer(),
-                  MapControlsWidget(
-                    showDebugButton: kDebugMode,
-                    onDebugTap: () async {
-                      context.go(DebuggingRoutes.debugPanel);
+          Positioned.fill(
+            child: IgnorePointer(
+              ignoring: !_showSearchPanel,
+              child: FadeTransition(
+                opacity: _searchPanelOpacity,
+                child: SlideTransition(
+                  position: _searchPanelSlide,
+                  child: MapSearchOverlayWidget(
+                    results: searchResults,
+                    query: _searchQuery,
+                    hasData: businessState.hasValue,
+                    location: location,
+                    topBarHeight: topBarHeight,
+                    filters: _searchFilters,
+                    categoryOptions: _searchCategoryOptions,
+                    distanceOptionsMeters: _distanceOptionsMeters,
+                    onClear: _clearSearchState,
+                    onClose: _closeSearchOverlay,
+                    onOpenNowChanged: (selected) {
+                      setState(() {
+                        _searchFilters = _searchFilters.copyWith(
+                          onlyOpenNow: selected,
+                        );
+                      });
                     },
-                    onZoomInTap: () async {
-                      final currentZoom =
-                          _animatedMapController.mapController.camera.zoom;
-                      _animatedMapController.animateTo(
-                        zoom: currentZoom + 1,
-                        duration: Durations.short4,
+                    onCategoryChanged: (category) {
+                      setState(() {
+                        _searchFilters = _searchFilters.copyWith(
+                          category: category,
+                          clearCategory: category == null,
+                        );
+                      });
+                    },
+                    onDistanceChanged: (distance) {
+                      setState(() {
+                        _searchFilters = _searchFilters.copyWith(
+                          maxDistanceMeters: distance,
+                          clearMaxDistanceMeters: distance == null,
+                        );
+                      });
+                    },
+                    onBusinessSelected: (business) {
+                      _searchController.text = business.name;
+                      _searchController.selection = TextSelection.fromPosition(
+                        TextPosition(offset: _searchController.text.length),
                       );
-                    },
-                    onZoomOutTap: () async {
-                      final currentZoom =
-                          _animatedMapController.mapController.camera.zoom;
-                      _animatedMapController.animateTo(
-                        zoom: currentZoom - 1,
-                        duration: Durations.short4,
+                      _viewController.openBusinessSheet(
+                        business,
+                        source: 'search',
                       );
+                      _closeSearchOverlay();
                     },
-                    onMyLocationTap: _handleMyLocationTap,
                   ),
-                  SizedBox(width: 16),
-                ],
+                ),
               ),
-              SizedBox(height: 100),
-            ],
+            ),
           ),
-          OurnegoFloatingSheet(
-            controller: _floatingSheetController,
-            collapsedHeight: _collapsedHeight,
-            expandedHeight: _expandedHeight,
-            maxWidth: isWide ? 600 : double.infinity,
-            bottomOffset: 96.0,
-            sideStackTop:
-                MediaQuery.of(context).padding.top + topBarHeight + 10,
-            onFavorite: _onFavorite,
-            onContact: _onContact,
-            onCatalog: _onCatalog,
-            onReviews: _onReviews,
-            onShare: _onShare,
+
+          if (!_showSearchPanel)
+            Column(
+              children: [
+                Spacer(),
+                Row(
+                  children: [
+                    Spacer(),
+                    MapControlsWidget(
+                      showDebugButton: kDebugMode,
+                      onDebugTap: () async {
+                        context.go(DebuggingRoutes.debugPanel);
+                      },
+                      onZoomInTap: () async {
+                        final currentZoom =
+                            _animatedMapController.mapController.camera.zoom;
+                        _animatedMapController.animateTo(
+                          zoom: currentZoom + 1,
+                          duration: Durations.short4,
+                        );
+                      },
+                      onZoomOutTap: () async {
+                        final currentZoom =
+                            _animatedMapController.mapController.camera.zoom;
+                        _animatedMapController.animateTo(
+                          zoom: currentZoom - 1,
+                          duration: Durations.short4,
+                        );
+                      },
+                      onMyLocationTap: _handleMyLocationTap,
+                    ),
+                    SizedBox(width: 16),
+                  ],
+                ),
+                SizedBox(height: 100),
+              ],
+            ),
+          if (!_showSearchPanel)
+            OurnegoFloatingSheet(
+              controller: _floatingSheetController,
+              collapsedHeight: _collapsedHeight,
+              expandedHeight: _expandedHeight,
+              maxWidth: isWide ? 600 : double.infinity,
+              bottomOffset: 96.0,
+              sideStackTop:
+                  MediaQuery.of(context).padding.top + topBarHeight + 10,
+              onFavorite: _onFavorite,
+              onContact: _onContact,
+              onCatalog: _onCatalog,
+              onReviews: _onReviews,
+              onShare: _onShare,
+            ),
+          TopNavigationBarWidget(
+            searchController: _searchController,
+            searchFocusNode: _searchFocusNode,
+            onSearchTap: () {
+              if (!mounted) return;
+              _syncSearchPanelVisibility();
+            },
+            onSearchChanged: (value) {
+              if (!mounted) return;
+              setState(() {
+                _searchQuery = value;
+              });
+              _syncSearchPanelVisibility();
+            },
           ),
         ],
       ),
@@ -617,6 +759,42 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final locationError = refreshedState.asError?.error;
     if (locationError != null) {
       await _showLocationErrorSheet(locationError);
+    }
+  }
+
+  void _closeSearchOverlay() {
+    _searchFocusNode.unfocus();
+    setState(() {
+      _searchQuery = '';
+      _searchController.clear();
+    });
+    _syncSearchPanelVisibility();
+  }
+
+  void _clearSearchState() {
+    setState(() {
+      _searchFilters = const MapSearchFilters();
+      _searchQuery = '';
+      _searchController.clear();
+    });
+    _syncSearchPanelVisibility();
+  }
+
+  void _syncSearchPanelVisibility() {
+    final shouldShow =
+        _searchFocusNode.hasFocus || _searchQuery.trim().isNotEmpty;
+    if (shouldShow == _isSearchPanelVisible) {
+      return;
+    }
+
+    setState(() {
+      _isSearchPanelVisible = shouldShow;
+    });
+
+    if (shouldShow) {
+      _searchPanelAnimationController.forward();
+    } else {
+      _searchPanelAnimationController.reverse();
     }
   }
 }
