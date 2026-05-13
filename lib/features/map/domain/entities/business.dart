@@ -1,3 +1,4 @@
+import 'package:ournego/features/map/domain/entities/business_hours.dart';
 import 'package:ournego/features/map/domain/entities/business_type.dart';
 
 class Business {
@@ -11,6 +12,8 @@ class Business {
   final double longitude;
   final BusinessType type;
   final List<String> images;
+  final int visitCount;
+  final List<BusinessHours> hours;
 
   Business({
     required this.id,
@@ -23,5 +26,7 @@ class Business {
     required this.longitude,
     required this.type,
     required this.images,
+    required this.visitCount,
+    required this.hours,
   });
 }

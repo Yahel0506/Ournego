@@ -13,6 +13,8 @@ typedef GetBusinessById =
     Future<Either<Failure, Business?>> Function(String businessId);
 typedef IsFavoriteSnapshot = bool Function(String businessId);
 typedef MissingBusinessReporter = void Function();
+typedef TrackBusinessVisit =
+    Future<void> Function({required String businessId, required String source});
 
 class MapViewController {
   final AnimatedMapController animatedMapController;
@@ -21,6 +23,7 @@ class MapViewController {
   final GetBusinessById getBusinessById;
   final IsFavoriteSnapshot isFavoriteSnapshot;
   final MissingBusinessReporter onMissingBusiness;
+  final TrackBusinessVisit trackBusinessVisit;
 
   LatLng? _initialCenter;
   double? _initialZoom;
@@ -35,6 +38,7 @@ class MapViewController {
     required this.getBusinessById,
     required this.isFavoriteSnapshot,
     required this.onMissingBusiness,
+    required this.trackBusinessVisit,
     String? initialBusinessId,
   }) : _pendingDeepLinkBusinessId = initialBusinessId;
 
@@ -103,7 +107,11 @@ class MapViewController {
     );
   }
 
-  void openBusinessSheet(Business business, {bool animateToBusiness = true}) {
+  void openBusinessSheet(
+    Business business, {
+    bool animateToBusiness = true,
+    String source = 'map',
+  }) {
     if (floatingSheetController.isComparisonMode) {
       return;
     }
@@ -119,6 +127,8 @@ class MapViewController {
         zoom: 18,
       );
     }
+
+    trackBusinessVisit(businessId: business.id, source: source);
   }
 
   Future<void> resolveDeepLinkBusiness() async {
@@ -142,7 +152,7 @@ class MapViewController {
 
         _pendingDeepLinkBusinessId = null;
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          openBusinessSheet(business);
+          openBusinessSheet(business, source: 'deeplink');
         });
       },
     );
