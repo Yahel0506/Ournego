@@ -7,6 +7,7 @@ import 'package:ournego/features/map/data/datasources/map_exceptions.dart';
 import 'package:ournego/features/map/data/datasources/supabase_map_datasource.dart';
 import 'package:ournego/features/map/data/models/business_model.dart';
 import 'package:ournego/features/map/domain/entities/business.dart';
+import 'package:ournego/features/map/domain/entities/business_hours.dart';
 import 'package:ournego/features/map/domain/repositories/map_repository.dart';
 
 class MapRepositoryImpl implements MapRepository {
@@ -44,9 +45,34 @@ class MapRepositoryImpl implements MapRepository {
   Stream<List<Business>> getBusinesses() {
     final businesses = businessesDatasource.getBusinesses();
 
-    return businesses.map((data) {
-      return data.map((businesses) {
-        return BusinessModel.fromSupabase(businesses);
+    return businesses.asyncMap((data) async {
+      final businessRows = data
+          .map((item) => Map<String, dynamic>.from(item))
+          .toList(growable: false);
+      final businessIds = businessRows
+          .map((row) => row['business_id'] as String?)
+          .whereType<String>()
+          .toList(growable: false);
+
+      final hoursByBusinessId = await businessesDatasource
+          .getBusinessHoursByBusinessId(businessIds);
+      final visitCountsByBusinessId = await businessesDatasource
+          .getBusinessVisitCountsByBusinessId(businessIds);
+
+      return businessRows.map((businessRow) {
+        final businessId = businessRow['business_id'] as String?;
+        final List<BusinessHours> hours = businessId == null
+            ? const <BusinessHours>[]
+            : (hoursByBusinessId[businessId] ?? const <BusinessHours>[]);
+        final visitCount = businessId == null
+            ? 0
+            : (visitCountsByBusinessId[businessId] ?? 0);
+
+        return BusinessModel.fromSupabase(
+          businessRow,
+          visitCount: visitCount,
+          hours: hours,
+        );
       }).toList();
     });
   }
@@ -59,7 +85,16 @@ class MapRepositoryImpl implements MapRepository {
         return const Right(null);
       }
 
-      final business = BusinessModel.fromSupabase(data);
+      final hoursByBusinessId = await businessesDatasource
+          .getBusinessHoursByBusinessId([businessId]);
+      final visitCountsByBusinessId = await businessesDatasource
+          .getBusinessVisitCountsByBusinessId([businessId]);
+
+      final business = BusinessModel.fromSupabase(
+        data,
+        visitCount: visitCountsByBusinessId[businessId] ?? 0,
+        hours: hoursByBusinessId[businessId] ?? const [],
+      );
       return Right(business);
     } catch (_) {
       return Left(ServerFailure());
@@ -98,5 +133,22 @@ class MapRepositoryImpl implements MapRepository {
   Stream<bool> isBusinessFavorite(String businessId) {
     final isFavorite = businessesDatasource.isBusinessFavorite(businessId);
     return isFavorite;
+  }
+
+  @override
+  Future<Either<Failure, void>> trackBusinessVisit({
+    required String businessId,
+    required String source,
+  }) async {
+    try {
+      await businessesDatasource.trackBusinessInteraction(
+        businessId: businessId,
+        source: source,
+        interactionType: 'view_business_profile',
+      );
+      return const Right(null);
+    } catch (_) {
+      return Left(ServerFailure());
+    }
   }
 }
