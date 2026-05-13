@@ -97,14 +97,13 @@ class _LocationOnboardingScreenState extends State<LocationOnboardingScreen> {
           ),
           const SizedBox(height: 32),
           const Icon(Icons.location_on, size: 180, color: Colors.redAccent),
+          const Spacer(),
           if (!_isPermissionGranted)
-            const Padding(
-              padding: EdgeInsets.only(top: 12),
-              child: Text(
-                'Debes habilitar la ubicacion para continuar.',
-                textAlign: TextAlign.center,
-              ),
+            Text(
+              'Debes habilitar la ubicacion para continuar.',
+              textAlign: TextAlign.center,
             ),
+          SizedBox(height: 12),
         ],
       ),
     );
