@@ -28,19 +28,33 @@ class BusinessHoursPicker extends ConsumerStatefulWidget {
 }
 
 class _BusinessHoursPickerState extends ConsumerState<BusinessHoursPicker> {
-  bool _isOpen = true;
+  bool _isOpen = false;
   int _openMinutes = BusinessHoursPicker.defaultOpenMinutes;
   int _closeMinutes = BusinessHoursPicker.defaultCloseMinutes;
 
   @override
   void initState() {
     super.initState();
+    _syncFromSchedule(widget.initialSchedule);
+  }
 
-    final schedule = widget.initialSchedule;
+  @override
+  void didUpdateWidget(covariant BusinessHoursPicker oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialSchedule != widget.initialSchedule) {
+      _syncFromSchedule(widget.initialSchedule);
+    }
+  }
+
+  void _syncFromSchedule(AppSchedule? schedule) {
     if (schedule != null) {
       _openMinutes = schedule.openMinutes;
       _closeMinutes = schedule.closeMinutes;
       _isOpen = true;
+    } else {
+      _openMinutes = BusinessHoursPicker.defaultOpenMinutes;
+      _closeMinutes = BusinessHoursPicker.defaultCloseMinutes;
+      _isOpen = false;
     }
   }
 
@@ -103,78 +117,86 @@ class _BusinessHoursPickerState extends ConsumerState<BusinessHoursPicker> {
                     ),
                     child: Column(
                       children: [
-                        SizedBox(height: 56),
+                        SizedBox(height: 36),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text('Inicio:'),
-                            const SizedBox(width: OurnegoSpacingTokens.xs),
-                            GestureDetector(
-                              onTap: () {
-                                showTimePicker(
-                                  context: context,
-                                  initialTime: _openTime,
-                                ).then((selectedTime) {
-                                  if (selectedTime != null) {
-                                    setState(() {
-                                      _openMinutes =
-                                          (selectedTime.hour * 60) +
-                                          selectedTime.minute;
+                            Column(
+                              children: [
+                                Text('Inicio:'),
+                                const SizedBox(width: OurnegoSpacingTokens.xs),
+                                GestureDetector(
+                                  onTap: () {
+                                    showTimePicker(
+                                      context: context,
+                                      initialTime: _openTime,
+                                    ).then((selectedTime) {
+                                      if (selectedTime != null) {
+                                        setState(() {
+                                          _openMinutes =
+                                              (selectedTime.hour * 60) +
+                                              selectedTime.minute;
+                                        });
+                                        _emitChange();
+                                      }
                                     });
-                                    _emitChange();
-                                  }
-                                });
-                              },
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface,
+                                  },
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.onSurface,
+                                      ),
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(
+                                        OurnegoSpacingTokens.xs,
+                                      ),
+                                      child: Text(_openTime.format(context)),
+                                    ),
                                   ),
                                 ),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(
-                                    OurnegoSpacingTokens.xs,
-                                  ),
-                                  child: Text(_openTime.format(context)),
-                                ),
-                              ),
+                              ],
                             ),
                             const SizedBox(width: OurnegoSpacingTokens.md),
-                            Text('Cierre:'),
-                            const SizedBox(width: OurnegoSpacingTokens.xs),
-                            GestureDetector(
-                              onTap: () {
-                                showTimePicker(
-                                  context: context,
-                                  initialTime: _closeTime,
-                                ).then((selectedTime) {
-                                  if (selectedTime != null) {
-                                    setState(() {
-                                      _closeMinutes =
-                                          (selectedTime.hour * 60) +
-                                          selectedTime.minute;
+                            Column(
+                              children: [
+                                Text('Cierre:'),
+                                const SizedBox(width: OurnegoSpacingTokens.xs),
+                                GestureDetector(
+                                  onTap: () {
+                                    showTimePicker(
+                                      context: context,
+                                      initialTime: _closeTime,
+                                    ).then((selectedTime) {
+                                      if (selectedTime != null) {
+                                        setState(() {
+                                          _closeMinutes =
+                                              (selectedTime.hour * 60) +
+                                              selectedTime.minute;
+                                        });
+                                        _emitChange();
+                                      }
                                     });
-                                    _emitChange();
-                                  }
-                                });
-                              },
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface,
+                                  },
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.onSurface,
+                                      ),
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(
+                                        OurnegoSpacingTokens.xs,
+                                      ),
+                                      child: Text(_closeTime.format(context)),
+                                    ),
                                   ),
                                 ),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(
-                                    OurnegoSpacingTokens.xs,
-                                  ),
-                                  child: Text(_closeTime.format(context)),
-                                ),
-                              ),
+                              ],
                             ),
                           ],
                         ),

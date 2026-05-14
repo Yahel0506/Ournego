@@ -1,7 +1,9 @@
 import 'package:dartz/dartz.dart';
 import 'package:ournego/core/location/app_position.dart';
-import 'package:ournego/features/business/domain/entities/business_image_data.dart';
 import 'package:ournego/features/business/domain/entities/app_schedule.dart';
+import 'package:ournego/features/business/domain/entities/business_image_data.dart';
+import 'package:ournego/features/business/domain/entities/business_panel_metrics.dart';
+import 'package:ournego/features/business/domain/entities/owned_business_profile.dart';
 
 import '../../../../core/failures.dart';
 
@@ -23,6 +25,8 @@ abstract class BusinessRepository {
   });
 
   Future<Either<Failure, bool>> checkIfOwner();
+
+  Future<Either<Failure, OwnedBusinessProfile?>> getOwnedBusiness();
 
   Future<Either<Failure, void>> upsertBusinessName({
     required String businessId,
@@ -62,6 +66,15 @@ abstract class BusinessRepository {
   });
 
   Future<Either<Failure, void>> deleteBusinessPhoneNumber({
+    required String businessId,
+  });
+
+  Future<Either<Failure, void>> upsertBusinessHours({
+    required String businessId,
+    required List<AppSchedule> hours,
+  });
+
+  Future<Either<Failure, BusinessPanelMetrics>> getBusinessPanelMetrics({
     required String businessId,
   });
 }
