@@ -506,6 +506,20 @@ Each feature folder under `lib/features/` should include a `README.md` with:
 
 Use `docs/templates/feature_readme_template.md` as baseline.
 
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues via `gh`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Use the default label vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, and `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Multi-context layout rooted at `CONTEXT-MAP.md`. See `docs/agents/domain.md`.
+
 ## Architecture Documentation
 
 Keep these files aligned when architecture evolves:
