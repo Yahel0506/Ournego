@@ -4,9 +4,10 @@ This guide provides essential information for AI coding agents and developers wo
 
 ## Project Overview
 
-**Tech Stack:** Flutter 3.41.4 (Dart SDK ^3.10.0)  
+**Tech Stack:** Flutter 3.41.4 (Dart SDK constraint: ^3.10.0; local toolchain: Dart 3.11.1)  
 **State Management:** flutter_riverpod ^3.0.3  
-**Backend:** Supabase (Firebase Auth + Cloud Firestore)  
+**Backend:** Supabase (Auth + database + storage).  
+**Note:** `firebase_auth` and `cloud_firestore` are present in `pubspec.yaml`, but there are currently no direct imports/usages under `lib/` (they still appear in generated plugin registrants).  
 **Architecture:** Clean Architecture with feature-based organization
 
 ## Build, Test & Run Commands
@@ -45,10 +46,10 @@ flutter test --coverage
 flutter analyze
 
 # Format code
-flutter format .
+dart format .
 
 # Format specific file
-flutter format lib/path/to/file.dart
+dart format lib/path/to/file.dart
 ```
 
 ### Dependencies
@@ -290,8 +291,12 @@ Required environment variables:
 - **Logging:** logger
 - **Maps:** flutter_map, latlong2, geolocator
 - **Backend:** supabase_flutter
-- **Auth:** firebase_auth, google_sign_in
+- **Auth:** Supabase Auth (via `supabase_flutter`) + `google_sign_in` (mobile OAuth helper used by `SupabaseAuthDatasource`)
 - **Local Storage:** shared_preferences, sembast
+
+Notes:
+
+- `firebase_auth` / `cloud_firestore` are listed in `pubspec.yaml` but are not currently imported/used under `lib/`.
 
 ## Analysis Rules
 
@@ -527,3 +532,43 @@ Keep these files aligned when architecture evolves:
 - `ARCHITECTURE.md` (high-level architecture and dependency rules)
 - `AGENTS.md` (coding instructions and conventions)
 - `README.md` (developer onboarding and quick start)
+
+## Documentation Index (Authoritative)
+
+This repo has multiple documentation entrypoints. Before creating new docs, prefer extending an existing one.
+
+- `README.md`: developer onboarding, setup basics.
+- `ARCHITECTURE.md`: high-level architecture and dependency rules.
+- `CONTEXT-MAP.md`: map of domain context and where to find details.
+- `AGENTS.md`: agent/dev workflow conventions and commands.
+- `TESTING.md`: testing strategy and how to run tests.
+- `MODELS_TEMPLATE.md`: guidelines for models vs entities and serialization.
+- `DESIGN_SYSTEM.md`: visual design system (tokens, components, patterns) documented from current UI implementation.
+- `SYSTEM_DESIGN.md`: alias entrypoint; canonical doc is `DESIGN_SYSTEM.md`.
+- `components.md`: project-specific component notes.
+
+Docs under `docs/`:
+
+- `docs/agents/domain.md`: domain docs navigation rules.
+- `docs/agents/issue-tracker.md`: issue tracker workflow (GitHub/gh).
+- `docs/agents/triage-labels.md`: label vocabulary for triage.
+- `docs/templates/feature_readme_template.md`: template for feature README files.
+- `docs/ui-refactor/README.md`: UI refactor notes and rationale.
+
+Feature documentation (one README per feature):
+
+- `lib/features/auth/README.md`
+- `lib/features/business/README.md`
+- `lib/features/community/README.md`
+- `lib/features/feedback/README.md`
+- `lib/features/map/README.md`
+- `lib/features/navigation/README.md`
+- `lib/features/onboarding/README.md`
+
+Test documentation:
+
+- `test/README.md`
+
+Generated/tooling docs (usually not edited manually):
+
+- `.dart_tool/extension_discovery/README.md`
