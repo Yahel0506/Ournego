@@ -3,15 +3,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ournego/features/business/data/datasources/business_geocoding_datasource.dart';
 import 'package:ournego/features/business/data/datasources/business_supabase_datasource.dart';
 import 'package:ournego/features/business/data/repositories/business_repository_impl.dart';
+import 'package:ournego/features/business/domain/entities/owned_business_profile.dart';
+import 'package:ournego/features/business/domain/entities/business_panel_metrics.dart';
 import 'package:ournego/features/business/domain/repositories/business_repository.dart';
 import 'package:ournego/features/business/domain/usecases/check_if_owner_usecase.dart';
 import 'package:ournego/features/business/domain/usecases/delete_business_image_usecase.dart';
 import 'package:ournego/features/business/domain/usecases/delete_business_phone_number_usecase.dart';
 import 'package:ournego/features/business/domain/usecases/get_addresses_suggestions_usecase.dart';
+import 'package:ournego/features/business/domain/usecases/get_owned_business_usecase.dart';
+import 'package:ournego/features/business/domain/usecases/get_business_panel_metrics_usecase.dart';
 import 'package:ournego/features/business/domain/usecases/insert_business_image_usecase.dart';
 import 'package:ournego/features/business/domain/usecases/register_business_usecase.dart';
 import 'package:ournego/features/business/domain/usecases/upsert_business_category_usecase.dart';
 import 'package:ournego/features/business/domain/usecases/upsert_business_description_usecase.dart';
+import 'package:ournego/features/business/domain/usecases/upsert_business_hours_usecase.dart';
 import 'package:ournego/features/business/domain/usecases/upsert_business_location_usecase.dart';
 import 'package:ournego/features/business/domain/usecases/upsert_business_name_usecase.dart';
 import 'package:ournego/features/business/domain/usecases/upsert_business_phone_number_usecase.dart';
@@ -107,6 +112,13 @@ final upsertBusinessPhoneNumberUsecaseProvider =
       return UpsertBusinessPhoneNumberUsecase(repository: repository);
     });
 
+final upsertBusinessHoursUsecaseProvider = Provider<UpsertBusinessHoursUsecase>(
+  (ref) {
+    final repository = ref.watch(businessRepositoryProvider);
+    return UpsertBusinessHoursUsecase(repository: repository);
+  },
+);
+
 final deleteBusinessPhoneNumberUsecaseProvider =
     Provider<DeleteBusinessPhoneNumberUsecase>((ref) {
       final repository = ref.watch(businessRepositoryProvider);
@@ -118,8 +130,46 @@ final checkIfOwnerUsecaseProvider = Provider<CheckIfOwnerUsecase>((ref) {
   return CheckIfOwnerUsecase(repository: repository);
 });
 
+final getOwnedBusinessUsecaseProvider = Provider<GetOwnedBusinessUsecase>((
+  ref,
+) {
+  final repository = ref.watch(businessRepositoryProvider);
+  return GetOwnedBusinessUsecase(repository: repository);
+});
+
+final getBusinessPanelMetricsUsecaseProvider =
+    Provider<GetBusinessPanelMetricsUsecase>((ref) {
+      final repository = ref.watch(businessRepositoryProvider);
+      return GetBusinessPanelMetricsUsecase(repository: repository);
+    });
+
 final isOwnerProvider = FutureProvider<bool>((ref) async {
   final usecase = ref.watch(checkIfOwnerUsecaseProvider);
   final result = await usecase();
   return result.fold((failure) => false, (isOwner) => isOwner);
 });
+
+final ownedBusinessProvider = FutureProvider<OwnedBusinessProfile?>((
+  ref,
+) async {
+  final usecase = ref.watch(getOwnedBusinessUsecaseProvider);
+  final result = await usecase();
+  return result.fold((failure) => null, (business) => business);
+});
+
+final businessPanelMetricsProvider =
+    FutureProvider.family<BusinessPanelMetrics, String>((
+      ref,
+      businessId,
+    ) async {
+      final usecase = ref.watch(getBusinessPanelMetricsUsecaseProvider);
+      final result = await usecase(businessId: businessId);
+      return result.fold(
+        (failure) => const BusinessPanelMetrics(
+          averageRating: 0,
+          monthlyInteractions: 0,
+          favoriteCount: 0,
+        ),
+        (metrics) => metrics,
+      );
+    });

@@ -3,6 +3,7 @@ import 'package:ournego/core/failures.dart';
 import 'package:ournego/core/location/app_position.dart';
 import 'package:ournego/features/business/domain/entities/app_schedule.dart';
 import 'package:ournego/features/business/domain/entities/business_image_data.dart';
+import 'package:ournego/features/business/domain/entities/owned_business_profile.dart';
 import 'package:ournego/features/business/domain/repositories/business_repository.dart';
 
 class FakeBusinessRepository implements BusinessRepository {
@@ -40,6 +41,11 @@ class FakeBusinessRepository implements BusinessRepository {
     }
 
     return Right(isOwner);
+  }
+
+  @override
+  Future<Either<Failure, OwnedBusinessProfile?>> getOwnedBusiness() async {
+    return const Right(null);
   }
 
   @override
@@ -103,6 +109,14 @@ class FakeBusinessRepository implements BusinessRepository {
   @override
   Future<Either<Failure, void>> deleteBusinessPhoneNumber({
     required String businessId,
+  }) async {
+    return const Right(null);
+  }
+
+  @override
+  Future<Either<Failure, void>> upsertBusinessHours({
+    required String businessId,
+    required List<AppSchedule> hours,
   }) async {
     return const Right(null);
   }

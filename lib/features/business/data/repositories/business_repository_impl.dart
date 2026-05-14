@@ -7,6 +7,8 @@ import 'package:ournego/features/business/data/datasources/business_supabase_dat
 import 'package:ournego/features/business/data/errors/business_registration_exceptions.dart';
 import 'package:ournego/features/business/domain/entities/app_schedule.dart';
 import 'package:ournego/features/business/domain/entities/business_image_data.dart';
+import 'package:ournego/features/business/domain/entities/business_panel_metrics.dart';
+import 'package:ournego/features/business/domain/entities/owned_business_profile.dart';
 import 'package:ournego/features/business/domain/repositories/business_repository.dart';
 
 class BusinessRepositoryImpl implements BusinessRepository {
@@ -100,6 +102,39 @@ class BusinessRepositoryImpl implements BusinessRepository {
       final isOwner = await businessDatasource.checkIfOwner();
       return Right(isOwner);
     } catch (e) {
+      return Left(ServerFailure());
+    }
+  }
+
+  @override
+  Future<Either<Failure, OwnedBusinessProfile?>> getOwnedBusiness() async {
+    try {
+      final data = await businessDatasource.getOwnedBusiness();
+      if (data == null) {
+        return const Right(null);
+      }
+
+      final images = (data['images'] as List<dynamic>? ?? const [])
+          .whereType<String>()
+          .toList(growable: false);
+      final hours = (data['hours'] as List<dynamic>? ?? const [])
+          .whereType<AppSchedule>()
+          .toList(growable: false);
+
+      final profile = OwnedBusinessProfile(
+        id: data['business_id'] as String? ?? '',
+        name: data['name'] as String? ?? '',
+        description: data['description'] as String? ?? '',
+        category: data['type'] as int? ?? 0,
+        address: data['address'] as String? ?? '',
+        phoneNumber: data['phone_number'] as String?,
+        latitude: ((data['latitude'] as num?) ?? 0).toDouble(),
+        longitude: ((data['longitude'] as num?) ?? 0).toDouble(),
+        images: images,
+        hours: hours,
+      );
+      return Right(profile);
+    } catch (_) {
       return Left(ServerFailure());
     }
   }
@@ -283,6 +318,47 @@ class BusinessRepositoryImpl implements BusinessRepository {
       return Left(BusinessRegistrationNetworkFailure());
     } catch (_) {
       return Left(BusinessRegistrationUnknownFailure());
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> upsertBusinessHours({
+    required String businessId,
+    required List<AppSchedule> hours,
+  }) async {
+    try {
+      await businessDatasource.upsertBusinessHours(
+        businessId: businessId,
+        hours: hours,
+      );
+      return const Right(null);
+    } on BusinessRegistrationUnauthorizedException {
+      return Left(BusinessRegistrationUnauthorizedFailure());
+    } on BusinessRegistrationValidationException {
+      return Left(BusinessRegistrationValidationFailure());
+    } on BusinessRegistrationNetworkException {
+      return Left(BusinessRegistrationNetworkFailure());
+    } catch (_) {
+      return Left(BusinessRegistrationUnknownFailure());
+    }
+  }
+
+  @override
+  Future<Either<Failure, BusinessPanelMetrics>> getBusinessPanelMetrics({
+    required String businessId,
+  }) async {
+    try {
+      final data = await businessDatasource.getBusinessPanelMetrics(
+        businessId: businessId,
+      );
+      final metrics = BusinessPanelMetrics(
+        averageRating: ((data['average_rating'] as num?) ?? 0).toDouble(),
+        monthlyInteractions: (data['monthly_interactions'] as int?) ?? 0,
+        favoriteCount: (data['favorite_count'] as int?) ?? 0,
+      );
+      return Right(metrics);
+    } catch (_) {
+      return Left(ServerFailure());
     }
   }
 }
