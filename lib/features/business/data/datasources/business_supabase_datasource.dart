@@ -50,6 +50,21 @@ class BusinessSupabaseDatasource {
     return appDay + 1;
   }
 
+  int? _parseSqlTimeToMinutes(String raw) {
+    final parts = raw.split(':');
+    if (parts.length < 2) {
+      return null;
+    }
+
+    final hours = int.tryParse(parts[0]);
+    final minutes = int.tryParse(parts[1]);
+    if (hours == null || minutes == null) {
+      return null;
+    }
+
+    return (hours * 60) + minutes;
+  }
+
   Future<bool> isSignedIn() async {
     try {
       final user = _supabase.auth.currentUser;
@@ -292,6 +307,78 @@ class BusinessSupabaseDatasource {
     });
   }
 
+  Future<void> upsertBusinessHours({
+    required String businessId,
+    required List<AppSchedule> hours,
+  }) async {
+    await _runProtectedWrite(() async {
+      if (hours.isEmpty) {
+        await _supabase
+            .from('business_hours')
+            .delete()
+            .eq('business_id', businessId);
+        return;
+      }
+
+      final rows = hours
+          .map((schedule) {
+            return {
+              'business_id': businessId,
+              'day_of_week': _mapAppDayToSqlDay(schedule.dayOfWeek),
+              'opening_time': _minutesToSqlTime(schedule.openMinutes),
+              'closing_time': _minutesToSqlTime(schedule.closeMinutes),
+            };
+          })
+          .toList(growable: false);
+
+      try {
+        await _supabase
+            .from('business_hours')
+            .upsert(rows, onConflict: 'business_id,day_of_week');
+      } on PostgrestException {
+        // Fallback when the composite unique constraint is not available for
+        // PostgREST upsert. We update by day and insert missing rows.
+        for (final row in rows) {
+          final dayOfWeek = row['day_of_week'] as int;
+          final updatedRows = await _supabase
+              .from('business_hours')
+              .update({
+                'opening_time': row['opening_time'],
+                'closing_time': row['closing_time'],
+              })
+              .eq('business_id', businessId)
+              .eq('day_of_week', dayOfWeek)
+              .select('day_of_week');
+
+          if (updatedRows.isEmpty) {
+            await _supabase.from('business_hours').insert(row);
+          }
+        }
+      }
+
+      final incomingDays = rows.map((row) => row['day_of_week'] as int).toSet();
+
+      final existingRows = await _supabase
+          .from('business_hours')
+          .select('day_of_week')
+          .eq('business_id', businessId);
+
+      final existingDays = existingRows
+          .map((row) => (row['day_of_week'] as num?)?.toInt())
+          .whereType<int>()
+          .toSet();
+
+      final daysToDelete = existingDays.difference(incomingDays).toList();
+      if (daysToDelete.isNotEmpty) {
+        await _supabase
+            .from('business_hours')
+            .delete()
+            .eq('business_id', businessId)
+            .inFilter('day_of_week', daysToDelete);
+      }
+    });
+  }
+
   Future<void> setBusinessHours(
     String businessId,
     List<AppSchedule> hours,
@@ -349,5 +436,102 @@ class BusinessSupabaseDatasource {
         .maybeSingle();
 
     return response != null;
+  }
+
+  Future<Map<String, dynamic>?> getOwnedBusiness() async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) {
+      return null;
+    }
+
+    final ownedBusiness = await _supabase
+        .from('businesses')
+        .select()
+        .eq('owner_id', user.id)
+        .limit(1)
+        .maybeSingle();
+
+    if (ownedBusiness == null) {
+      return null;
+    }
+
+    final businessId = ownedBusiness['business_id'] as String?;
+    if (businessId == null) {
+      return null;
+    }
+
+    final hoursRows = await _supabase
+        .from('business_hours')
+        .select('day_of_week, opening_time, closing_time')
+        .eq('business_id', businessId);
+
+    final hours = <AppSchedule>[];
+    for (final row in hoursRows) {
+      final data = Map<String, dynamic>.from(row);
+      final dayOfWeekDb = data['day_of_week'] as int?;
+      final openingTime = data['opening_time'] as String?;
+      final closingTime = data['closing_time'] as String?;
+      if (dayOfWeekDb == null || openingTime == null || closingTime == null) {
+        continue;
+      }
+
+      final dayOfWeek = dayOfWeekDb - 1;
+      if (dayOfWeek < 0 || dayOfWeek > 6) {
+        continue;
+      }
+
+      final openMinutes = _parseSqlTimeToMinutes(openingTime);
+      final closeMinutes = _parseSqlTimeToMinutes(closingTime);
+      if (openMinutes == null || closeMinutes == null) {
+        continue;
+      }
+
+      hours.add(
+        AppSchedule(
+          dayOfWeek: dayOfWeek,
+          openMinutes: openMinutes,
+          closeMinutes: closeMinutes,
+        ),
+      );
+    }
+
+    final payload = Map<String, dynamic>.from(ownedBusiness);
+    payload['hours'] = hours;
+    return payload;
+  }
+
+  Future<Map<String, dynamic>> getBusinessPanelMetrics({
+    required String businessId,
+  }) async {
+    final reviewsRows = await _supabase
+        .from('reviews')
+        .select('rating')
+        .eq('business_id', businessId);
+    final ratings = reviewsRows
+        .map((row) => (row['rating'] as num?)?.toDouble())
+        .whereType<double>()
+        .toList(growable: false);
+    final averageRating = ratings.isEmpty
+        ? 0.0
+        : ratings.reduce((a, b) => a + b) / ratings.length;
+
+    final nowUtc = DateTime.now().toUtc();
+    final fromUtc = nowUtc.subtract(const Duration(days: 30));
+    final interactionsRows = await _supabase
+        .from('user_interactions')
+        .select('id')
+        .eq('business_id', businessId)
+        .gte('created_at', fromUtc.toIso8601String());
+
+    final favoritesRows = await _supabase
+        .from('user_favorites')
+        .select('id')
+        .eq('business_id', businessId);
+
+    return <String, dynamic>{
+      'average_rating': averageRating,
+      'monthly_interactions': interactionsRows.length,
+      'favorite_count': favoritesRows.length,
+    };
   }
 }
