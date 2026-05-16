@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ournego/core/theme/tokens/ournego_semantic_tokens.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -101,10 +102,18 @@ class CompleteProfileScreen extends ConsumerWidget {
                           ),
                           errorBuilder: (context, error, stackTrace) {
                             return Container(
-                              color: Colors.grey.withAlpha(127),
+                              color: OurnegoSemanticTokens.surfaceRaised(
+                                Theme.of(context).colorScheme,
+                              ),
                               width: double.maxFinite,
                               height: double.maxFinite,
-                              child: Icon(Icons.account_circle, size: 60),
+                              child: Icon(
+                                Icons.account_circle,
+                                size: 60,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withValues(alpha: 0.6),
+                              ),
                             );
                           },
                         ),

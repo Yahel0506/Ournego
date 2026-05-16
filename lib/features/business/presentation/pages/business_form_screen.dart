@@ -14,6 +14,7 @@ import 'package:ournego/core/location/geolocator_location_datasource.dart';
 import 'package:ournego/core/location/location_datasource.dart';
 import 'package:ournego/core/mapbox_config.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
+import 'package:ournego/core/theme/tokens/ournego_color_tokens.dart';
 import 'package:ournego/features/business/domain/entities/business_image_data.dart';
 import 'package:ournego/features/business/domain/usecases/get_addresses_suggestions_usecase.dart';
 import 'package:ournego/features/business/presentation/pages/components/business_hours_picker.dart';
@@ -480,8 +481,8 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
                   (_pickedImageBytes == null || _pickedImageBytes!.isEmpty)
                       ? Text(
                           'Para verificar que tu negocio realmente existe, necesitamos una foto del exterior de tu local.',
-                          style: OurnegoTextStyles.body.copyWith(
-                            color: Colors.orange,
+                          style: OurnegoTextStyles.bodyCompact.copyWith(
+                            color: OurnegoColorTokens.warning,
                           ),
                           textAlign: TextAlign.center,
                         )
@@ -601,7 +602,7 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
                   SizedBox(height: 24),
                   Text(
                     'Número de teléfono de tu negocio (opcional)',
-                    style: OurnegoTextStyles.body,
+                    style: OurnegoTextStyles.bodyCompact,
                     textAlign: TextAlign.center,
                   ),
                   SizedBox(height: 16),
@@ -614,7 +615,7 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
                   SizedBox(height: 24),
                   Text(
                     '¿En qué horarios abre tu negocio?',
-                    style: OurnegoTextStyles.body,
+                    style: OurnegoTextStyles.bodyCompact,
                     textAlign: TextAlign.center,
                   ),
                   SizedBox(height: 16),
@@ -723,10 +724,13 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
                         }
                       },
                       child: _isSending.value
-                          ? CircularProgressIndicator(color: Colors.black)
+                          ? CircularProgressIndicator(
+                              color: Theme.of(context).colorScheme.onPrimary,
+                              strokeWidth: 2,
+                            )
                           : Text(
                               'Registrar Negocio',
-                              style: OurnegoTextStyles.header,
+                              style: OurnegoTextStyles.button,
                             ),
                     ),
                   ),
@@ -811,7 +815,11 @@ class BusinessPositionSelector extends StatelessWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.location_on, size: 48, color: Colors.red),
+                        Icon(
+                          Icons.location_on,
+                          size: 48,
+                          color: Theme.of(context).colorScheme.error,
+                        ),
                         SizedBox(height: 48),
                       ],
                     ),

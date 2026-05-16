@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:uuid/uuid.dart';
 
+import 'package:ournego/core/theme/tokens/ournego_color_tokens.dart';
 import '../../../../features/navigation/presentation/providers/navigation_provider.dart';
 import '../providers/feedback_providers.dart';
 
@@ -36,7 +37,10 @@ class _FeedbackDialogWidgetState extends ConsumerState<FeedbackDialogWidget> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: Icon(Icons.bug_report, color: Colors.red),
+              leading: const Icon(
+                Icons.bug_report,
+                color: OurnegoColorTokens.error,
+              ),
               title: Text("Algo no funciona"),
               onTap: () async {
                 Navigator.pop(context);
@@ -81,7 +85,10 @@ class _FeedbackDialogWidgetState extends ConsumerState<FeedbackDialogWidget> {
               },
             ),
             ListTile(
-              leading: Icon(Icons.message, color: Colors.blue),
+              leading: const Icon(
+                Icons.message,
+                color: OurnegoColorTokens.info,
+              ),
               title: Text("Tengo una duda"),
               onTap: () async {
                 await launchUrl(Uri.parse('https://wa.me/3411768237'));

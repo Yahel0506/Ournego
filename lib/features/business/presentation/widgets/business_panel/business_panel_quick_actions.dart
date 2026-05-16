@@ -76,7 +76,7 @@ class BusinessPanelQuickActions extends ConsumerWidget {
                       const SizedBox(width: OurnegoSpacingTokens.xs),
                       Text(
                         'Ver estadisticas',
-                        style: OurnegoTextStyles.body.copyWith(
+                        style: OurnegoTextStyles.bodyCompact.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
                       ),
