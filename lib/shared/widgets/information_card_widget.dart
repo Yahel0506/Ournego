@@ -38,14 +38,14 @@ class InformationCardWidget extends StatelessWidget {
           const SizedBox(height: OurnegoSpacingTokens.md),
           Text(
             title,
-            style: OurnegoTextStyles.header,
+            style: OurnegoTextStyles.title,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: OurnegoSpacingTokens.xs),
           Text(
             description,
             textAlign: TextAlign.center,
-            style: OurnegoTextStyles.body.copyWith(
+            style: OurnegoTextStyles.bodyCompact.copyWith(
               color: colorScheme.onSurface.withValues(alpha: 0.7),
             ),
           ),

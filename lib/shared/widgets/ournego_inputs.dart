@@ -1,20 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:ournego/core/ournego_text_styles.dart';
 
-import '../../core/theme/tokens/ournego_radius_tokens.dart';
+import 'package:ournego/core/ournego_text_styles.dart';
+import 'package:ournego/core/theme/tokens/ournego_semantic_tokens.dart';
+import 'package:ournego/core/theme/tokens/ournego_spacing_tokens.dart';
 
 class OurnegoInputDecorations {
   OurnegoInputDecorations._();
 
   static InputDecoration filled({
+    required BuildContext context,
     String? labelText,
     String? hintText,
     TextStyle? hintStyle,
     Widget? icon,
     Widget? hint,
     Widget? suffixIcon,
-    BuildContext? context,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return InputDecoration(
       labelText: labelText,
       hintText: hintText,
@@ -23,12 +26,7 @@ class OurnegoInputDecorations {
       hint: hint,
       suffixIcon: suffixIcon,
       filled: true,
-      border: const OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(OurnegoRadiusTokens.xl)),
-      ),
-      fillColor: context != null
-          ? Theme.of(context).colorScheme.surface.withValues(alpha: 0.6)
-          : null,
+      fillColor: OurnegoSemanticTokens.surfaceSoft(colorScheme),
     );
   }
 }
@@ -49,6 +47,7 @@ class OurnegoInputField extends StatelessWidget {
   final Widget? icon;
   final Widget? suffixIcon;
   final bool obscureText;
+  final bool enabled;
 
   const OurnegoInputField({
     super.key,
@@ -67,6 +66,7 @@ class OurnegoInputField extends StatelessWidget {
     this.icon,
     this.suffixIcon,
     this.obscureText = false,
+    this.enabled = true,
   });
 
   @override
@@ -81,37 +81,15 @@ class OurnegoInputField extends StatelessWidget {
       keyboardType: keyboardType,
       maxLines: maxLines,
       obscureText: obscureText,
-      decoration: InputDecoration(
-        hintText: hintText,
+      enabled: enabled,
+      decoration: OurnegoInputDecorations.filled(
+        context: context,
         labelText: labelText,
-        hint: hint,
+        hintText: hintText,
         hintStyle: hintStyle,
         icon: icon,
-        filled: true,
-        fillColor: Theme.of(context).colorScheme.surface.withValues(alpha: 0.5),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.all(
-            Radius.circular(OurnegoRadiusTokens.xl),
-          ),
-          borderSide: BorderSide(
-            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
-          ),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.all(
-            Radius.circular(OurnegoRadiusTokens.xl),
-          ),
-          borderSide: BorderSide(
-            color: Theme.of(context).colorScheme.outline,
-            width: 1.2,
-          ),
-        ),
+        hint: hint,
         suffixIcon: suffixIcon,
-        border: const OutlineInputBorder(
-          borderRadius: BorderRadius.all(
-            Radius.circular(OurnegoRadiusTokens.xl),
-          ),
-        ),
       ),
     );
   }
@@ -126,14 +104,14 @@ class OurnegoLabeledInputSection extends StatelessWidget {
     super.key,
     required this.label,
     required this.input,
-    this.spacing = 10,
+    this.spacing = OurnegoSpacingTokens.inputGap,
   });
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(label, style: OurnegoTextStyles.body),
+        Text(label, style: OurnegoTextStyles.bodyCompact),
         SizedBox(height: spacing),
         input,
       ],
