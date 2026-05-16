@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:ournego/core/ournego_text_styles.dart';
+
 class SheetHeader extends StatelessWidget {
   final String name;
   final bool isExpanded;
@@ -12,7 +14,7 @@ class SheetHeader extends StatelessWidget {
       name,
       maxLines: isExpanded ? 2 : 1,
       overflow: TextOverflow.ellipsis,
-      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+      style: OurnegoTextStyles.sheetTitle,
     );
   }
 }
