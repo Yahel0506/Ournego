@@ -4,7 +4,7 @@ Este documento describe el sistema visual real implementado en Ournego. No propo
 
 ## 1. Design Philosophy
 
-Ournego usa una identidad visual luminosa, suave y local-first: superficies redondeadas, colores aqua/menta, fondos animados organicos, componentes con borde sutil y un mascot procedural (`NegoAvatar`) como elemento de marca. La app favorece interfaces centradas, amigables y de baja friccion para onboarding/auth, y una experiencia mas utilitaria sobre mapa para discovery y negocios.
+Ournego usa una identidad visual luminosa, suave y local-first: superficies redondeadas, colores aqua/menta, fondos animados organicos, componentes con borde sutil y un mascot procedural (`NegoAvatar`) como elemento de marca. La app favorece interfaces centradas, amigables y de baja friccion para onboarding/auth, y una experiencia mas utilitaria sobre mapa para discovery y negocios. Flutter es la fuente de verdad para la experiencia de app; la web es referencia de marca y lenguaje compartido, pero no dicta patrones marketing pesados dentro de la app.
 
 El lenguaje visual existente se logra con:
 
@@ -15,6 +15,8 @@ El lenguaje visual existente se logra con:
 - Motion suave y expresivo en onboarding, `NegoAvatar`, bottom navigation y floating sheets.
 
 Debe evitarse cambiar por pantalla a un estilo duro, angular, sobrio corporativo o con colores fuera de la familia aqua/menta, salvo en categorias de mapa o estados semanticos ya existentes.
+
+`brand.primary` y `action.primary` estan separados a proposito: `brand.primary` es el verde oscuro (`#055F46`) para anclajes de marca y contraste, mientras que `action.primary` sigue siendo el aqua (`#3BCFED`) para seleccion y accion principal de la app.
 
 ## 2. Visual Principles
 
@@ -76,6 +78,12 @@ Definidos en `lib/core/theme/tokens/ournego_color_tokens.dart` y expuestos por `
   - `outline #89938F`
   - `scaffoldBackgroundColor #161616`
 
+### Brand vs action
+
+- `action.primary`: aqua (`#3BCFED`), usado por `ColorScheme.primary`, botones primarios, seleccion y elementos de accion.
+- `brand.primary`: verde oscuro (`#055F46`), usado para anclaje de marca, contraste y referencias identitarias compartidas con la web.
+- Estados semanticos compartidos se apoyan en tokens dedicados en vez de reutilizar colores de marca sin contexto.
+
 ### Surface, border and transparency patterns
 
 Implemented and repeated:
@@ -121,11 +129,18 @@ No custom font family is configured in `pubspec.yaml`; the app uses Flutter/Mate
 
 Defined in `lib/core/ournego_text_styles.dart`:
 
-- `OurnegoTextStyles.onboardingHeader`: `fontSize: 32`, `fontWeight: FontWeight.bold`.
-- `OurnegoTextStyles.header`: `fontSize: 24`, `fontWeight: FontWeight.bold`.
+- `OurnegoTextStyles.display`: `fontSize: 32`, `fontWeight: 700`.
+- `OurnegoTextStyles.headline`: `fontSize: 26`, `fontWeight: 700`.
+- `OurnegoTextStyles.title`: `fontSize: 24`, `fontWeight: 700`.
+- `OurnegoTextStyles.sheetTitle`: `fontSize: 22`, `fontWeight: 700`.
 - `OurnegoTextStyles.body`: `fontSize: 16`.
-- `OurnegoTextStyles.link`: `fontSize: 16`, underline.
-- `OurnegoTextStyles.errorText`: `fontSize: 16`, `Colors.red`.
+- `OurnegoTextStyles.bodyCompact`: `fontSize: 14`.
+- `OurnegoTextStyles.caption`: `fontSize: 12`.
+- `OurnegoTextStyles.badge`: `fontSize: 11`, `fontWeight: 600`.
+- `OurnegoTextStyles.button`: `fontSize: 16`, `fontWeight: 700`.
+- `OurnegoTextStyles.error`: `fontSize: 14`, `fontWeight: 600`, semantic error color.
+
+Legacy aliases are still present for migration: `onboardingHeader`, `header`, `link` and `errorText`.
 
 ### Repeated inferred styles
 
@@ -133,8 +148,8 @@ Defined in `lib/core/ournego_text_styles.dart`:
 - Small action tile labels: `TextStyle(fontSize: 10)`.
 - Floating sheet description: `fontSize: 15`, `height: 1.35`.
 - Floating sheet names: `fontSize: 22`, `fontWeight: FontWeight.w700`.
-- Buttons sometimes use `body` (`16`) and sometimes `header` (`24`) for large CTA labels.
-- Badges use `fontSize: 11`, `fontWeight: FontWeight.w600`.
+- Buttons use `button` (`16/700`) or existing Material button defaults when a feature keeps a custom shape.
+- Badges use `badge` (`11/600`).
 
 ### Usage rules
 
@@ -176,6 +191,15 @@ Formal tokens live in `lib/core/theme/tokens/ournego_spacing_tokens.dart`:
 - `72`: bottom nav height, onboarding top spacing.
 - `90-120`: large page layout offsets and map nav clearance.
 
+### Semantic spacing aliases
+
+- `OurnegoSpacingTokens.controlGap = 8`
+- `OurnegoSpacingTokens.inputGap = 10`
+- `OurnegoSpacingTokens.formSectionGap = 24`
+- `OurnegoSpacingTokens.pagePadding = 28`
+- `OurnegoSpacingTokens.pageTopOffset = 120`
+- `OurnegoSpacingTokens.navHeight = 72`
+
 ### Layout spacing rules
 
 - New feature screens should start with existing tokens where possible.
@@ -208,6 +232,17 @@ Formal tokens in `lib/core/theme/tokens/ournego_radius_tokens.dart`:
 - `10`: compact dropdowns.
 - `8`: sheet control icon buttons.
 - `999/1000`: badges/pills and circular profile avatar.
+
+### Semantic radius aliases
+
+- `OurnegoRadiusTokens.input = 30`
+- `OurnegoRadiusTokens.container = 30`
+- `OurnegoRadiusTokens.sheet = 18`
+- `OurnegoRadiusTokens.button = 24`
+- `OurnegoRadiusTokens.innerCard = 14`
+- `OurnegoRadiusTokens.actionTile = 12`
+- `OurnegoRadiusTokens.iconButton = 8`
+- `OurnegoRadiusTokens.pill = 1000`
 
 Usage rule: do not invent new radius levels. Pick the nearest existing level and document exceptions.
 
@@ -427,8 +462,16 @@ Rules:
 
 `lib/core/ournego_motion.dart`:
 
+- `kFastDuration = 120ms`.
+- `kFastWithPaddingDuration = 140ms`.
+- `kStandardDuration = 220ms`.
 - `kEaseOutExpo = Cubic(0.16, 1.0, 0.3, 1.0)`.
+- `kEaseOutQuart = Curves.easeOutQuart`.
+- `kEaseOutCubic = Curves.easeOutCubic`.
+- `kStandardCurve = Curves.easeInOut`.
 - `kSheetTransitionDuration = 420ms`.
+- `kOnboardingPageDuration = 600ms`.
+- `kBackgroundDriftDuration = 4s`.
 
 ### Implemented motion patterns
 
@@ -442,7 +485,7 @@ Rules:
 - Exit onboarding: title/description slide+fade `1000ms`, `Cubic(0.22, 1, 0.36, 1)`, timers at `300ms`, `900ms`, finish at `3200ms`.
 - Discover orb: custom 28-second repeating animation.
 - Animated background blobs: position changes every `4s`, `Curves.easeInOut`, blur sigma `80`.
-- Animated particles: continuous long-running controller, paused by route/lifecycle.
+- Animated particles: continuous long-running controller, paused by route/lifecycle, reduced-motion aware.
 - Business hours picker: `AnimatedCrossFade` `200ms`.
 - Address focus scroll: `300ms`, `Curves.linear`.
 - Map animateTo curves include `Curves.easeIn`, `Curves.bounceInOut`.
@@ -458,7 +501,7 @@ Rules:
 - Blink close `60ms`, open `120ms`, hold `60ms`, random delay `1400-5000ms`.
 - Curves: `easeInOut`, `easeOut`, `Cubic(0.16, 1.0, 0.3, 1.0)`.
 
-Respect `TickerMode` and `MediaQuery.disableAnimationsOf(context)` patterns when adding motion.
+Respect `TickerMode` and `MediaQuery.disableAnimationsOf(context)` patterns when adding motion. Shared background widgets should degrade to static or low-power variants when reduced motion is enabled.
 
 ## 13. Interaction States
 
@@ -469,9 +512,10 @@ Respect `TickerMode` and `MediaQuery.disableAnimationsOf(context)` patterns when
 - Selected: bottom nav uses primary circular fill; search filter chip uses Material selected state; favorite uses primary alpha background and primary icon.
 - Active/listening: mic icon changes and primary color is applied.
 - Loading: spinner inside button or inline row; search overlay uses thin linear progress.
-- Success: business upload button icon switches from upload to check; snackbar text/info is used for success.
-- Error: red text/icons, error snackbar, alert/information dialog with generic error image.
-- Empty: information card or search overlay text.
+- Success: business upload button icon switches from upload to check; success snackbar and semantic success tokens are available.
+- Warning: semantic warning tokens are available for business image/location guidance and other non-blocking cautions.
+- Error: semantic error text/icons, error snackbar, alert/information dialog with generic error image.
+- Empty: information card or search overlay text, with shared empty-state patterns preferred over one-off copy.
 
 ## 14. Forms and Inputs
 
@@ -482,6 +526,7 @@ Form pattern:
 - `OurnegoInputField` for text fields.
 - `SizedBox(height: 24 or 30)` between sections.
 - Primary submit action at end.
+- `ThemeData.inputDecorationTheme` now centralizes fill, border, focus, error and disabled states; `OurnegoInputField` only supplies field content and behavior.
 
 Input details:
 
@@ -489,7 +534,7 @@ Input details:
 - Filled surface alpha `0.5`.
 - Enabled border outline alpha `0.3`.
 - Focused border outline full/alpha with width `1.2`.
-- Error border uses `colorScheme.error` in theme input style, but `OurnegoInputField` does not explicitly override error border.
+- Error border uses `colorScheme.error` in the shared theme style.
 - Hints sometimes use `body` with onSurface alpha via `withAlpha(150)` or `withValues(alpha: 0.6)`.
 - Prefix/suffix icons are allowed through `icon` and `suffixIcon`.
 - Password rules use small `Icons.check` or `Icons.panorama_fish_eye`, size `12`, red for unmet rules.
@@ -605,16 +650,15 @@ When an AI agent creates or modifies Ournego UI:
 
 ## 19. Current Inconsistencies
 
-- `lib/core/theme/ournego_button_styles.dart` defines theme button styles, but `OurnegoTheme` does not apply `elevatedButtonTheme`, `outlinedButtonTheme` or input theme.
+- `lib/core/theme/ournego_button_styles.dart` and `OurnegoTheme` now apply shared button/input themes, but some screens still bypass them with custom Material button styles.
 - There are two `OurnegoButtonStyles` classes: one in `lib/core/theme/ournego_button_styles.dart` and one in `lib/shared/widgets/ournego_buttons.dart`.
-- `OurnegoTextStyles.errorText` and many screens use `Colors.red` instead of `colorScheme.error`.
-- `OurnegoTextStyles` has only five styles; compact labels (`10/11/12/14/15`), sheet titles (`22/700`) and button labels are hardcoded.
-- Spacing tokens exist, but many screens use hardcoded `10`, `14`, `18`, `20`, `28`, `30`, `56`, `72`, `108`, `120`.
-- Radius tokens exist, but many components hardcode `30`, `24`, `18`, `16`, `14`, `12`, `10`, `8`, `999`.
-- `OurnegoInputStyles.inputDecorationTheme` exists but is not wired into `ThemeData`; `OurnegoInputField` repeats much of the decoration manually.
+- `OurnegoTextStyles` now exposes the expanded semantic scale, but some screens still use hardcoded `fontSize` overrides for compact map labels and sheet content.
+- Spacing aliases now exist, but many screens still use hardcoded `10`, `14`, `18`, `20`, `28`, `30`, `56`, `72`, `108`, `120`.
+- Radius aliases now exist, but many components still hardcode `30`, `24`, `18`, `16`, `14`, `12`, `10`, `8`, `999`.
+- `OurnegoInputStyles.inputDecorationTheme` is now wired into `ThemeData`, but a few feature surfaces still bypass `OurnegoInputField` or `OurnegoInputDecorations`.
 - Feedback dialog uses raw Material `AlertDialog` and `ListTile` styling, unlike `OurnegoInformationDialog`.
 - Some buttons use `ElevatedButton`, some `FilledButton`, some custom shared buttons, with inconsistent heights/foreground colors.
-- Top navigation `_CrystalItemContainer` uses `BackdropFilter` with blur sigma `0`, so it is visually just a bordered surface.
+- Top navigation `_CrystalItemContainer` now has a real blur, but it is still a good candidate for a lighter fallback on low-power or reduced-motion contexts.
 - Business form map style selection appears inverted by variable name: `isDarkModeOn ? styleIdLight : styleIdDark`.
 - `pubspec.yaml` includes `assets/fonts/MyIcons.ttf` as a file asset but not as a registered font; `MyIcons.google` is unused.
 - Category marker colors are hardcoded Material colors, not semantic/category tokens.
@@ -671,6 +715,7 @@ Theme and tokens:
 - `lib/core/theme/ournego_button_styles.dart`
 - `lib/core/theme/ournego_input_styles.dart`
 - `lib/core/theme/tokens/ournego_color_tokens.dart`
+- `lib/core/theme/tokens/ournego_semantic_tokens.dart`
 - `lib/core/theme/tokens/ournego_spacing_tokens.dart`
 - `lib/core/theme/tokens/ournego_radius_tokens.dart`
 
@@ -688,6 +733,7 @@ Shared visual widgets:
 - `lib/shared/widgets/ournego_snackbars.dart`
 - `lib/shared/widgets/nego/README.md`
 - `lib/shared/widgets/nego/nego_avatar.dart`
+- `test/core/theme/design_system_tokens_test.dart`
 - `lib/shared/widgets/nego/nego_tokens.dart`
 - `lib/shared/widgets/nego/nego_painter.dart`
 - `lib/shared/widgets/nego/nego_motion_controller.dart`
