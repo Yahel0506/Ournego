@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
+import 'package:ournego/core/theme/tokens/ournego_color_tokens.dart';
 import 'package:ournego/core/theme/tokens/ournego_radius_tokens.dart';
 import 'package:ournego/core/theme/tokens/ournego_spacing_tokens.dart';
 import 'package:ournego/features/business/presentation/widgets/business_panel/business_panel_icon_button.dart';
@@ -32,7 +33,7 @@ class BusinessPanelGallery extends StatelessWidget {
           children: [
             const Icon(
               Icons.warning_amber_rounded,
-              color: Colors.amber,
+              color: OurnegoColorTokens.warning,
               size: 34,
             ),
             const SizedBox(height: OurnegoSpacingTokens.xs),
@@ -103,9 +104,7 @@ class BusinessPanelGallery extends StatelessWidget {
                       ),
                       child: Text(
                         'Principal',
-                        style: OurnegoTextStyles.body.copyWith(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
+                        style: OurnegoTextStyles.badge.copyWith(
                           color: colorScheme.onPrimary,
                         ),
                       ),

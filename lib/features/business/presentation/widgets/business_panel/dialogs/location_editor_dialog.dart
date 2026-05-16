@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:ournego/core/mapbox_config.dart';
 import 'package:ournego/core/theme/tokens/ournego_radius_tokens.dart';
 import 'package:ournego/core/theme/tokens/ournego_spacing_tokens.dart';
+import 'package:ournego/core/theme/tokens/ournego_color_tokens.dart';
 import 'package:ournego/features/business/presentation/widgets/business_panel/models/location_editor_result.dart';
 import 'package:ournego/shared/widgets/ournego_inputs.dart';
 
@@ -93,7 +94,11 @@ class _LocationEditorDialogState extends State<LocationEditorDialog>
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: const [
-                          Icon(Icons.location_on, size: 42, color: Colors.red),
+                          Icon(
+                            Icons.location_on,
+                            size: 42,
+                            color: OurnegoColorTokens.warning,
+                          ),
                           SizedBox(height: 36),
                         ],
                       ),

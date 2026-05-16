@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ournego/core/theme/tokens/ournego_color_tokens.dart';
 import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/core/routing/route_observer.dart';
 import 'package:ournego/core/routing/route_sources.dart';
@@ -293,7 +294,11 @@ GoRouter createAppRouter({
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
+            const Icon(
+              Icons.error_outline,
+              size: 48,
+              color: OurnegoColorTokens.error,
+            ),
             const SizedBox(height: 16),
             Text(
               'Page not found: ${state.uri.path}',

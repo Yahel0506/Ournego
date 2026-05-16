@@ -46,9 +46,7 @@ class BusinessPanelMetricTile extends StatelessWidget {
                   const Spacer(),
                   Text(
                     isLoading ? '--' : value,
-                    style: OurnegoTextStyles.header.copyWith(
-                      fontSize: 26,
-                      height: 1,
+                    style: OurnegoTextStyles.headline.copyWith(
                       color: colorScheme.onSurface,
                       fontFeatures: const [FontFeature.tabularFigures()],
                     ),
@@ -56,8 +54,7 @@ class BusinessPanelMetricTile extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     label,
-                    style: OurnegoTextStyles.body.copyWith(
-                      fontSize: 13,
+                    style: OurnegoTextStyles.caption.copyWith(
                       color: colorScheme.onSurface.withValues(alpha: 0.82),
                     ),
                   ),
