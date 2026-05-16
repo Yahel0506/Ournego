@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'package:ournego/core/ournego_text_styles.dart';
+import 'package:ournego/core/theme/tokens/ournego_radius_tokens.dart';
+
 class ActionTile extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -15,7 +18,7 @@ class ActionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(OurnegoRadiusTokens.actionTile),
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(10),
@@ -23,7 +26,7 @@ class ActionTile extends StatelessWidget {
           color: Theme.of(
             context,
           ).colorScheme.inverseSurface.withValues(alpha: 0.07),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(OurnegoRadiusTokens.actionTile),
           border: Border.all(
             color: Theme.of(
               context,
@@ -40,7 +43,7 @@ class ActionTile extends StatelessWidget {
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 10),
+              style: OurnegoTextStyles.caption,
             ),
           ],
         ),

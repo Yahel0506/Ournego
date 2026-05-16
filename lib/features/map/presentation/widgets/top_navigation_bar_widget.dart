@@ -3,6 +3,9 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ournego/core/theme/tokens/ournego_radius_tokens.dart';
+import 'package:ournego/core/theme/tokens/ournego_semantic_tokens.dart';
+import 'package:ournego/core/theme/tokens/ournego_spacing_tokens.dart';
 import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
 import 'package:ournego/shared/widgets/ournego_alert_dialog.dart';
@@ -38,11 +41,16 @@ class TopNavigationBarWidget extends ConsumerWidget {
 
     return Padding(
       key: topNavigationBarKey,
-      padding: const EdgeInsets.fromLTRB(16, 40, 16, 0),
+      padding: const EdgeInsets.fromLTRB(
+        OurnegoSpacingTokens.md,
+        40,
+        OurnegoSpacingTokens.md,
+        0,
+      ),
       child: Row(
         children: [
           _CrystalItemContainer(
-            borderRadius: 30,
+            borderRadius: OurnegoRadiusTokens.container,
             child: ElevatedButton(
               onPressed: onVoiceSearchTap,
               style: OurnegoButtonStyles.circularSurface(context: context),
@@ -55,10 +63,10 @@ class TopNavigationBarWidget extends ConsumerWidget {
               ),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: OurnegoSpacingTokens.controlGap),
           Expanded(
             child: _CrystalItemContainer(
-              borderRadius: 30,
+              borderRadius: OurnegoRadiusTokens.container,
               child: SearchBar(
                 controller: searchController,
                 focusNode: searchFocusNode,
@@ -77,9 +85,9 @@ class TopNavigationBarWidget extends ConsumerWidget {
               ),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: OurnegoSpacingTokens.controlGap),
           _CrystalItemContainer(
-            borderRadius: 30,
+            borderRadius: OurnegoRadiusTokens.container,
             child: ElevatedButton(
               key: const ValueKey('mapProfileButton'),
               onPressed: () async {
@@ -132,7 +140,9 @@ class TopNavigationBarWidget extends ConsumerWidget {
                                   ? Icons.account_circle
                                   : Icons.login_rounded,
                               size: 40,
-                              color: Colors.grey,
+                              color: colorScheme.onSurface.withValues(
+                                alpha: 0.6,
+                              ),
                             );
                           },
                         ),
@@ -140,7 +150,7 @@ class TopNavigationBarWidget extends ConsumerWidget {
                     : Icon(
                         isLogged ? Icons.account_circle : Icons.login_rounded,
                         size: 40,
-                        color: Colors.grey,
+                        color: colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
               ),
             ),
@@ -167,14 +177,14 @@ class _CrystalItemContainer extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(borderRadius),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaY: 0, sigmaX: 0),
+        filter: ImageFilter.blur(sigmaY: 6, sigmaX: 6),
         child: Container(
           decoration: BoxDecoration(
-            color: colorScheme.surface.withValues(alpha: 1),
+            color: OurnegoSemanticTokens.surfaceRaised(colorScheme),
             borderRadius: BorderRadius.circular(borderRadius),
             border: Border.all(
               width: 1,
-              color: colorScheme.outline.withValues(alpha: 0.3),
+              color: OurnegoSemanticTokens.borderSubtle(colorScheme),
             ),
           ),
           child: child,

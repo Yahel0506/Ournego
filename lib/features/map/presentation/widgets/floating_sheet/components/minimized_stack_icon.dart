@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:ournego/core/theme/tokens/ournego_radius_tokens.dart';
 import 'package:ournego/features/map/domain/entities/business.dart';
 import 'package:ournego/features/map/domain/entities/business_hours.dart';
 import 'package:ournego/features/map/presentation/mappers/business_marker_ui_mapper.dart';
@@ -54,14 +55,16 @@ class MinimizedStackIcon extends StatelessWidget {
         height: 48,
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(OurnegoRadiusTokens.innerCard),
           border: Border.all(
             color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
             width: 1,
           ),
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(11),
+          borderRadius: BorderRadius.circular(
+            OurnegoRadiusTokens.innerCard - 1,
+          ),
           child: hasImage
               ? Image.network(
                   business.images.first,
