@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 
+import 'package:ournego/core/theme/ournego_button_styles.dart';
+import 'package:ournego/core/theme/ournego_input_styles.dart';
 import 'package:ournego/core/theme/tokens/ournego_color_tokens.dart';
+import 'package:ournego/core/theme/tokens/ournego_radius_tokens.dart';
+import 'package:ournego/core/ournego_text_styles.dart';
 
 class OurnegoTheme {
   OurnegoTheme._();
 
   static ThemeData get light {
     const scheme = ColorScheme.light(
-      primary: OurnegoColorTokens.azulCielo,
+      primary: OurnegoColorTokens.actionPrimary,
       onPrimary: Colors.white,
       primaryContainer: OurnegoColorTokens.cianClaro,
       onPrimaryContainer: OurnegoColorTokens.azulVerde,
@@ -15,9 +19,9 @@ class OurnegoTheme {
       onSecondary: OurnegoColorTokens.verdeCastleton,
       secondaryContainer: OurnegoColorTokens.verdeMenta,
       tertiary: OurnegoColorTokens.verdeCastleton,
-      surface: Color(0xFFF4FBF9),
+      surface: OurnegoColorTokens.surfaceLight,
       onSurface: OurnegoColorTokens.noche,
-      error: Color(0xFFBA1A1A),
+      error: OurnegoColorTokens.error,
     );
 
     return ThemeData(
@@ -25,6 +29,29 @@ class OurnegoTheme {
       brightness: Brightness.light,
       scaffoldBackgroundColor: OurnegoColorTokens.blanco,
       colorScheme: scheme,
+      inputDecorationTheme: OurnegoInputStyles.inputDecorationTheme(scheme),
+      elevatedButtonTheme: OurnegoButtonStyles.elevatedButtonTheme(scheme),
+      outlinedButtonTheme: OurnegoButtonStyles.outlinedButtonTheme(scheme),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          minimumSize: const Size(double.infinity, 50),
+          backgroundColor: scheme.primary,
+          foregroundColor: scheme.onPrimary,
+          textStyle: OurnegoTextStyles.button,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(OurnegoRadiusTokens.button),
+          ),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: scheme.onSurface,
+          textStyle: OurnegoTextStyles.button,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(OurnegoRadiusTokens.button),
+          ),
+        ),
+      ),
     );
   }
 
@@ -37,7 +64,7 @@ class OurnegoTheme {
       secondary: OurnegoColorTokens.mentaOscuro,
       onSecondary: OurnegoColorTokens.noche,
       secondaryContainer: OurnegoColorTokens.verdeCastleton,
-      surface: Color(0xFF1E2625),
+      surface: OurnegoColorTokens.surfaceDark,
       onSurface: Color(0xFFE1E3E1),
       outline: Color(0xFF89938F),
     );
@@ -47,6 +74,29 @@ class OurnegoTheme {
       brightness: Brightness.dark,
       scaffoldBackgroundColor: OurnegoColorTokens.noche,
       colorScheme: scheme,
+      inputDecorationTheme: OurnegoInputStyles.inputDecorationTheme(scheme),
+      elevatedButtonTheme: OurnegoButtonStyles.elevatedButtonTheme(scheme),
+      outlinedButtonTheme: OurnegoButtonStyles.outlinedButtonTheme(scheme),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          minimumSize: const Size(double.infinity, 50),
+          backgroundColor: scheme.primary,
+          foregroundColor: scheme.onPrimary,
+          textStyle: OurnegoTextStyles.button,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(OurnegoRadiusTokens.button),
+          ),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: scheme.onSurface,
+          textStyle: OurnegoTextStyles.button,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(OurnegoRadiusTokens.button),
+          ),
+        ),
+      ),
     );
   }
 }
