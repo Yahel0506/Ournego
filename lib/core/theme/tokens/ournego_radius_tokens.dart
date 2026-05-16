@@ -6,4 +6,13 @@ class OurnegoRadiusTokens {
   static const double lg = 14;
   static const double xl = 30;
   static const double full = 1000;
+
+  static const double iconButton = sm;
+  static const double actionTile = md;
+  static const double innerCard = lg;
+  static const double sheet = 18;
+  static const double button = 24;
+  static const double input = xl;
+  static const double container = xl;
+  static const double pill = full;
 }

@@ -8,6 +8,9 @@ class OurnegoColors {
   static const Color azulCielo = OurnegoColorTokens.azulCielo;
   static const Color cianClaro = OurnegoColorTokens.cianClaro;
   static const Color azulVerde = OurnegoColorTokens.azulVerde;
+  static const Color actionPrimary = OurnegoColorTokens.actionPrimary;
+  static const Color actionPrimaryPressed =
+      OurnegoColorTokens.actionPrimaryPressed;
 
   static const Color aguamarina = OurnegoColorTokens.aguamarina;
   static const Color verdeMenta = OurnegoColorTokens.verdeMenta;
@@ -15,9 +18,14 @@ class OurnegoColors {
 
   static const Color verdeCastleton = OurnegoColorTokens.verdeCastleton;
   static const Color verdeBrunswick = OurnegoColorTokens.verdeBrunswick;
+  static const Color brandPrimary = OurnegoColorTokens.brandPrimary;
 
   static const Color noche = OurnegoColorTokens.noche;
   static const Color blanco = OurnegoColorTokens.blanco;
+  static const Color success = OurnegoColorTokens.success;
+  static const Color warning = OurnegoColorTokens.warning;
+  static const Color info = OurnegoColorTokens.info;
+  static const Color error = OurnegoColorTokens.error;
 
   // TODO: Extract semantic color tokens (e.g. `background`, `surface`,
   // `accent`) and provide accessibility helpers (contrast checks).
