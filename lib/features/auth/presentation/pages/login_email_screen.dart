@@ -68,7 +68,7 @@ class _LoginEmailScreenState extends ConsumerState<LoginEmailScreen> {
       child: Column(
         children: [
           // Título de la screen
-          Text(text.title, style: OurnegoTextStyles.header),
+          Text(text.title, style: OurnegoTextStyles.title),
           Spacer(),
           // Campos de texto
           OurnegoContentContainer(
@@ -196,7 +196,7 @@ class PrimaryButton extends StatelessWidget {
           );
         }
       },
-      child: Text(text.primaryButton, style: OurnegoTextStyles.body),
+      child: Text(text.primaryButton, style: OurnegoTextStyles.button),
     );
   }
 }
@@ -217,7 +217,7 @@ class EmailInput extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(text.primaryInstruction, style: OurnegoTextStyles.body),
+        Text(text.primaryInstruction, style: OurnegoTextStyles.bodyCompact),
         SizedBox(height: 10),
         OurnegoInputField(
           fieldKey: inputKey,
@@ -276,7 +276,7 @@ class _PasswordInputState extends State<PasswordInput> {
       children: [
         Text(
           widget.text.secondaryInstruction.toString(),
-          style: OurnegoTextStyles.body,
+          style: OurnegoTextStyles.bodyCompact,
         ),
         SizedBox(height: 10),
         OurnegoInputField(
@@ -314,7 +314,9 @@ class _PasswordInputState extends State<PasswordInput> {
           },
           child: Text(
             widget.text.forgotPassword.toString(),
-            style: OurnegoTextStyles.link.copyWith(fontSize: 14),
+            style: OurnegoTextStyles.bodyCompact.copyWith(
+              decoration: TextDecoration.underline,
+            ),
           ),
         ),
       ],

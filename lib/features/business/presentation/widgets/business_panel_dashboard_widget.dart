@@ -92,6 +92,7 @@ class _BusinessPanelDashboardWidgetState
                         setStateDialog(() => category = value ?? category);
                       },
                       decoration: OurnegoInputDecorations.filled(
+                        context: dialogContext,
                         labelText: 'Categoria',
                       ),
                     ),
@@ -185,13 +186,11 @@ class _BusinessPanelDashboardWidgetState
       builder: (dialogContext) {
         return AlertDialog(
           title: const Text('Editar telefono'),
-          content: TextField(
+          content: OurnegoInputField(
             controller: controller,
             keyboardType: TextInputType.phone,
-            decoration: OurnegoInputDecorations.filled(
-              labelText: 'Telefono',
-              hintText: '1234 567 8900',
-            ),
+            labelText: 'Telefono',
+            hintText: '1234 567 8900',
           ),
           actions: [
             TextButton(

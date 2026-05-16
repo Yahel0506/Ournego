@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+
 import 'package:ournego/core/ournego_text_styles.dart';
+import 'package:ournego/core/theme/tokens/ournego_color_tokens.dart';
 import 'package:ournego/core/theme/tokens/ournego_spacing_tokens.dart';
 import 'package:ournego/shared/widgets/ournego_content_container.dart';
 
@@ -13,9 +15,12 @@ class BusinessPanelLoadingState extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: OurnegoSpacingTokens.lg),
         child: Column(
           children: const [
-            CircularProgressIndicator(),
+            CircularProgressIndicator(strokeWidth: 2),
             SizedBox(height: OurnegoSpacingTokens.sm),
-            Text('Cargando tu negocio...'),
+            Text(
+              'Cargando tu negocio...',
+              style: OurnegoTextStyles.bodyCompact,
+            ),
           ],
         ),
       ),
@@ -35,12 +40,21 @@ class BusinessPanelErrorState extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: OurnegoSpacingTokens.md),
         child: Column(
           children: [
-            const Text(
-              'No pudimos cargar tu panel de negocio.',
-              textAlign: TextAlign.center,
+            const Icon(
+              Icons.error_outline_rounded,
+              color: OurnegoColorTokens.error,
             ),
             const SizedBox(height: OurnegoSpacingTokens.sm),
-            FilledButton(onPressed: onRetry, child: const Text('Reintentar')),
+            Text(
+              'No pudimos cargar tu panel de negocio.',
+              textAlign: TextAlign.center,
+              style: OurnegoTextStyles.bodyCompact,
+            ),
+            const SizedBox(height: OurnegoSpacingTokens.sm),
+            FilledButton(
+              onPressed: onRetry,
+              child: const Text('Reintentar', style: OurnegoTextStyles.button),
+            ),
           ],
         ),
       ),
@@ -59,7 +73,9 @@ class BusinessPanelEmptyState extends StatelessWidget {
         child: Text(
           'No encontramos un negocio asociado a esta cuenta.',
           textAlign: TextAlign.center,
-          style: OurnegoTextStyles.body.copyWith(fontWeight: FontWeight.w600),
+          style: OurnegoTextStyles.bodyCompact.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     );
