@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+
 import 'package:ournego/core/ournego_colors.dart';
+import 'package:ournego/core/ournego_text_styles.dart';
+import 'package:ournego/core/theme/tokens/ournego_radius_tokens.dart';
+import 'package:ournego/core/theme/tokens/ournego_semantic_tokens.dart';
 
 class OurnegoPrimaryButton extends StatelessWidget {
   final VoidCallback? onPressed;
@@ -24,13 +28,21 @@ class OurnegoPrimaryButton extends StatelessWidget {
         minimumSize: WidgetStatePropertyAll(minimumSize),
         backgroundColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.pressed)) {
-            return OurnegoColors.azulVerde;
+            return OurnegoColors.actionPrimaryPressed;
           }
 
           return Theme.of(context).colorScheme.primary;
         }),
-        foregroundColor: WidgetStatePropertyAll(OurnegoColors.noche),
+        foregroundColor: WidgetStatePropertyAll(
+          Theme.of(context).colorScheme.onPrimary,
+        ),
         elevation: WidgetStateProperty.all(0),
+        textStyle: const WidgetStatePropertyAll(OurnegoTextStyles.button),
+        shape: WidgetStatePropertyAll(
+          RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(OurnegoRadiusTokens.button),
+          ),
+        ),
       ),
       child: child,
     );
@@ -43,7 +55,7 @@ class OurnegoNeutralPrimaryButton extends StatelessWidget {
     required this.onPressed,
     required this.child,
     this.minimumSize = const Size(double.infinity, 56),
-    this.radius = 24,
+    this.radius = OurnegoRadiusTokens.button,
     this.elevation = 6,
   });
 
@@ -70,6 +82,7 @@ class OurnegoNeutralPrimaryButton extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radius),
         ),
+        textStyle: OurnegoTextStyles.button,
       ),
       child: child,
     );
@@ -83,7 +96,9 @@ class OurnegoButtonStyles {
     return OutlinedButton.styleFrom(
       side: BorderSide(
         width: 1,
-        color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+        color: OurnegoSemanticTokens.borderSubtle(
+          Theme.of(context).colorScheme,
+        ),
       ),
       foregroundColor: Theme.of(
         context,
@@ -91,6 +106,10 @@ class OurnegoButtonStyles {
       backgroundColor: Theme.of(
         context,
       ).colorScheme.surface.withValues(alpha: 0.7),
+      textStyle: OurnegoTextStyles.button,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(OurnegoRadiusTokens.button),
+      ),
     );
   }
 
@@ -99,6 +118,10 @@ class OurnegoButtonStyles {
       backgroundColor: OurnegoColors.blanco,
       foregroundColor: OurnegoColors.noche,
       elevation: 2,
+      textStyle: OurnegoTextStyles.button,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(OurnegoRadiusTokens.button),
+      ),
     );
   }
 
@@ -131,6 +154,7 @@ class OurnegoButtonStyles {
         borderRadius: BorderRadius.circular(radius),
         side: BorderSide(color: colorScheme.outline.withValues(alpha: 0.28)),
       ),
+      textStyle: OurnegoTextStyles.button,
     );
   }
 }

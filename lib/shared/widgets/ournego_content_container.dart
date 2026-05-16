@@ -2,12 +2,15 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
+import 'package:ournego/core/theme/tokens/ournego_radius_tokens.dart';
+import 'package:ournego/core/theme/tokens/ournego_semantic_tokens.dart';
+
 class OurnegoContentContainer extends StatelessWidget {
   const OurnegoContentContainer({
     super.key,
     required this.child,
     this.margin,
-    this.borderRadius = 30,
+    this.borderRadius = OurnegoRadiusTokens.container,
     this.hasBlur = false,
     this.customHorizontalPadding,
     this.customVerticalPadding,
@@ -44,9 +47,12 @@ class OurnegoContentContainer extends StatelessWidget {
           margin: margin,
           decoration: BoxDecoration(
             color:
-                backgroundColor ?? colorScheme.surface.withValues(alpha: 0.5),
+                backgroundColor ??
+                OurnegoSemanticTokens.surfaceSoft(colorScheme),
             border: Border.all(
-              color: borderColor ?? colorScheme.outline.withValues(alpha: 0.3),
+              color:
+                  borderColor ??
+                  OurnegoSemanticTokens.borderSubtle(colorScheme),
               width: 1,
             ),
             borderRadius: BorderRadius.circular(borderRadius),

@@ -27,6 +27,7 @@ class _AnimatedParticlesState extends State<AnimatedParticles>
   late final AnimationController _controller;
   final Random _random = Random();
   final List<_Particle> _particles = [];
+  bool _reducedMotion = false;
 
   Size _canvasSize = Size.zero;
 
@@ -43,6 +44,15 @@ class _AnimatedParticlesState extends State<AnimatedParticles>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final nextReducedMotion = MediaQuery.disableAnimationsOf(context);
+    if (_reducedMotion != nextReducedMotion) {
+      _reducedMotion = nextReducedMotion;
+      if (_reducedMotion) {
+        _stopAnimation();
+      } else {
+        _startAnimation();
+      }
+    }
     final modalRoute = ModalRoute.of(context);
     if (modalRoute is PageRoute) {
       AppRouteObserver.instance.subscribe(this, modalRoute);
@@ -103,10 +113,16 @@ class _AnimatedParticlesState extends State<AnimatedParticles>
       ..clear()
       ..addAll(
         List<_Particle>.generate(
-          widget.particleCount,
+          _effectiveParticleCount,
           (index) => _createParticle(index, _canvasSize),
         ),
       );
+  }
+
+  int get _effectiveParticleCount {
+    if (!_reducedMotion) return widget.particleCount;
+    if (widget.particleCount <= 20) return widget.particleCount;
+    return (widget.particleCount ~/ 3).clamp(12, 20).toInt();
   }
 
   _Particle _createParticle(int index, Size size) {
@@ -166,7 +182,7 @@ class _AnimatedParticlesState extends State<AnimatedParticles>
               painter: _AnimatedParticlesPainter(
                 animation: _controller,
                 particles: _particles,
-                layerBlur: widget.layerBlur,
+                layerBlur: _reducedMotion ? 0 : widget.layerBlur,
               ),
             ),
           ),
