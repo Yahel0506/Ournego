@@ -310,7 +310,13 @@ class MapCanvasWidget extends StatelessWidget {
       },
       child: Row(
         children: [
-          const Icon(Icons.link, color: Colors.grey, size: 16),
+          Icon(
+            Icons.link,
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.6),
+            size: 16,
+          ),
           const SizedBox(width: 8),
           Text(
             text,

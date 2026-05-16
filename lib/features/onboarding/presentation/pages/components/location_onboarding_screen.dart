@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ournego/core/theme/tokens/ournego_color_tokens.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/features/onboarding/presentation/pages/components/onboarding_responsive_layout.dart';
 import 'package:ournego/shared/widgets/ournego_buttons.dart';
@@ -119,7 +120,11 @@ class _LocationOnboardingScreenState extends State<LocationOnboardingScreen>
             ),
           ),
           const SizedBox(height: 32),
-          Icon(Icons.location_on, size: iconSize, color: Colors.redAccent),
+          Icon(
+            Icons.location_on,
+            size: iconSize,
+            color: OurnegoColorTokens.warning,
+          ),
           const Spacer(),
           if (!_isPermissionGranted)
             const Text(

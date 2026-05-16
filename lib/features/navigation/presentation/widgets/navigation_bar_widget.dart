@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ournego/core/theme/tokens/ournego_color_tokens.dart';
 import 'package:ournego/features/navigation/presentation/providers/navigation_provider.dart';
+import 'package:ournego/core/theme/tokens/ournego_radius_tokens.dart';
+import 'package:ournego/core/theme/tokens/ournego_semantic_tokens.dart';
+import 'package:ournego/core/theme/tokens/ournego_spacing_tokens.dart';
+import 'package:ournego/core/ournego_motion.dart';
 
 final GlobalKey appNavigationBarKey = GlobalKey(debugLabel: 'appNavigationBar');
 
@@ -21,8 +26,8 @@ class AppNavigationBar extends ConsumerWidget {
     final icons = datasource.getNavigationBarItemsIcons();
     final kIsWideScreen = MediaQuery.of(context).size.width > 600;
 
-    const double height = 72;
-    const double borderRadius = 100;
+    const double height = OurnegoSpacingTokens.navHeight;
+    const double borderRadius = OurnegoRadiusTokens.pill;
     const EdgeInsets marginR = EdgeInsets.fromLTRB(48, 0, 48, 4);
     const EdgeInsets paddingR = EdgeInsets.fromLTRB(8, 8, 8, 10);
 
@@ -38,7 +43,7 @@ class AppNavigationBar extends ConsumerWidget {
           decoration: BoxDecoration(
             boxShadow: const [
               BoxShadow(
-                color: Color(0x26000000),
+                color: OurnegoColorTokens.shadow,
                 blurRadius: 10,
                 spreadRadius: 0.2,
               ),
@@ -54,7 +59,7 @@ class AppNavigationBar extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(borderRadius),
                 border: Border.all(
                   width: 1,
-                  color: colorScheme.outline.withValues(alpha: 0.3),
+                  color: OurnegoSemanticTokens.borderSubtle(colorScheme),
                 ),
                 color: colorScheme.surface,
               ),
@@ -127,7 +132,7 @@ class _CrystalNavItem extends StatelessWidget {
           child: Center(
             child: TweenAnimationBuilder<double>(
               tween: Tween<double>(begin: 0, end: isSelected ? 1 : 0),
-              duration: const Duration(milliseconds: 120),
+              duration: kFastDuration,
               curve: Curves.easeOut,
               builder: (context, value, _) {
                 final iconScale = 1 + (0.06 * value);
@@ -135,7 +140,7 @@ class _CrystalNavItem extends StatelessWidget {
                 return Transform.scale(
                   scale: iconScale,
                   child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 120),
+                    duration: kFastDuration,
                     curve: Curves.easeOut,
                     width: 68,
                     height: 68,

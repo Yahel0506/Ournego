@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:ournego/core/theme/tokens/ournego_radius_tokens.dart';
+
 class SheetControlButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
@@ -17,7 +19,7 @@ class SheetControlButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(OurnegoRadiusTokens.iconButton),
       onTap: onTap,
       child: Container(
         width: 32,
@@ -28,7 +30,7 @@ class SheetControlButton extends StatelessWidget {
               Theme.of(
                 context,
               ).colorScheme.inverseSurface.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(OurnegoRadiusTokens.iconButton),
         ),
         child: Icon(
           icon,
