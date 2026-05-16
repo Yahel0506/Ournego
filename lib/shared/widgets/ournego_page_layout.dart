@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:ournego/shared/widgets/animated_background.dart';
+import 'package:ournego/core/theme/tokens/ournego_spacing_tokens.dart';
 
 class OurnegoPageLayout extends StatelessWidget {
   final Widget child;
@@ -16,8 +17,8 @@ class OurnegoPageLayout extends StatelessWidget {
     this.resizeToAvoidBottomInset = false,
     this.maxWidth = 500,
     this.contentPadding = const EdgeInsets.symmetric(
-      horizontal: 30,
-      vertical: 120,
+      horizontal: OurnegoSpacingTokens.pagePadding,
+      vertical: OurnegoSpacingTokens.pageTopOffset,
     ),
   });
 
