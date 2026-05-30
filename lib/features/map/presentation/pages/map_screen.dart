@@ -23,19 +23,19 @@ import 'package:ournego/features/map/presentation/models/map_search_models.dart'
 import 'package:ournego/features/map/presentation/providers/map_providers.dart';
 import 'package:ournego/features/map/presentation/providers/notifiers/map_voice_search_notifier.dart';
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/floating_sheet_controller.dart';
-import 'package:ournego/features/map/presentation/widgets/map_search_overlay_widget.dart';
+import 'package:ournego/features/map/presentation/widgets/floating_sheet/floating_sheet_state.dart';
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/models/sheet_business_data.dart';
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/ournego_floating_sheet.dart';
 import 'package:ournego/features/map/presentation/widgets/map_canvas_widget.dart';
 import 'package:ournego/features/map/presentation/widgets/map_controls_widget.dart';
+import 'package:ournego/features/map/presentation/widgets/map_search_overlay_widget.dart';
 import 'package:ournego/features/map/presentation/widgets/top_navigation_bar_widget.dart';
 import 'package:ournego/features/navigation/presentation/providers/navigation_provider.dart';
-import 'package:ournego/features/navigation/presentation/widgets/navigation_bar_widget.dart';
 import 'package:ournego/shared/widgets/information_card_widget.dart';
+import 'package:ournego/shared/widgets/nego/nego.dart';
 import 'package:ournego/shared/widgets/ournego_alert_dialog.dart';
 import 'package:ournego/shared/widgets/ournego_content_container.dart';
 import 'package:ournego/shared/widgets/ournego_information_dialog.dart';
-import 'package:ournego/shared/widgets/nego/nego.dart';
 import 'package:ournego/shared/widgets/ournego_snackbars.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -51,6 +51,10 @@ class MapScreen extends ConsumerStatefulWidget {
 
 class _MapScreenState extends ConsumerState<MapScreen>
     with TickerProviderStateMixin {
+  static const double _sheetBottomOffset = 104;
+  static const double _sheetTopGap = 12;
+  static const double _searchPanelGap = 12;
+
   late final _animatedMapController = AnimatedMapController(vsync: this);
   late final AnimationController _searchPanelAnimationController;
   late final Animation<double> _searchPanelOpacity;
@@ -73,22 +77,46 @@ class _MapScreenState extends ConsumerState<MapScreen>
   double get _expandedHeight {
     final mq = MediaQuery.of(context);
     final screenHeight = mq.size.height;
-    final topPadding = mq.padding.top;
-    final bottomPadding = mq.padding.bottom;
-    final topBarHeight = _readWidgetHeight(topNavigationBarKey, fallback: 56);
-    final navBarHeight = _readWidgetHeight(appNavigationBarKey, fallback: 72);
+    final maxHeight =
+        screenHeight - _topNavigationHeight - _sheetBottomOffset - _sheetTopGap;
 
-    return screenHeight -
-        topPadding -
-        topBarHeight -
-        navBarHeight -
-        bottomPadding +
-        90;
+    return maxHeight.clamp(220.0, screenHeight);
   }
 
   double get _collapsedHeight {
     final screenHeight = MediaQuery.of(context).size.height;
-    return (screenHeight * 0.24);
+    final collapsed = screenHeight * 0.2;
+    return collapsed.clamp(160.0, _expandedHeight);
+  }
+
+  double get _topNavigationHeight {
+    return _readWidgetHeight(topNavigationBarKey, fallback: 68);
+  }
+
+  double get _currentSheetHeight {
+    if (!_floatingSheetController.hasActiveBusiness) {
+      return 0;
+    }
+
+    if (_floatingSheetController.isComparisonMode ||
+        _floatingSheetController.state == FloatingSheetState.expanded) {
+      return _expandedHeight;
+    }
+
+    if (_floatingSheetController.state == FloatingSheetState.collapsed) {
+      return _collapsedHeight;
+    }
+
+    return 0;
+  }
+
+  double get _searchPanelBottomInset {
+    final sheetHeight = _currentSheetHeight;
+    if (sheetHeight <= 0) {
+      return 12;
+    }
+
+    return _sheetBottomOffset + sheetHeight + _searchPanelGap;
   }
 
   double _readWidgetHeight(GlobalKey key, {required double fallback}) {
@@ -473,7 +501,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
     );
     final voiceState = ref.watch(mapVoiceSearchProvider);
     final isOwnerState = ref.watch(isOwnerProvider);
-    final topBarHeight = _readWidgetHeight(topNavigationBarKey, fallback: 68);
+    final topBarHeight = _topNavigationHeight;
     final isWide = MediaQuery.of(context).size.width > 600;
 
     final bool isDarkModeOn =
@@ -574,6 +602,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     hasData: businessState.hasValue,
                     location: location,
                     topBarHeight: topBarHeight,
+                    bottomInset: _searchPanelBottomInset,
                     filters: _searchFilters,
                     categoryOptions: _searchCategoryOptions,
                     distanceOptionsMeters: _distanceOptionsMeters,
@@ -655,21 +684,19 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 SizedBox(height: 100),
               ],
             ),
-          if (!_showSearchPanel)
-            OurnegoFloatingSheet(
-              controller: _floatingSheetController,
-              collapsedHeight: _collapsedHeight,
-              expandedHeight: _expandedHeight,
-              maxWidth: isWide ? 600 : double.infinity,
-              bottomOffset: 96.0,
-              sideStackTop:
-                  MediaQuery.of(context).padding.top + topBarHeight + 10,
-              onFavorite: _onFavorite,
-              onContact: _onContact,
-              onCatalog: _onCatalog,
-              onReviews: _onReviews,
-              onShare: _onShare,
-            ),
+          OurnegoFloatingSheet(
+            controller: _floatingSheetController,
+            collapsedHeight: _collapsedHeight,
+            expandedHeight: _expandedHeight,
+            maxWidth: isWide ? 600 : double.infinity,
+            bottomOffset: _sheetBottomOffset,
+            sideStackTop: topBarHeight + 10,
+            onFavorite: _onFavorite,
+            onContact: _onContact,
+            onCatalog: _onCatalog,
+            onReviews: _onReviews,
+            onShare: _onShare,
+          ),
           TopNavigationBarWidget(
             searchController: _searchController,
             searchFocusNode: _searchFocusNode,
