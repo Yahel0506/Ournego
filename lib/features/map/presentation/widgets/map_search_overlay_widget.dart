@@ -14,6 +14,7 @@ class MapSearchOverlayWidget extends StatelessWidget {
   final bool hasData;
   final AppPosition? location;
   final double topBarHeight;
+  final double bottomInset;
   final MapSearchFilters filters;
   final List<BusinessType> categoryOptions;
   final List<double> distanceOptionsMeters;
@@ -31,6 +32,7 @@ class MapSearchOverlayWidget extends StatelessWidget {
     required this.hasData,
     required this.location,
     required this.topBarHeight,
+    required this.bottomInset,
     required this.filters,
     required this.categoryOptions,
     required this.distanceOptionsMeters,
@@ -246,7 +248,7 @@ class MapSearchOverlayWidget extends StatelessWidget {
 
     return SafeArea(
       child: Padding(
-        padding: EdgeInsets.fromLTRB(16, topBarHeight + 10, 16, 12),
+        padding: EdgeInsets.fromLTRB(16, topBarHeight + 10, 16, bottomInset),
         child: OurnegoContentContainer(
           backgroundColor: Theme.of(context).colorScheme.surface,
           borderRadius: 24,
