@@ -1,4 +1,5 @@
 import 'package:ournego/features/map/domain/entities/business.dart';
+import 'package:ournego/features/map/domain/entities/business_hours.dart';
 import 'package:ournego/features/map/domain/entities/business_type.dart';
 
 class SheetBusinessData {
@@ -12,6 +13,7 @@ class SheetBusinessData {
   final bool isFavorite;
   final double? rating;
   final List<String> images;
+  final List<BusinessHours> hours;
 
   const SheetBusinessData({
     required this.id,
@@ -24,6 +26,7 @@ class SheetBusinessData {
     this.isFavorite = false,
     this.rating,
     required this.images,
+    required this.hours,
   });
 
   factory SheetBusinessData.fromBusiness(
@@ -42,10 +45,15 @@ class SheetBusinessData {
       isFavorite: isFavorite,
       rating: rating,
       images: business.images,
+      hours: business.hours,
     );
   }
 
-  SheetBusinessData copyWith({bool? isFavorite, double? rating}) {
+  SheetBusinessData copyWith({
+    bool? isFavorite,
+    double? rating,
+    List<BusinessHours>? hours,
+  }) {
     return SheetBusinessData(
       id: id,
       name: name,
@@ -57,6 +65,7 @@ class SheetBusinessData {
       isFavorite: isFavorite ?? this.isFavorite,
       rating: rating ?? this.rating,
       images: images,
+      hours: hours ?? this.hours,
     );
   }
 
@@ -72,6 +81,15 @@ class SheetBusinessData {
       'isFavorite': isFavorite,
       'rating': rating,
       'images': images,
+      'hours': hours
+          .map(
+            (hour) => {
+              'dayOfWeek': hour.dayOfWeek,
+              'openMinutes': hour.openMinutes,
+              'closeMinutes': hour.closeMinutes,
+            },
+          )
+          .toList(growable: false),
     };
   }
 
@@ -86,6 +104,28 @@ class SheetBusinessData {
 
     final rawImages = json['images'] as List<dynamic>? ?? [];
     final images = rawImages.map((e) => e as String).toList(growable: false);
+    final rawHours = json['hours'] as List<dynamic>? ?? const [];
+    final hours = rawHours
+        .whereType<Map>()
+        .map((item) => Map<String, dynamic>.from(item))
+        .map((item) {
+          final dayOfWeek = item['dayOfWeek'] as int?;
+          final openMinutes = item['openMinutes'] as int?;
+          final closeMinutes = item['closeMinutes'] as int?;
+          if (dayOfWeek == null ||
+              openMinutes == null ||
+              closeMinutes == null) {
+            return null;
+          }
+
+          return BusinessHours(
+            dayOfWeek: dayOfWeek,
+            openMinutes: openMinutes,
+            closeMinutes: closeMinutes,
+          );
+        })
+        .whereType<BusinessHours>()
+        .toList(growable: false);
 
     return SheetBusinessData(
       id: json['id'] as String? ?? '',
@@ -98,6 +138,7 @@ class SheetBusinessData {
       isFavorite: json['isFavorite'] as bool? ?? false,
       rating: (json['rating'] as num?)?.toDouble(),
       images: images,
+      hours: hours,
     );
   }
 }
