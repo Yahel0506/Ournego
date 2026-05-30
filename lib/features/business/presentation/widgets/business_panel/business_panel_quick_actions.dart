@@ -53,7 +53,7 @@ class BusinessPanelQuickActions extends ConsumerWidget {
         ),
         const SizedBox(height: OurnegoSpacingTokens.sm),
         OurnegoContentContainer(
-          borderRadius: OurnegoRadiusTokens.lg,
+          borderRadius: OurnegoRadiusTokens.xl,
           customHorizontalPadding: OurnegoSpacingTokens.md,
           customVerticalPadding: OurnegoSpacingTokens.md,
           backgroundColor: colorScheme.surface,

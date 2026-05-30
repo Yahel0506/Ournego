@@ -32,7 +32,7 @@ class BusinessPanelPreviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return OurnegoContentContainer(
-      borderRadius: OurnegoRadiusTokens.md,
+      borderRadius: OurnegoRadiusTokens.lg,
       customHorizontalPadding: OurnegoSpacingTokens.md,
       customVerticalPadding: OurnegoSpacingTokens.md,
       child: Column(
