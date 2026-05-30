@@ -1,6 +1,7 @@
 import 'package:geolocator/geolocator.dart';
 import 'package:ournego/features/map/domain/entities/business.dart';
 import 'package:ournego/features/map/domain/entities/business_type.dart';
+import 'package:ournego/features/map/presentation/mappers/business_hours_ui_mapper.dart';
 import 'package:ournego/features/map/presentation/models/map_search_models.dart';
 
 class SearchBusinessesUsecase {
@@ -186,22 +187,7 @@ double? _distanceMetersFromLocation({
 }
 
 BusinessOpenState _businessOpenState(Business business, DateTime now) {
-  if (business.hours.isEmpty) {
-    return BusinessOpenState.unknown;
-  }
-
-  final dayOfWeek = now.weekday - 1;
-  final minutesNow = (now.hour * 60) + now.minute;
-  for (final slot in business.hours) {
-    if (slot.dayOfWeek != dayOfWeek) {
-      continue;
-    }
-    if (minutesNow >= slot.openMinutes && minutesNow < slot.closeMinutes) {
-      return BusinessOpenState.open;
-    }
-  }
-
-  return BusinessOpenState.closed;
+  return getBusinessOpenState(hours: business.hours, now: now);
 }
 
 class _BusinessRanking {
