@@ -35,7 +35,7 @@ class MinimizedStackIcon extends StatelessWidget {
         type: business.type,
         images: business.images,
         visitCount: 0,
-        hours: const <BusinessHours>[],
+        hours: business.hours,
       ),
     );
 

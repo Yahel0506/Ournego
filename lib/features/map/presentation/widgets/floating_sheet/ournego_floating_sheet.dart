@@ -1,35 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import 'package:ournego/core/ournego_motion.dart';
+import 'package:ournego/core/ournego_text_styles.dart';
+import 'package:ournego/core/theme/tokens/ournego_radius_tokens.dart';
+import 'package:ournego/core/theme/tokens/ournego_semantic_tokens.dart';
 import 'package:ournego/features/map/presentation/providers/map_providers.dart';
+import 'package:ournego/features/map/presentation/widgets/floating_sheet/components/business_hours_compact_card.dart';
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/components/minimized_stack_icon.dart';
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/components/sheet_control_button.dart';
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/components/sheet_header.dart';
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/floating_sheet_controller.dart';
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/floating_sheet_state.dart';
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/models/sheet_business_data.dart';
-import 'package:ournego/shared/widgets/ournego_buttons.dart';
-
-// =============================================================
-// OURNEGO FLOATING SHEET — ANALISIS PRE-IMPLEMENTACION
-// Generado por: OpenCode
-// Fecha: 2026-04-14
-// =============================================================
-// Widget reemplazado: lib/features/map/presentation/pages/map_screen.dart:673
-// + lib/features/map/presentation/widgets/business_information_widget.dart:24
-// Widget padre: Scaffold > Stack > Align > SizedBox > NotificationListener >
-// DraggableScrollableSheet en lib/features/map/presentation/pages/map_screen.dart
-// Modelo de datos: Business (lib/features/map/domain/entities/business.dart)
-// State management: Riverpod + controller local (favoritos)
-// Border radius estándar app: 30
-// Colores superficie dark: surface=#1E2625, primary=#3BCFED
-// Fuente de animaciones: Durations.medium1/short4 + Curves.linearToEaseOut,
-// easeOutCubic, easeInCubic
-// Notas de riesgos: no existe rating en modelo Business; no hay altura global
-// expuesta de navbar/topbar; tests actuales esperan que al tap marker aparezca
-// nombre del negocio; no existe side stack hoy.
-// =============================================================
 
 class OurnegoFloatingSheet extends StatefulWidget {
   final FloatingSheetController controller;
@@ -544,9 +526,12 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet> {
                           child: isExpanded
                               ? _LegacyExpandedContent(
                                   business: activeBusiness,
-                                  onContact: () => widget.onContact(activeBusiness),
-                                  onCatalog: () => widget.onCatalog(activeBusiness),
-                                  onReviews: () => widget.onReviews(activeBusiness),
+                                  onContact: () =>
+                                      widget.onContact(activeBusiness),
+                                  onCatalog: () =>
+                                      widget.onCatalog(activeBusiness),
+                                  onReviews: () =>
+                                      widget.onReviews(activeBusiness),
                                   onShare: () => widget.onShare(activeBusiness),
                                 )
                               : SingleChildScrollView(
@@ -555,8 +540,7 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet> {
                                   // (especially in widget tests). Scrolling/clip
                                   // avoids RenderFlex overflow without changing
                                   // the visible layout in normal use.
-                                  physics:
-                                      const NeverScrollableScrollPhysics(),
+                                  physics: const NeverScrollableScrollPhysics(),
                                   child: _LegacyCollapsedActions(
                                     onContact: () =>
                                         widget.onContact(activeBusiness),
@@ -564,7 +548,8 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet> {
                                         widget.onCatalog(activeBusiness),
                                     onReviews: () =>
                                         widget.onReviews(activeBusiness),
-                                    onShare: () => widget.onShare(activeBusiness),
+                                    onShare: () =>
+                                        widget.onShare(activeBusiness),
                                   ),
                                 ),
                         ),
@@ -714,12 +699,6 @@ class _LegacyCollapsedActions extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Expanded(
-          child: _LegacyActionButton(
-            icon: Icons.share_outlined,
-            onTap: onShare,
-          ),
-        ),
         const SizedBox(width: 8),
         Expanded(
           child: _LegacyActionButton(
@@ -746,6 +725,58 @@ class _LegacyCollapsedActions extends StatelessWidget {
   }
 }
 
+BoxDecoration _brandedSheetCardDecoration(ColorScheme colorScheme) {
+  return BoxDecoration(
+    color: colorScheme.surface,
+    borderRadius: BorderRadius.circular(OurnegoRadiusTokens.xl),
+    border: Border.all(color: OurnegoSemanticTokens.borderSubtle(colorScheme)),
+  );
+}
+
+ButtonStyle _brandedSheetButtonStyle({
+  required BuildContext context,
+  required double radius,
+  Size minimumSize = const Size(double.infinity, 58),
+}) {
+  final colorScheme = Theme.of(context).colorScheme;
+  return ElevatedButton.styleFrom(
+    elevation: 0,
+    minimumSize: minimumSize,
+    backgroundColor: colorScheme.surface,
+    foregroundColor: colorScheme.onSurface,
+    textStyle: OurnegoTextStyles.button,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(radius),
+      side: BorderSide(color: OurnegoSemanticTokens.borderSubtle(colorScheme)),
+    ),
+  ).copyWith(
+    overlayColor: WidgetStatePropertyAll(
+      colorScheme.primary.withValues(alpha: 0.08),
+    ),
+  );
+}
+
+class _SheetAccentIcon extends StatelessWidget {
+  const _SheetAccentIcon({required this.icon, this.size = 36});
+
+  final IconData icon;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: colorScheme.primary.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(OurnegoRadiusTokens.full),
+      ),
+      child: Icon(icon, size: size * 0.52),
+    );
+  }
+}
+
 class _LegacyActionButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
@@ -758,9 +789,10 @@ class _LegacyActionButton extends StatelessWidget {
       height: 42,
       child: ElevatedButton(
         onPressed: onTap,
-        style: OurnegoButtonStyles.tonalCardButton(
+        style: _brandedSheetButtonStyle(
           context: context,
-          radius: 12,
+          radius: OurnegoRadiusTokens.actionTile,
+          minimumSize: const Size(double.infinity, 42),
         ),
         child: Icon(icon, size: 18),
       ),
@@ -845,12 +877,7 @@ class _LegacyExpandedContent extends ConsumerWidget {
               },
             ),
           ),
-        if (business.images.isNotEmpty) const SizedBox(height: 16),
-        _LegacyWideButton(
-          icon: Icons.share_outlined,
-          text: 'Compartir negocio',
-          onTap: onShare,
-        ),
+        if (business.images.isNotEmpty) const SizedBox(height: 0),
         const SizedBox(height: 12),
         _LegacyWideButton(
           icon: Icons.emoji_emotions_outlined,
@@ -859,6 +886,8 @@ class _LegacyExpandedContent extends ConsumerWidget {
         ),
         const SizedBox(height: 12),
         _LegacyContactCard(ownerName: ownerName, onContact: onContact),
+        const SizedBox(height: 12),
+        BusinessHoursCompactCard(hours: business.hours),
         const SizedBox(height: 12),
         _LegacyCatalogCard(onCatalog: onCatalog),
         const SizedBox(height: 8),
@@ -884,24 +913,28 @@ class _LegacyWideButton extends StatelessWidget {
       height: 58,
       child: ElevatedButton(
         onPressed: onTap,
-        style: OurnegoButtonStyles.tonalCardButton(
+        style: _brandedSheetButtonStyle(
           context: context,
-          radius: 14,
+          radius: OurnegoRadiusTokens.xl,
         ),
         child: Row(
           children: [
-            Icon(icon, size: 24),
-            const SizedBox(width: 10),
+            _SheetAccentIcon(icon: icon),
+            const SizedBox(width: 12),
             Expanded(
               child: Text(
                 text,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
+                style: OurnegoTextStyles.body.copyWith(
+                  fontWeight: FontWeight.bold,
                 ),
+                textAlign: TextAlign.center,
               ),
             ),
-            const Icon(Icons.chevron_right_rounded, size: 26),
+            Icon(
+              Icons.chevron_right_rounded,
+              size: 26,
+              color: Theme.of(context).colorScheme.primary,
+            ),
           ],
         ),
       ),
@@ -921,28 +954,21 @@ class _LegacyContactCard extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: colorScheme.inverseSurface.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.28)),
-      ),
+      decoration: _brandedSheetCardDecoration(colorScheme),
       child: Column(
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.account_circle_outlined,
-                color: colorScheme.onSurface.withValues(alpha: 0.8),
-                size: 28,
+              const _SheetAccentIcon(
+                icon: Icons.account_circle_outlined,
+                size: 40,
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Text(
                 ownerName,
-                style: TextStyle(
-                  color: colorScheme.onSurface,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
+                style: OurnegoTextStyles.body.copyWith(
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ],
@@ -981,11 +1007,7 @@ class _LegacyCatalogCard extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: colorScheme.inverseSurface.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.28)),
-      ),
+      decoration: _brandedSheetCardDecoration(colorScheme),
       child: Column(
         children: [
           SizedBox(
@@ -994,9 +1016,16 @@ class _LegacyCatalogCard extends StatelessWidget {
               hintText: 'Buscar productos...',
               elevation: const WidgetStatePropertyAll(0),
               onTap: onCatalog,
-              leading: const Icon(Icons.search_rounded, size: 18),
+              leading: Icon(
+                Icons.search_rounded,
+                size: 18,
+                color: colorScheme.primary,
+              ),
               backgroundColor: WidgetStatePropertyAll(
-                colorScheme.surface.withValues(alpha: 0.85),
+                colorScheme.primary.withValues(alpha: 0.08),
+              ),
+              side: WidgetStatePropertyAll(
+                BorderSide(color: colorScheme.outline.withValues(alpha: 0.3)),
               ),
               hintStyle: WidgetStatePropertyAll(
                 TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.65)),
@@ -1005,16 +1034,11 @@ class _LegacyCatalogCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Align(
-            alignment: Alignment.centerLeft,
+            alignment: Alignment.center,
             child: TextButton.icon(
               onPressed: onCatalog,
               icon: const Icon(Icons.inventory_2_rounded, size: 18),
               label: const Text('Ver catálogo'),
-              style: ButtonStyle(
-                foregroundColor: WidgetStatePropertyAll(
-                  colorScheme.onSurface.withValues(alpha: 0.8),
-                ),
-              ),
             ),
           ),
         ],
@@ -1040,7 +1064,11 @@ class _CompactAction extends StatelessWidget {
       onPressed: onTap,
       icon: Icon(icon, size: 16),
       label: Text(text),
-      style: OurnegoButtonStyles.tonalCardButton(context: context, radius: 12),
+      style: _brandedSheetButtonStyle(
+        context: context,
+        radius: OurnegoRadiusTokens.lg,
+        minimumSize: const Size(0, 42),
+      ),
     );
   }
 }
