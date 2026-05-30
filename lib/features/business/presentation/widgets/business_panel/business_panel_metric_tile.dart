@@ -22,44 +22,41 @@ class BusinessPanelMetricTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return AspectRatio(
-      aspectRatio: 1,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(OurnegoRadiusTokens.md),
-          child: Ink(
-            decoration: BoxDecoration(
-              color: colorScheme.surface,
-              borderRadius: BorderRadius.circular(OurnegoRadiusTokens.md),
-              border: Border.all(
-                color: colorScheme.outline.withValues(alpha: 0.3),
-              ),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(OurnegoRadiusTokens.xl),
+        child: Ink(
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            borderRadius: BorderRadius.circular(OurnegoRadiusTokens.xl),
+            border: Border.all(
+              color: colorScheme.outline.withValues(alpha: 0.3),
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(OurnegoSpacingTokens.sm),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(icon, size: 36, color: colorScheme.onSurface),
-                  const Spacer(),
-                  Text(
-                    isLoading ? '--' : value,
-                    style: OurnegoTextStyles.headline.copyWith(
-                      color: colorScheme.onSurface,
-                      fontFeatures: const [FontFeature.tabularFigures()],
-                    ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(OurnegoSpacingTokens.md),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(icon, size: 36, color: colorScheme.onSurface),
+                const SizedBox(height: OurnegoSpacingTokens.lg),
+                Text(
+                  isLoading ? '--' : value,
+                  style: OurnegoTextStyles.headline.copyWith(
+                    color: colorScheme.onSurface,
+                    fontFeatures: const [FontFeature.tabularFigures()],
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    label,
-                    style: OurnegoTextStyles.caption.copyWith(
-                      color: colorScheme.onSurface.withValues(alpha: 0.82),
-                    ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  style: OurnegoTextStyles.caption.copyWith(
+                    color: colorScheme.onSurface.withValues(alpha: 0.82),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),

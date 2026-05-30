@@ -35,7 +35,7 @@ class BusinessPanelEditorDropdown extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return OurnegoContentContainer(
-      borderRadius: OurnegoRadiusTokens.lg,
+      borderRadius: OurnegoRadiusTokens.xl,
       customHorizontalPadding: OurnegoSpacingTokens.md,
       customVerticalPadding: OurnegoSpacingTokens.sm,
       backgroundColor: colorScheme.surface,
@@ -45,7 +45,7 @@ class BusinessPanelEditorDropdown extends StatelessWidget {
         child: ExpansionTile(
           tilePadding: EdgeInsets.zero,
           childrenPadding: const EdgeInsets.only(top: OurnegoSpacingTokens.sm),
-          title: const Text('Editar mi negocio', style: OurnegoTextStyles.body),
+          title: Text('Editar mi negocio', style: OurnegoTextStyles.body),
           trailing: AnimatedRotation(
             turns: isExpanded ? 0.5 : 0,
             duration: const Duration(milliseconds: 180),
