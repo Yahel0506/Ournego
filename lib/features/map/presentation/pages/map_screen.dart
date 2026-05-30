@@ -51,7 +51,7 @@ class MapScreen extends ConsumerStatefulWidget {
 
 class _MapScreenState extends ConsumerState<MapScreen>
     with TickerProviderStateMixin {
-  static const double _sheetBottomOffset = 104;
+  static const double _sheetBottomOffset = 96;
   static const double _sheetTopGap = 12;
   static const double _searchPanelGap = 12;
 
@@ -85,7 +85,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
   double get _collapsedHeight {
     final screenHeight = MediaQuery.of(context).size.height;
-    final collapsed = screenHeight * 0.2;
+    final collapsed = screenHeight * 0.24;
     return collapsed.clamp(160.0, _expandedHeight);
   }
 
