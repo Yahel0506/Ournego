@@ -345,11 +345,7 @@ class _BusinessPanelDashboardWidgetState
                   ),
                   sliver: SliverList.list(
                     children: [
-                      BusinessPanelHeader(
-                        profileImageUrl: profileImageUrl,
-                        isLogged: isLogged,
-                      ),
-                      const SizedBox(height: OurnegoSpacingTokens.lg),
+                      const SizedBox(height: OurnegoSpacingTokens.xxl),
                       ...ownedBusinessAsync.when(
                         loading: () => const <Widget>[
                           BusinessPanelLoadingState(),
@@ -366,14 +362,13 @@ class _BusinessPanelDashboardWidgetState
                           }
 
                           return <Widget>[
+                            const SizedBox(height: 64),
                             Text(
                               ownedBusiness.name,
                               textAlign: TextAlign.center,
-                              style: OurnegoTextStyles.header.copyWith(
-                                color: colorScheme.onSurface,
-                              ),
+                              style: OurnegoTextStyles.onboardingHeader,
                             ),
-                            const SizedBox(height: OurnegoSpacingTokens.lg),
+                            const SizedBox(height: 64),
                             BusinessPanelEditorDropdown(
                               isExpanded: _isEditorExpanded,
                               onChanged: (expanded) {
@@ -432,6 +427,38 @@ class _BusinessPanelDashboardWidgetState
                   child: Center(child: CircularProgressIndicator()),
                 ),
               ),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Container(
+                height: 30,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [
+                      Theme.of(context).scaffoldBackgroundColor,
+                      Theme.of(
+                        context,
+                      ).scaffoldBackgroundColor.withValues(alpha: 0),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Align(
+              alignment: Alignment.topCenter,
+              child: Container(
+                color: Theme.of(context).scaffoldBackgroundColor,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: BusinessPanelHeader(
+                    profileImageUrl: profileImageUrl,
+                    isLogged: isLogged,
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),

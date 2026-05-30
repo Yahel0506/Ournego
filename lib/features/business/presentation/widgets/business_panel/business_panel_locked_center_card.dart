@@ -20,13 +20,13 @@ class BusinessPanelLockedCenterCard extends StatelessWidget {
             blurRadius: 16,
           ),
         ],
-        borderRadius: BorderRadius.circular(OurnegoRadiusTokens.lg),
+        borderRadius: BorderRadius.circular(OurnegoRadiusTokens.xl),
       ),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(OurnegoRadiusTokens.lg),
         child: OurnegoContentContainer(
-          borderRadius: OurnegoRadiusTokens.lg,
+          borderRadius: OurnegoRadiusTokens.xl,
           customHorizontalPadding: OurnegoSpacingTokens.md,
           customVerticalPadding: OurnegoSpacingTokens.md,
           child: Row(
