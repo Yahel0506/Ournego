@@ -22,7 +22,7 @@ class OurnegoColorTokens {
 
   static const Color success = mentaOscuro;
   static const Color warning = Color(0xFFE38E1C);
-  static const Color info = azulCielo;
+  static const Color info = Color(0xFF05788D);
   static const Color error = Color(0xFFBA1A1A);
 
   static const Color surfaceLight = Color(0xFFF4FBF9);
