@@ -12,17 +12,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # ESTE ES EL PASO QUE TE FALTA (Instala Flutter en el servidor)
       - name: Install Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
 
-      # Instala las dependencias de tu pubspec.yaml
       - name: Install dependencies
         run: flutter pub get
 
-      # Ahora sí, la compu ya sabe qué es flutter
       - name: Build Web
         run: flutter build web --release
 
