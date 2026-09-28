@@ -1,11 +1,11 @@
 name: Build iOS IPA
 
 on:
-  workflow_dispatch: # Para que lo corras tú manualmente cuando quieras
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: macos-latest # Aquí es donde ocurre la magia (servidor Mac)
+    runs-on: macos-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -20,12 +20,9 @@ jobs:
 
       - name: Build IPA
         run: flutter build ios --release --no-codesign
-        # Usamos --no-codesign porque firmar requiere certificados reales.
-        # BrowserStack a veces acepta apps sin firmar para pruebas básicas,
-        # pero lo ideal es configurar el "Code Signing".
 
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
           name: ournego-ipa
-          path: build/ios/iphoneos/*.app # O la ruta del .ipa si logras firmarlo
+          path: build/ios/iphoneos/*.app
