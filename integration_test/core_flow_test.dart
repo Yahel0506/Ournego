@@ -27,6 +27,8 @@ Business _business({required String id, required String name}) {
     longitude: -99.1332,
     type: BusinessType.shop,
     images: const [],
+    visitCount: 0,
+    hours: const [],
   );
 }
 

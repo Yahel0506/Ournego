@@ -43,6 +43,7 @@ class _FeedbackDialogWidgetState extends ConsumerState<FeedbackDialogWidget> {
               ),
               title: Text("Algo no funciona"),
               onTap: () async {
+                final feedbackState = BetterFeedback.of(context);
                 Navigator.pop(context);
                 WidgetsBinding.instance.addPostFrameCallback((_) async {
                   final deviceInfo = DeviceInfoPlugin();
@@ -52,15 +53,15 @@ class _FeedbackDialogWidgetState extends ConsumerState<FeedbackDialogWidget> {
 
                   if (Platform.isAndroid) {
                     final androidInfo = await deviceInfo.androidInfo;
-                    model = androidInfo.model ?? '';
+                    model = androidInfo.model;
                     osVersion = 'Android ${androidInfo.version.release}';
                   } else if (Platform.isIOS) {
                     final iosInfo = await deviceInfo.iosInfo;
-                    model = iosInfo.utsname.machine ?? '';
+                    model = iosInfo.utsname.machine;
                     osVersion = 'iOS ${iosInfo.systemVersion}';
                   }
 
-                  BetterFeedback.of(context).show((feedback) async {
+                  feedbackState.show((feedback) async {
                     final rawImage = feedback.screenshot;
                     final uuid = Uuid();
                     final timestamp = DateTime.now().millisecondsSinceEpoch;
@@ -92,6 +93,7 @@ class _FeedbackDialogWidgetState extends ConsumerState<FeedbackDialogWidget> {
               title: Text("Tengo una duda"),
               onTap: () async {
                 await launchUrl(Uri.parse('https://wa.me/3411768237'));
+                if (!context.mounted) return;
                 Navigator.pop(context);
               },
             ),

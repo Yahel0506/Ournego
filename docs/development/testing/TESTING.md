@@ -66,3 +66,45 @@ patrol test integration_test/auth_test.dart
 - Sin negocios en radio actual (TODO: falta componente explícito de estado vacío en UI actual).
 - Tap en negocio abre detalle y muestra nombre (TODO: distancia aún no renderizada).
 - Actualización de nombre de negocio por stream se refleja sin reload manual.
+
+## Control de calidad Android en CI
+
+El workflow `.github/workflows/android-ci.yml` ejecuta este gate en pull requests,
+pushes a `main` y ejecuciones manuales. Usa Flutter 3.41.4 estable y Java 17,
+instala dependencias y ejecuta, en orden:
+
+```bash
+flutter pub get
+flutter analyze
+flutter test
+flutter build apk --release
+```
+
+Cada paso falla el job si devuelve un error. El APK se publica como artefacto de
+la ejecución; el build actual usa la configuración de firma debug de Flutter,
+por lo que valida la compilación Android y no produce un paquete firmado para
+Google Play.
+
+### Estado comprobado localmente
+
+En la verificación del 2 de octubre de 2026, `flutter analyze` terminó con
+`No issues found!`, `flutter test` pasó las 30 pruebas estándar y
+`flutter build apk --release` generó
+`build/app/outputs/flutter-apk/app-release.apk` (66.3 MB). El build informó que
+no encontró la fuente de iconos de `packages/cupertino_icons/CupertinoIcons`;
+registrar su uso real y comprobar los iconos en Android tiene prioridad P2.
+El workflow está añadido al repositorio, pero su primera ejecución remota sigue
+pendiente de un push y no se considera verificada aquí.
+
+### Diagnósticos pendientes
+
+- **P1 — Patrol en Android:** `flutter test` pasa 30 pruebas Dart estándar; no
+  ejecuta los escenarios `integration_test/` con Patrol en un dispositivo o
+  emulador Android. Ejecutar esa suite como una validación de dispositivo sigue
+  pendiente.
+- **P1 — Firma de distribución:** el APK de este gate usa firma debug. La
+  configuración y custodia de firma release para Google Play queda pendiente.
+- **P2 — Iconos Cupertino:** el build reporta que falta la fuente de iconos
+  `packages/cupertino_icons/CupertinoIcons`; verificar qué iconos la requieren
+  y su renderizado Android antes de decidir si se necesita un cambio de assets o
+  dependencias.

@@ -201,6 +201,7 @@ class CompleteProfileScreen extends ConsumerWidget {
                           if (isFirstRouteOnboarding) {
                             await setHasSeenOnboarding();
                             await Future.delayed(Duration(milliseconds: 100));
+                            if (!context.mounted) return;
                             context.go(MapRoutes.map);
                             return;
                           }
