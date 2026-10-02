@@ -322,7 +322,6 @@ class _BusinessPanelDashboardWidgetState
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final isLogged = ref.watch(authSessionStatusProvider);
     final profileAsync = isLogged ? ref.watch(profileStreamProvider) : null;
     final profileImageUrl = profileAsync?.value?.profilePicture ?? '';

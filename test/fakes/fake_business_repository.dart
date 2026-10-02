@@ -3,6 +3,7 @@ import 'package:ournego/core/failures.dart';
 import 'package:ournego/core/location/app_position.dart';
 import 'package:ournego/features/business/domain/entities/app_schedule.dart';
 import 'package:ournego/features/business/domain/entities/business_image_data.dart';
+import 'package:ournego/features/business/domain/entities/business_panel_metrics.dart';
 import 'package:ournego/features/business/domain/entities/owned_business_profile.dart';
 import 'package:ournego/features/business/domain/repositories/business_repository.dart';
 
@@ -119,5 +120,18 @@ class FakeBusinessRepository implements BusinessRepository {
     required List<AppSchedule> hours,
   }) async {
     return const Right(null);
+  }
+
+  @override
+  Future<Either<Failure, BusinessPanelMetrics>> getBusinessPanelMetrics({
+    required String businessId,
+  }) async {
+    return const Right(
+      BusinessPanelMetrics(
+        averageRating: 0,
+        monthlyInteractions: 0,
+        favoriteCount: 0,
+      ),
+    );
   }
 }
