@@ -34,6 +34,8 @@ jobs:
 
       - name: Install Android SDK components
         uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
 
       - name: Install Flutter dependencies
         run: flutter pub get
