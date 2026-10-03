@@ -7,6 +7,10 @@ on:
       - main
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -46,8 +50,20 @@ jobs:
       - name: Run tests
         run: flutter test
 
+      - name: Configure Gradle for CI
+        run: |
+          ci_gradle_home="${GRADLE_USER_HOME:-$HOME/.gradle}"
+          mkdir -p "$ci_gradle_home"
+          cat >> "$ci_gradle_home/gradle.properties" <<'EOF'
+          org.gradle.jvmargs=-Xmx3G -XX:MaxMetaspaceSize=1G -XX:ReservedCodeCacheSize=256m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8
+          org.gradle.workers.max=2
+          org.gradle.vfs.watch=false
+          org.gradle.console=plain
+          kotlin.daemon.jvmargs=-Xmx1G
+          EOF
+
       - name: Build release APK
-        run: flutter build apk --release
+        run: flutter build apk --release --verbose
 
       - name: Upload release APK
         uses: actions/upload-artifact@v4
