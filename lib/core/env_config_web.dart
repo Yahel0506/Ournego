@@ -1,6 +1,8 @@
 // Web-specific environment configuration
 import 'dart:js_interop' as js;
 
+import 'package:flutter/foundation.dart';
+
 @js.JS('window.ENV')
 external js.JSObject? get _windowEnv;
 
@@ -18,7 +20,7 @@ String getWebEnvVariable(String key) {
       }
     }
   } catch (e) {
-    print('Error reading web environment variable $key: $e');
+    debugPrint('Error reading web environment variable $key: $e');
   }
 
   return '';

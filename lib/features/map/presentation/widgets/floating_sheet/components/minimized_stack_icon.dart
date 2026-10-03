@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import 'package:ournego/core/theme/tokens/ournego_radius_tokens.dart';
 import 'package:ournego/features/map/domain/entities/business.dart';
-import 'package:ournego/features/map/domain/entities/business_hours.dart';
 import 'package:ournego/features/map/presentation/mappers/business_marker_ui_mapper.dart';
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/models/sheet_business_data.dart';
 
