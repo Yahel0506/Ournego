@@ -18,20 +18,18 @@ class CreatePasswordScreen extends ConsumerStatefulWidget {
   const CreatePasswordScreen({super.key, required this.email});
 
   @override
-  ConsumerState<ConsumerStatefulWidget> createState() =>
-      _CreatePasswordScreen(email: email);
+  ConsumerState<CreatePasswordScreen> createState() => _CreatePasswordScreen();
 }
 
 class _CreatePasswordScreen extends ConsumerState<CreatePasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _passwordController;
-  final String email;
 
   bool hasNumbersOrSpecialChars = false;
   bool hasCapitalLetter = false;
   bool minimumLenght = false;
 
-  _CreatePasswordScreen({required this.email});
+  _CreatePasswordScreen();
 
   @override
   void initState() {
@@ -206,7 +204,7 @@ class _CreatePasswordScreen extends ConsumerState<CreatePasswordScreen> {
                       if ((_formKey.currentState?.validate() ?? false) &&
                           isValid) {
                         final result = await signUpWithEmailUsecase(
-                          email,
+                          widget.email,
                           _passwordController.text,
                         );
 
@@ -223,7 +221,7 @@ class _CreatePasswordScreen extends ConsumerState<CreatePasswordScreen> {
                           (user) async {
                             context.push(
                               AuthRoutes.verifyEmail,
-                              extra: user.email ?? email,
+                              extra: user.email ?? widget.email,
                             );
                           },
                         );
