@@ -11,13 +11,24 @@ import 'package:ournego/shared/widgets/ournego_content_container.dart';
 import 'package:ournego/shared/widgets/ournego_snackbars.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class AuthSelectionWidget extends ConsumerWidget {
+class AuthSelectionWidget extends ConsumerStatefulWidget {
   final VoidCallback? onSuccess;
+  final bool isFromOnboarding;
 
-  const AuthSelectionWidget({super.key, required this.onSuccess});
+  const AuthSelectionWidget({
+    super.key,
+    required this.onSuccess,
+    this.isFromOnboarding = false,
+  });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AuthSelectionWidget> createState() =>
+      _AuthSelectionWidgetState();
+}
+
+class _AuthSelectionWidgetState extends ConsumerState<AuthSelectionWidget> {
+  @override
+  Widget build(BuildContext context) {
     final Brightness brightness = MediaQuery.of(context).platformBrightness;
     final bool isDarkMode = brightness == Brightness.dark;
 
@@ -43,18 +54,20 @@ class AuthSelectionWidget extends ConsumerWidget {
             // Columna de botones
             Column(
               children: [
-                GoogleLoginButton(config: this),
+                GoogleLoginButton(config: widget),
                 const SizedBox(height: 15),
-                MailLoginButton(config: this),
+                MailLoginButton(config: widget),
                 const SizedBox(height: 15),
                 // PhoneLoginButton(config: this),
-                const SizedBox(height: 30),
-                GuestAccessButton(config: this),
+                if (widget.isFromOnboarding) ...[
+                  const SizedBox(height: 30),
+                  GuestAccessButton(config: widget),
+                ],
               ],
             ),
             const SizedBox(height: 60),
             // Términos y condiciones
-            TermsRichText(config: this),
+            TermsRichText(config: widget),
             const Spacer(),
           ],
         ),

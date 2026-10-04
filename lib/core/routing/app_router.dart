@@ -60,7 +60,7 @@ GoRouter createAppRouter({
 
           return CustomTransitionPage<void>(
             key: state.pageKey,
-            child: const AuthSelectionScreen(),
+            child: const AuthSelectionScreen(isFromOnboarding: true),
             transitionDuration: const Duration(milliseconds: 450),
             reverseTransitionDuration: const Duration(milliseconds: 300),
             transitionsBuilder:
