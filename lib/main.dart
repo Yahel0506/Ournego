@@ -18,6 +18,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   bool hasSeenOnboarding = false;
+  String? startupError;
 
   try {
     String supabaseUrl;
@@ -45,20 +46,30 @@ Future<void> main() async {
     }
 
     await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
+  } catch (e) {
+    debugPrint('Error loading environment variables: $e');
+    startupError =
+        'No se pudo inicializar Supabase. Ejecuta la app con SUPABASE_URL y '
+        'SUPABASE_ANON_KEY mediante --dart-define o incluye un archivo .env '
+        'como asset.';
+  }
 
+  try {
     final onboardingDatasource = LocalOnboardingDatasource();
     hasSeenOnboarding = await onboardingDatasource.hasSeenOnboarding();
   } catch (e) {
-    debugPrint('Error loading environment variables: $e');
-    // Continue with default value for hasSeenOnboarding
+    debugPrint('Error loading onboarding state: $e');
   }
+
   usePathUrlStrategy();
+  final app = MyApp(startOnMap: hasSeenOnboarding, startupError: startupError);
+
   runApp(
     BetterFeedback(
       child: ProviderScope(
-        child: kIsWeb
-            ? AuthStateListener(child: MyApp(startOnMap: hasSeenOnboarding))
-            : MyApp(startOnMap: hasSeenOnboarding),
+        child: kIsWeb && startupError == null
+            ? AuthStateListener(child: app)
+            : app,
       ),
     ),
   );
@@ -67,11 +78,26 @@ Future<void> main() async {
 class MyApp extends StatelessWidget {
   final bool startOnMap;
   final Stream<dynamic>? authStateChanges;
+  final String? startupError;
 
-  const MyApp({super.key, required this.startOnMap, this.authStateChanges});
+  const MyApp({
+    super.key,
+    required this.startOnMap,
+    this.authStateChanges,
+    this.startupError,
+  });
 
   @override
   Widget build(BuildContext context) {
+    if (startupError != null) {
+      return MaterialApp(
+        title: 'Ournego',
+        theme: OurnegoColors.lightTheme,
+        darkTheme: OurnegoColors.darkTheme,
+        home: _StartupErrorScreen(message: startupError!),
+      );
+    }
+
     return MaterialApp.router(
       routerConfig: createAppRouter(
         startOnMap: startOnMap,
@@ -81,6 +107,24 @@ class MyApp extends StatelessWidget {
       title: 'Ournego',
       theme: OurnegoColors.lightTheme,
       darkTheme: OurnegoColors.darkTheme,
+    );
+  }
+}
+
+class _StartupErrorScreen extends StatelessWidget {
+  final String message;
+
+  const _StartupErrorScreen({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(message, textAlign: TextAlign.center),
+        ),
+      ),
     );
   }
 }
