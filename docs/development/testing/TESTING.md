@@ -108,3 +108,33 @@ pendiente de un push y no se considera verificada aquí.
   `packages/cupertino_icons/CupertinoIcons`; verificar qué iconos la requieren
   y su renderizado Android antes de decidir si se necesita un cambio de assets o
   dependencias.
+
+### Recuperación del arranque (OUR-131)
+
+El 5 de octubre de 2026, las pruebas estándar cubrieron la validación de la
+configuración, el fallback por campo entre `--dart-define` y dotenv, el único
+reintento de `SharedPreferences.getInstance()` después de `channel-error`, los
+fallos sin reintento, la expiración con resultados tardíos, el bloqueo del
+router hasta completar Supabase, la conservación de onboarding y la ayuda sin
+mostrar excepciones. La suite dirigida `flutter test test/core/startup` pasó
+18 pruebas; la suite completa `flutter test` pasó 48 pruebas. `flutter analyze`
+no reportó problemas y `flutter build apk --release` produjo el APK habitual
+(66.5 MB tras la corrección de contraste del reintento). El build conserva el
+aviso existente de la fuente de iconos Cupertino.
+
+Estas pruebas validan la barrera mediante un `StartupGate` inyectable y una
+respuesta de canal simulada para SharedPreferences.
+
+También se comprobó en un Samsung S24 (SM-S921B) el mismo controlador y widget
+mediante una app de prueba separada, sin el asset `.env`, con fallos inyectados
+y preferencias nativas propias. Se verificaron configuración defectuosa sin
+reintento, recuperación mediante reintento con una sola llamada al inicializador
+y onboarding conservado, doble pulsación, fallo persistente sin tercer intento,
+fallo del inicializador, timeout con preparación tardía y ayuda local cuando
+falla la apertura del soporte. La revisión visual comprobó el contraste del
+reintento y texto ampliado al doble en los temas claro y oscuro. La app temporal
+se retiró después; la instalación y los datos de Ournego se conservaron.
+
+La validación nativa usa un inicializador simulado: no prueba una caída real,
+la recuperación de sesión ni la conexión de producción a Supabase. Tampoco
+equivale a ejecutar la suite Patrol pendiente indicada arriba.
