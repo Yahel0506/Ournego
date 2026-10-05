@@ -2,7 +2,6 @@ import 'package:feedback/feedback.dart';
 import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
@@ -12,64 +11,28 @@ import 'package:ournego/core/env_config_stub.dart'
     if (dart.library.js_interop) 'package:ournego/core/env_config_web.dart';
 import 'package:ournego/core/ournego_colors.dart';
 import 'package:ournego/core/routing/app_router.dart';
+import 'package:ournego/core/startup/startup_controller.dart';
+import 'package:ournego/core/startup/startup_gate.dart';
 import 'package:ournego/features/onboarding/data/datasources/local_onboarding_datasource.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  bool hasSeenOnboarding = false;
-  String? startupError;
-
-  try {
-    String supabaseUrl;
-    String supabaseAnonKey;
-
-    if (kIsWeb) {
-      // For web, get variables from window.ENV (loaded from config.js)
-      supabaseUrl = getWebEnvVariable('SUPABASE_URL');
-      supabaseAnonKey = getWebEnvVariable('SUPABASE_ANON_KEY');
-    } else {
-      // For mobile/desktop, use String.fromEnvironment or flutter_dotenv
-      supabaseUrl = const String.fromEnvironment('SUPABASE_URL');
-      supabaseAnonKey = const String.fromEnvironment('SUPABASE_ANON_KEY');
-
-      // If not provided via --dart-define, try loading from .env file
-      if (supabaseUrl.isEmpty || supabaseAnonKey.isEmpty) {
-        await dotenv.load(fileName: '.env');
-        supabaseUrl = dotenv.env['SUPABASE_URL'] ?? '';
-        supabaseAnonKey = dotenv.env['SUPABASE_ANON_KEY'] ?? '';
-      }
-    }
-
-    if (supabaseUrl.isEmpty || supabaseAnonKey.isEmpty) {
-      throw Exception('Supabase credentials not found in environment');
-    }
-
-    await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
-  } catch (e) {
-    debugPrint('Error loading environment variables: $e');
-    startupError =
-        'No se pudo inicializar Supabase. Ejecuta la app con SUPABASE_URL y '
-        'SUPABASE_ANON_KEY mediante --dart-define o incluye un archivo .env '
-        'como asset.';
-  }
-
-  try {
-    final onboardingDatasource = LocalOnboardingDatasource();
-    hasSeenOnboarding = await onboardingDatasource.hasSeenOnboarding();
-  } catch (e) {
-    debugPrint('Error loading onboarding state: $e');
-  }
-
   usePathUrlStrategy();
-  final app = MyApp(startOnMap: hasSeenOnboarding, startupError: startupError);
 
   runApp(
     BetterFeedback(
       child: ProviderScope(
-        child: kIsWeb && startupError == null
-            ? AuthStateListener(child: app)
-            : app,
+        child: StartupGate(
+          controller: StartupController.production(
+            isWeb: kIsWeb,
+            webValue: getWebEnvVariable,
+            readOnboarding: LocalOnboardingDatasource().hasSeenOnboarding,
+          ),
+          appBuilder: (startOnMap) {
+            final app = MyApp(startOnMap: startOnMap);
+            return kIsWeb ? AuthStateListener(child: app) : app;
+          },
+        ),
       ),
     ),
   );
@@ -78,26 +41,11 @@ Future<void> main() async {
 class MyApp extends StatelessWidget {
   final bool startOnMap;
   final Stream<dynamic>? authStateChanges;
-  final String? startupError;
 
-  const MyApp({
-    super.key,
-    required this.startOnMap,
-    this.authStateChanges,
-    this.startupError,
-  });
+  const MyApp({super.key, required this.startOnMap, this.authStateChanges});
 
   @override
   Widget build(BuildContext context) {
-    if (startupError != null) {
-      return MaterialApp(
-        title: 'Ournego',
-        theme: OurnegoColors.lightTheme,
-        darkTheme: OurnegoColors.darkTheme,
-        home: _StartupErrorScreen(message: startupError!),
-      );
-    }
-
     return MaterialApp.router(
       routerConfig: createAppRouter(
         startOnMap: startOnMap,
@@ -107,24 +55,6 @@ class MyApp extends StatelessWidget {
       title: 'Ournego',
       theme: OurnegoColors.lightTheme,
       darkTheme: OurnegoColors.darkTheme,
-    );
-  }
-}
-
-class _StartupErrorScreen extends StatelessWidget {
-  final String message;
-
-  const _StartupErrorScreen({required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(message, textAlign: TextAlign.center),
-        ),
-      ),
     );
   }
 }
