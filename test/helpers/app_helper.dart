@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:ournego/core/ournego_colors.dart';
@@ -24,18 +25,43 @@ Widget buildTestApp(
   required bool startOnMap,
   String? initialLocation,
   Stream<dynamic>? authStateChanges,
+  String? Function()? currentSessionUserId,
+  GoRouter? router,
+  Widget? testOverlay,
+  Size? testMediaQuerySize,
 }) {
   return ProviderScope(
     overrides: overrides,
     child: MaterialApp.router(
-      routerConfig: createAppRouter(
-        startOnMap: startOnMap,
-        initialLocation: initialLocation,
-        authStateChanges: authStateChanges ?? const Stream<bool>.empty(),
-      ),
+      routerConfig:
+          router ??
+          createAppRouter(
+            startOnMap: startOnMap,
+            initialLocation: initialLocation,
+            authStateChanges: authStateChanges ?? const Stream<bool>.empty(),
+            currentSessionUserId: currentSessionUserId,
+          ),
       title: 'Ournego',
       theme: OurnegoColors.lightTheme,
       darkTheme: OurnegoColors.darkTheme,
+      builder: (context, child) {
+        final app = testOverlay == null
+            ? child!
+            : Stack(
+                children: [
+                  child!,
+                  IgnorePointer(child: testOverlay),
+                ],
+              );
+        if (testMediaQuerySize == null) return app;
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            size: testMediaQuerySize,
+            textScaler: const TextScaler.linear(0.8),
+          ),
+          child: app,
+        );
+      },
       scrollBehavior: const _TestScrollBehavior(),
     ),
   );

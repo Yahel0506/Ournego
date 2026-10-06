@@ -2,7 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'package:dartz/dartz.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'package:ournego/core/failures.dart';
 import 'package:ournego/core/theme/tokens/ournego_color_tokens.dart';
 import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/core/routing/route_observer.dart';
@@ -23,7 +28,6 @@ import 'package:ournego/features/community/presentation/pages/community_screen.d
 import 'package:ournego/features/map/presentation/pages/map_screen.dart';
 import 'package:ournego/features/navigation/presentation/pages/main_layout_screen.dart';
 import 'package:ournego/features/onboarding/presentation/pages/onboarding_screen.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../debugging/presentation/pages/debug_panel_screen.dart';
 
@@ -31,8 +35,11 @@ GoRouter createAppRouter({
   required bool startOnMap,
   Stream<dynamic>? authStateChanges,
   String? initialLocation,
+  String? Function()? currentSessionUserId,
 }) {
   final refreshStream = authStateChanges ?? _defaultAuthStateChanges();
+  final readCurrentSessionUserId =
+      currentSessionUserId ?? _defaultCurrentSessionUserId;
 
   return GoRouter(
     initialLocation:
@@ -78,6 +85,11 @@ GoRouter createAppRouter({
                 },
           );
         },
+      ),
+      GoRoute(
+        path: AuthRoutes.authCompletion,
+        name: 'auth-completion',
+        builder: (context, state) => const SizedBox.shrink(),
       ),
       GoRoute(
         path: AuthRoutes.loginEmail,
@@ -214,6 +226,17 @@ GoRouter createAppRouter({
       final path = state.uri.path;
       final container = ProviderScope.containerOf(context, listen: false);
       final isLoggedIn = container.read(authSessionStatusProvider);
+
+      if (path == AuthRoutes.authCompletion) {
+        return _resolveAuthenticatedDestination(
+          readCurrentSessionUserId: readCurrentSessionUserId,
+          isEmailVerified: () => container
+              .read(emailVerificationUsecaseProvider)
+              .isEmailVerified(),
+          checkHasProfile: () =>
+              container.read(hasProfileUsecaseProvider).checkHasProfile(),
+        );
+      }
       final isPublicAuthRoute =
           path == AuthRoutes.authSelection ||
           path == AuthRoutes.loginEmail ||
@@ -250,44 +273,23 @@ GoRouter createAppRouter({
         return null;
       }
 
-      final emailVerificationUsecase = container.read(
-        emailVerificationUsecaseProvider,
-      );
-      final isEmailVerifiedResult = await emailVerificationUsecase
-          .isEmailVerified();
-      final isEmailVerified = isEmailVerifiedResult.fold(
-        (_) => false,
-        (value) => value,
+      final destination = await _resolveAuthenticatedDestination(
+        readCurrentSessionUserId: readCurrentSessionUserId,
+        isEmailVerified: () =>
+            container.read(emailVerificationUsecaseProvider).isEmailVerified(),
+        checkHasProfile: () =>
+            container.read(hasProfileUsecaseProvider).checkHasProfile(),
       );
 
-      if (!isEmailVerified) {
-        if (!isVerifyRoute) {
-          return AuthRoutes.verifyEmail;
-        }
-
+      if (destination == path) return null;
+      if (destination == MapRoutes.map &&
+          path != AuthRoutes.verifyEmail &&
+          !isPublicAuthRoute &&
+          path != AuthRoutes.completeProfile &&
+          path != AppRoutes.onboarding) {
         return null;
       }
-
-      final hasProfileUsecase = container.read(hasProfileUsecaseProvider);
-      final hasProfileResult = await hasProfileUsecase.checkHasProfile();
-      final hasProfile = hasProfileResult.fold((_) => false, (value) => value);
-
-      if (!hasProfile) {
-        if (path != AuthRoutes.completeProfile) {
-          return AuthRoutes.completeProfile;
-        }
-
-        return null;
-      }
-
-      if (isVerifyRoute ||
-          isPublicAuthRoute ||
-          path == AuthRoutes.completeProfile ||
-          path == AppRoutes.onboarding) {
-        return MapRoutes.map;
-      }
-
-      return null;
+      return destination;
     },
     errorBuilder: (context, state) => Scaffold(
       body: Center(
@@ -314,6 +316,43 @@ GoRouter createAppRouter({
       ),
     ),
   );
+}
+
+Future<String> _resolveAuthenticatedDestination({
+  required String? Function() readCurrentSessionUserId,
+  required Future<Either<Failure, bool>> Function() isEmailVerified,
+  required Future<Either<Failure, bool>> Function() checkHasProfile,
+}) async {
+  final userId = readCurrentSessionUserId();
+  if (userId == null) return AuthRoutes.authSelection;
+
+  final verificationResult = await isEmailVerified();
+  if (readCurrentSessionUserId() != userId) {
+    return AuthRoutes.authSelection;
+  }
+
+  final isVerified = verificationResult.fold((_) => false, (value) => value);
+  if (!isVerified) return AuthRoutes.verifyEmail;
+
+  final profileResult = await checkHasProfile();
+  if (readCurrentSessionUserId() != userId) {
+    return AuthRoutes.authSelection;
+  }
+
+  final hasProfile = profileResult.fold((_) => false, (value) => value);
+  final destination = hasProfile ? MapRoutes.map : AuthRoutes.completeProfile;
+
+  return readCurrentSessionUserId() == userId
+      ? destination
+      : AuthRoutes.authSelection;
+}
+
+String? _defaultCurrentSessionUserId() {
+  try {
+    return Supabase.instance.client.auth.currentSession?.user.id;
+  } catch (_) {
+    return null;
+  }
 }
 
 Stream<dynamic> _defaultAuthStateChanges() {

@@ -29,6 +29,7 @@ class AuthRoutes {
   AuthRoutes._();
 
   static const authSelection = '/auth-selection';
+  static const authCompletion = '/auth-completion';
   static const loginEmail = '/login-email';
   static const passwordRecovery = '/password-recovery';
   static const signupEmail = '/signup-email';
