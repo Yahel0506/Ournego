@@ -23,12 +23,7 @@ class AuthSelectionScreen extends ConsumerWidget {
               child: AuthSelectionWidget(
                 isFromOnboarding: isFromOnboarding,
                 onSuccess: () {
-                  if (context.canPop()) {
-                    context.pop();
-                    return;
-                  }
-
-                  context.go(MapRoutes.map);
+                  context.go(AuthRoutes.authCompletion);
                 },
               ),
             ),

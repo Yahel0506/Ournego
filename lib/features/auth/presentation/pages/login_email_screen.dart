@@ -162,8 +162,9 @@ class PrimaryButton extends StatelessWidget {
             password: passwordController.text,
           );
 
-          result.fold(
-            (failure) {
+          await result.fold<Future<void>>(
+            (failure) async {
+              if (!context.mounted) return;
               final message = errorMessages.getErrorMessage(failure);
               ScaffoldMessenger.of(
                 context,
@@ -177,21 +178,15 @@ class PrimaryButton extends StatelessWidget {
                 );
               }
             },
-            (user) async {
+            (_) async {
               TextInput.finishAutofillContext();
               final hasSeenOnboarding = await getHasSeenOnboarding();
 
-              if (hasSeenOnboarding) {
-                // User has seen onboarding, just pop back
-                context.pop();
-              } else {
-                await setHasSeenOnboarding();
+              if (!context.mounted) return;
+              if (!hasSeenOnboarding) await setHasSeenOnboarding();
+              if (!context.mounted) return;
 
-                // Pequeña pausa para asegurar que las operaciones anteriores se completen
-                await Future.delayed(Duration(milliseconds: 100));
-
-                context.go(MapRoutes.map);
-              }
+              context.go(AuthRoutes.authCompletion);
             },
           );
         }

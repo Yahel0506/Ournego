@@ -35,9 +35,13 @@ void main() {
         await resetAppState();
 
         final authState = StreamController<bool>.broadcast();
+        String? liveUserId;
         final authRepository = FakeAuthRepository(
           state: FakeAuthState.authenticatedAsCustomer,
-          onLogin: (_) => authState.add(true),
+          onLogin: (_) {
+            liveUserId = MockUsers.customer.uid;
+            authState.add(true);
+          },
         );
 
         await $.pumpWidgetAndSettle(
@@ -55,6 +59,7 @@ void main() {
             startOnMap: false,
             initialLocation: AuthRoutes.loginEmail,
             authStateChanges: authState.stream,
+            currentSessionUserId: () => liveUserId,
           ),
         );
 
@@ -73,9 +78,13 @@ void main() {
         await resetAppState();
 
         final authState = StreamController<bool>.broadcast();
+        String? liveUserId;
         final authRepository = FakeAuthRepository(
           state: FakeAuthState.authenticatedAsOwnerWithBusiness,
-          onLogin: (_) => authState.add(true),
+          onLogin: (_) {
+            liveUserId = MockUsers.ownerWithBusiness.uid;
+            authState.add(true);
+          },
         );
 
         await $.pumpWidgetAndSettle(
@@ -93,6 +102,7 @@ void main() {
             startOnMap: false,
             initialLocation: AuthRoutes.loginEmail,
             authStateChanges: authState.stream,
+            currentSessionUserId: () => liveUserId,
           ),
         );
 
@@ -100,7 +110,10 @@ void main() {
         await $.tester.tap(find.byIcon(Icons.store_rounded));
         await $.pumpAndSettle();
 
-        expect(find.byKey(const ValueKey('businessDashboardScreen')), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('businessDashboardScreen')),
+          findsOneWidget,
+        );
 
         await authState.close();
       },
@@ -113,9 +126,13 @@ void main() {
         await resetAppState();
 
         final authState = StreamController<bool>.broadcast();
+        String? liveUserId;
         final authRepository = FakeAuthRepository(
           state: FakeAuthState.authenticatedAsOwnerWithoutBusiness,
-          onLogin: (_) => authState.add(true),
+          onLogin: (_) {
+            liveUserId = MockUsers.ownerWithoutBusiness.uid;
+            authState.add(true);
+          },
         );
 
         await $.pumpWidgetAndSettle(
@@ -133,6 +150,7 @@ void main() {
             startOnMap: false,
             initialLocation: AuthRoutes.loginEmail,
             authStateChanges: authState.stream,
+            currentSessionUserId: () => liveUserId,
           ),
         );
 
@@ -140,7 +158,10 @@ void main() {
         await $.tester.tap(find.byIcon(Icons.store_rounded));
         await $.pumpAndSettle();
 
-        expect(find.byKey(const ValueKey('registerBusinessScreen')), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('registerBusinessScreen')),
+          findsOneWidget,
+        );
 
         await authState.close();
       },
@@ -161,10 +182,7 @@ void main() {
         await $.pumpWidgetAndSettle(
           buildTestApp(
             [
-              ...authOverrides(
-                authRepository,
-                sessionStream: authState.stream,
-              ),
+              ...authOverrides(authRepository, sessionStream: authState.stream),
               ...mapOverrides(FakeMapRepository()),
             ],
             startOnMap: false,
@@ -208,10 +226,7 @@ void main() {
         await $.pumpWidgetAndSettle(
           buildTestApp(
             [
-              ...authOverrides(
-                authRepository,
-                sessionStream: authState.stream,
-              ),
+              ...authOverrides(authRepository, sessionStream: authState.stream),
               ...mapOverrides(FakeMapRepository()),
             ],
             startOnMap: false,
@@ -246,10 +261,7 @@ void main() {
         await $.pumpWidgetAndSettle(
           buildTestApp(
             [
-              ...authOverrides(
-                authRepository,
-                sessionStream: authState.stream,
-              ),
+              ...authOverrides(authRepository, sessionStream: authState.stream),
               ...mapOverrides(FakeMapRepository()),
             ],
             startOnMap: false,
