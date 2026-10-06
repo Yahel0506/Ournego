@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -143,10 +144,8 @@ class GuestAccessButton extends ConsumerWidget {
         key: const ValueKey('guestAccessButton'),
         onPressed: () async {
           await setHasSeenOnboarding();
-
-          if (config.onSuccess != null) {
-            config.onSuccess!();
-          }
+          if (!context.mounted) return;
+          context.go(MapRoutes.map);
         },
         style: OurnegoButtonStyles.authOutlinedOnSurface(context),
         child: Row(
@@ -235,9 +234,11 @@ class GoogleLoginButton extends ConsumerWidget {
       child: ElevatedButton(
         onPressed: () async {
           await setHasSeenOnboarding();
+          if (!context.mounted) return;
           final googleSignIn = await ref.read(
             signInWithGoogleUsecaseProvider,
           )();
+          if (!context.mounted) return;
           googleSignIn.fold(
             (failure) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -245,7 +246,7 @@ class GoogleLoginButton extends ConsumerWidget {
               );
             },
             (_) async {
-              if (config.onSuccess != null) {
+              if (!kIsWeb && config.onSuccess != null) {
                 config.onSuccess!();
               }
             },
