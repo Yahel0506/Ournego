@@ -13,6 +13,7 @@ import 'package:ournego/core/failures.dart';
 import 'package:ournego/core/routing/app_router.dart';
 import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/core/routing/route_sources.dart';
+import 'package:ournego/features/auth/presentation/pages/account_check_failed_screen.dart';
 import 'package:ournego/features/auth/presentation/pages/auth_selection_screen.dart';
 import 'package:ournego/features/auth/presentation/pages/complete_profile_screen.dart';
 import 'package:ournego/features/auth/presentation/pages/verify_email_screen.dart';
@@ -99,6 +100,34 @@ void main() {
       expect(find.byKey(const ValueKey('mapScreen')), findsOneWidget);
     },
   );
+
+  testWidgets('offline account check routes to the retry screen', (
+    tester,
+  ) async {
+    _setTallViewport(tester);
+    final repository = _CompletionAuthRepository();
+    repository.profileResult = Completer<Either<Failure, bool>>()
+      ..complete(Left(NetworkFailure()));
+    final mapRepository = FakeMapRepository();
+    addTearDown(mapRepository.dispose);
+
+    await tester.pumpWidget(
+      buildTestApp(
+        [
+          ...authOverrides(repository, initialSessionStatus: false),
+          ...mapOverrides(mapRepository),
+        ],
+        startOnMap: false,
+        initialLocation: AuthRoutes.authCompletion,
+        currentSessionUserId: () => 'user-1',
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.byType(AccountCheckFailedScreen), findsOneWidget);
+    expect(find.byKey(const Key('account-check-retry')), findsOneWidget);
+  });
 
   testWidgets('email login replaces the shell and auth route stack', (
     tester,

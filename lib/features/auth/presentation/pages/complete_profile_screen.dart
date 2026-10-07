@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ournego/core/network/connectivity_providers.dart';
 import 'package:ournego/core/theme/tokens/ournego_semantic_tokens.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
@@ -165,60 +166,83 @@ class CompleteProfileScreen extends ConsumerWidget {
                     ],
                   ),
                 ),
+                if (asyncUser.hasError) ...[
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Flexible(
+                        child: Text(
+                          'No pudimos cargar tu perfil.',
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      TextButton(
+                        key: const Key('profile-load-retry'),
+                        onPressed: () => ref.invalidate(profileStreamProvider),
+                        child: const Text('Reintentar'),
+                      ),
+                    ],
+                  ),
+                ],
                 SizedBox(height: 30),
                 // Botón SignUp
                 OurnegoPrimaryButton(
-                  onPressed: () async {
-                    if (_formKey.currentState?.validate() ?? false) {
-                      final result = await UpdateProfileUsecase(
-                        repository: repository,
-                      ).updateUserName(_nameController.text);
+                  onPressed: !ref.watch(isOnlineProvider)
+                      ? null
+                      : () async {
+                          if (_formKey.currentState?.validate() ?? false) {
+                            final result = await UpdateProfileUsecase(
+                              repository: repository,
+                            ).updateUserName(_nameController.text);
 
-                      result.fold(
-                        (failure) {
-                          final message = errorMessages.getErrorMessage(
-                            failure,
-                          );
-                          // Mostrar error
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            OurnegoSnackbars.error(context, message),
-                          );
+                            result.fold(
+                              (failure) {
+                                final message = errorMessages.getErrorMessage(
+                                  failure,
+                                );
+                                // Mostrar error
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  OurnegoSnackbars.error(context, message),
+                                );
+                              },
+                              (_) async {
+                                final setHasSeenOnboarding = ref.read(
+                                  setHasSeenOnboardingUsecaseProvider,
+                                );
+
+                                final firstRouteName = AppRouteObserver
+                                    .instance
+                                    .firstRoute
+                                    ?.settings
+                                    .name;
+                                final isFirstRouteOnboarding =
+                                    firstRouteName == AppRoutes.onboarding ||
+                                    firstRouteName == 'onboarding';
+
+                                if (isFirstRouteOnboarding) {
+                                  await setHasSeenOnboarding();
+                                  await Future.delayed(
+                                    Duration(milliseconds: 100),
+                                  );
+                                  if (!context.mounted) return;
+                                  context.go(MapRoutes.map);
+                                  return;
+                                }
+
+                                var poppedAnyRoute = false;
+                                while (context.canPop()) {
+                                  poppedAnyRoute = true;
+                                  context.pop();
+                                }
+
+                                if (!poppedAnyRoute) {
+                                  context.go(MapRoutes.map);
+                                }
+                              },
+                            );
+                          }
                         },
-                        (_) async {
-                          final setHasSeenOnboarding = ref.read(
-                            setHasSeenOnboardingUsecaseProvider,
-                          );
-
-                          final firstRouteName = AppRouteObserver
-                              .instance
-                              .firstRoute
-                              ?.settings
-                              .name;
-                          final isFirstRouteOnboarding =
-                              firstRouteName == AppRoutes.onboarding ||
-                              firstRouteName == 'onboarding';
-
-                          if (isFirstRouteOnboarding) {
-                            await setHasSeenOnboarding();
-                            await Future.delayed(Duration(milliseconds: 100));
-                            if (!context.mounted) return;
-                            context.go(MapRoutes.map);
-                            return;
-                          }
-
-                          var poppedAnyRoute = false;
-                          while (context.canPop()) {
-                            poppedAnyRoute = true;
-                            context.pop();
-                          }
-
-                          if (!poppedAnyRoute) {
-                            context.go(MapRoutes.map);
-                          }
-                        },
-                      );
-                    }
-                  },
                   child: Text(text.primaryButton),
                 ),
               ],

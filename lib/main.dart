@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 
@@ -13,7 +14,9 @@ import 'package:ournego/core/ournego_colors.dart';
 import 'package:ournego/core/routing/app_router.dart';
 import 'package:ournego/core/startup/startup_controller.dart';
 import 'package:ournego/core/startup/startup_gate.dart';
+import 'package:ournego/features/auth/presentation/widgets/session_expired_listener.dart';
 import 'package:ournego/features/onboarding/data/datasources/local_onboarding_datasource.dart';
+import 'package:ournego/shared/widgets/ournego_offline_banner.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,18 +41,33 @@ Future<void> main() async {
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   final bool startOnMap;
   final Stream<dynamic>? authStateChanges;
 
   const MyApp({super.key, required this.startOnMap, this.authStateChanges});
 
   @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+  late final GoRouter _router = createAppRouter(
+    startOnMap: widget.startOnMap,
+    authStateChanges: widget.authStateChanges,
+    navigatorKey: _navigatorKey,
+  );
+
+  @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      routerConfig: createAppRouter(
-        startOnMap: startOnMap,
-        authStateChanges: authStateChanges,
+      routerConfig: _router,
+      builder: (context, child) => OurnegoOfflineBanner(
+        child: SessionExpiredListener(
+          navigatorKey: _navigatorKey,
+          child: child ?? const SizedBox.shrink(),
+        ),
       ),
       scrollBehavior: MyCustomScrollBehavior(),
       title: 'Ournego',

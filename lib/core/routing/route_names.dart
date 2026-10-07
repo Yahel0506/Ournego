@@ -36,6 +36,7 @@ class AuthRoutes {
   static const createPassword = '/create-password';
   static const verifyEmail = '/verify-email';
   static const completeProfile = '/complete-profile';
+  static const accountCheckFailed = '/account-check-failed';
 }
 
 // |---------------------------------| \\
