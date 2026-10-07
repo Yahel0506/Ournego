@@ -545,6 +545,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
             mapboxAccessToken: myAccessToken,
             location: location,
             businessState: businessState,
+            onRetryBusinesses: () => ref.invalidate(businessesStreamProvider),
             isMarkerVisible: _isMarkerVisible,
             isMarkerHidden: _isMarkerHidden,
             onCameraChanged: (zoom) async {

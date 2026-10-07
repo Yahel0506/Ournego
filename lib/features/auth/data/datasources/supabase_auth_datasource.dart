@@ -178,7 +178,23 @@ class SupabaseAuthDatasource {
 
   /// Signs out the current user.
   Future<void> logOut() async {
-    await _supabase.auth.signOut();
+    _userInitiatedSignOut = true;
+    try {
+      await _supabase.auth.signOut();
+    } catch (_) {
+      _userInitiatedSignOut = false;
+      rethrow;
+    }
+  }
+
+  bool _userInitiatedSignOut = false;
+
+  /// Returns whether the last sign-out came from the user, and clears the flag.
+  /// Lets the session-expiry detector tell logouts apart from lost sessions.
+  bool consumeUserInitiatedSignOut() {
+    final value = _userInitiatedSignOut;
+    _userInitiatedSignOut = false;
+    return value;
   }
 
   /// Signs in with Google.
