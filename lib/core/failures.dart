@@ -8,6 +8,12 @@ abstract class Failure {}
 // Si el servidor falló en el proceso
 class ServerFailure extends Failure {}
 
+// Si no hay red o la conexión con el servidor se perdió
+class NetworkFailure extends Failure {}
+
+// Si la sesión dejó de ser válida y no pudo renovarse
+class SessionExpiredFailure extends Failure {}
+
 // Si hay un fallo en un proceso local
 class LocalFailure extends Failure {}
 
