@@ -146,7 +146,8 @@ final getBusinessPanelMetricsUsecaseProvider =
 final isOwnerProvider = FutureProvider<bool>((ref) async {
   final usecase = ref.watch(checkIfOwnerUsecaseProvider);
   final result = await usecase();
-  return result.fold((failure) => false, (isOwner) => isOwner);
+  // Failures must surface: treating them as "not owner" shows the wrong screen.
+  return result.fold((failure) => throw failure, (isOwner) => isOwner);
 });
 
 final ownedBusinessProvider = FutureProvider<OwnedBusinessProfile?>((
@@ -154,7 +155,7 @@ final ownedBusinessProvider = FutureProvider<OwnedBusinessProfile?>((
 ) async {
   final usecase = ref.watch(getOwnedBusinessUsecaseProvider);
   final result = await usecase();
-  return result.fold((failure) => null, (business) => business);
+  return result.fold((failure) => throw failure, (business) => business);
 });
 
 final businessPanelMetricsProvider =

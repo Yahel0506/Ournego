@@ -12,6 +12,7 @@ import 'package:ournego/core/theme/tokens/ournego_color_tokens.dart';
 import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/core/routing/route_observer.dart';
 import 'package:ournego/core/routing/route_sources.dart';
+import 'package:ournego/features/auth/presentation/pages/account_check_failed_screen.dart';
 import 'package:ournego/features/auth/presentation/pages/auth_selection_screen.dart';
 import 'package:ournego/features/auth/presentation/pages/complete_profile_screen.dart';
 import 'package:ournego/features/auth/presentation/pages/create_password_screen.dart';
@@ -20,10 +21,12 @@ import 'package:ournego/features/auth/presentation/pages/password_recovery_scree
 import 'package:ournego/features/auth/presentation/pages/signup_email_screen.dart';
 import 'package:ournego/features/auth/presentation/pages/verify_email_screen.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
+import 'package:ournego/features/auth/presentation/providers/session_expiry_providers.dart';
 import 'package:ournego/features/business/presentation/pages/business_form_screen.dart';
 import 'package:ournego/features/business/presentation/pages/business_panel_screen.dart';
 import 'package:ournego/features/business/presentation/pages/register_business_screen.dart';
 import 'package:ournego/features/business/presentation/providers/business_providers.dart';
+import 'package:ournego/features/business/presentation/widgets/business_panel/business_panel_states.dart';
 import 'package:ournego/features/community/presentation/pages/community_screen.dart';
 import 'package:ournego/features/map/presentation/pages/map_screen.dart';
 import 'package:ournego/features/navigation/presentation/pages/main_layout_screen.dart';
@@ -36,12 +39,14 @@ GoRouter createAppRouter({
   Stream<dynamic>? authStateChanges,
   String? initialLocation,
   String? Function()? currentSessionUserId,
+  GlobalKey<NavigatorState>? navigatorKey,
 }) {
   final refreshStream = authStateChanges ?? _defaultAuthStateChanges();
   final readCurrentSessionUserId =
       currentSessionUserId ?? _defaultCurrentSessionUserId;
 
   return GoRouter(
+    navigatorKey: navigatorKey,
     initialLocation:
         initialLocation ?? (startOnMap ? MapRoutes.map : AppRoutes.onboarding),
     debugLogDiagnostics: false,
@@ -129,6 +134,11 @@ GoRouter createAppRouter({
           final email = state.extra as String?;
           return VerifyEmailScreen(email: email);
         },
+      ),
+      GoRoute(
+        path: AuthRoutes.accountCheckFailed,
+        name: 'account-check-failed',
+        builder: (context, state) => const AccountCheckFailedScreen(),
       ),
       GoRoute(
         path: AuthRoutes.completeProfile,
@@ -228,7 +238,7 @@ GoRouter createAppRouter({
       final isLoggedIn = container.read(authSessionStatusProvider);
 
       if (path == AuthRoutes.authCompletion) {
-        return _resolveAuthenticatedDestination(
+        final destination = await _resolveAuthenticatedDestination(
           readCurrentSessionUserId: readCurrentSessionUserId,
           isEmailVerified: () => container
               .read(emailVerificationUsecaseProvider)
@@ -236,6 +246,12 @@ GoRouter createAppRouter({
           checkHasProfile: () =>
               container.read(hasProfileUsecaseProvider).checkHasProfile(),
         );
+        if (destination != MapRoutes.map) return destination;
+        // Return to where the user was when the session expired.
+        final pending = container
+            .read(pendingReturnLocationProvider.notifier)
+            .take();
+        return pending ?? destination;
       }
       final isPublicAuthRoute =
           path == AuthRoutes.authSelection ||
@@ -286,6 +302,7 @@ GoRouter createAppRouter({
           path != AuthRoutes.verifyEmail &&
           !isPublicAuthRoute &&
           path != AuthRoutes.completeProfile &&
+          path != AuthRoutes.accountCheckFailed &&
           path != AppRoutes.onboarding) {
         return null;
       }
@@ -331,6 +348,9 @@ Future<String> _resolveAuthenticatedDestination({
     return AuthRoutes.authSelection;
   }
 
+  if (verificationResult.fold((f) => f is NetworkFailure, (_) => false)) {
+    return AuthRoutes.accountCheckFailed;
+  }
   final isVerified = verificationResult.fold((_) => false, (value) => value);
   if (!isVerified) return AuthRoutes.verifyEmail;
 
@@ -339,6 +359,9 @@ Future<String> _resolveAuthenticatedDestination({
     return AuthRoutes.authSelection;
   }
 
+  if (profileResult.fold((f) => f is NetworkFailure, (_) => false)) {
+    return AuthRoutes.accountCheckFailed;
+  }
   final hasProfile = profileResult.fold((_) => false, (value) => value);
   final destination = hasProfile ? MapRoutes.map : AuthRoutes.completeProfile;
 
@@ -379,7 +402,18 @@ class _BusinessShellScreen extends ConsumerWidget {
         return const RegisterBusinessScreen();
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (_, _) => const RegisterBusinessScreen(),
+      error: (_, _) => Scaffold(
+        body: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: BusinessPanelErrorState(
+                onRetry: () => ref.invalidate(isOwnerProvider),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
