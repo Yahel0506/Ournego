@@ -138,3 +138,15 @@ se retiró después; la instalación y los datos de Ournego se conservaron.
 La validación nativa usa un inicializador simulado: no prueba una caída real,
 la recuperación de sesión ni la conexión de producción a Supabase. Tampoco
 equivale a ejecutar la suite Patrol pendiente indicada arriba.
+
+## Checklist manual: sesión vencida y fallos de red (OUR-132)
+
+Ejecutar en Android (emulador o dispositivo), con una cuenta completa:
+
+1. Abrir la app en modo avión con sesión guardada: se ve el mapa y el banner "Sin conexión". Al quitar el modo avión el banner desaparece, aparece "Conexión restablecida" y los marcadores cargan solos.
+2. Iniciar sesión sin red: aparece "Sin conexión. Revisa tu internet e inténtalo de nuevo." y no queda un indicador de carga infinito.
+3. Con sesión iniciada, cortar la red y abrir una ruta de auth: aparece "No pudimos verificar tu cuenta"; al reconectar continúa sola; "Continuar al mapa" funciona.
+4. Revocar la sesión desde Supabase (cerrar sesiones del usuario) y provocar un refresh: aparece "Tu sesión venció". "Iniciar sesión" vuelve a la ruta previa tras entrar; "Seguir como invitado" deja la app usable.
+5. Como dueño de negocio, sin red, abrir el panel: error con "Reintentar", nunca "Registrar negocio".
+6. Cerrar sesión manualmente: no aparece el diálogo de sesión vencida.
+
