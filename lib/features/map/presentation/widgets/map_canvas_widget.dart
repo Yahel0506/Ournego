@@ -28,6 +28,7 @@ class MapCanvasWidget extends StatelessWidget {
   final Future<void> Function(double zoom) onCameraChanged;
   final void Function(Business business) onBusinessTap;
   final BusinessMarkerUiModel Function(Business business) markerUiMapper;
+  final VoidCallback? onRetryBusinesses;
 
   const MapCanvasWidget({
     super.key,
@@ -47,6 +48,7 @@ class MapCanvasWidget extends StatelessWidget {
     required this.onCameraChanged,
     required this.onBusinessTap,
     required this.markerUiMapper,
+    this.onRetryBusinesses,
   });
 
   @override
@@ -196,7 +198,20 @@ class MapCanvasWidget extends StatelessWidget {
           },
           error: (error, _) {
             debugPrint(error.toString());
-            return const SizedBox();
+            return Align(
+              alignment: Alignment.topCenter,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 110, left: 16, right: 16),
+                child: ActionChip(
+                  key: const Key('businesses-load-error'),
+                  avatar: const Icon(Icons.refresh_rounded, size: 18),
+                  label: const Text(
+                    'No pudimos cargar los negocios. Reintentar',
+                  ),
+                  onPressed: onRetryBusinesses,
+                ),
+              ),
+            );
           },
           loading: () => const MarkerLayer(markers: []),
         ),

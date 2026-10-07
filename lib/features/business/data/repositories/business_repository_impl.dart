@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
 import 'package:ournego/core/failures.dart';
+import 'package:ournego/core/network/network_error_classifier.dart';
 import 'package:ournego/core/location/app_position.dart';
 import 'package:ournego/features/business/data/datasources/business_geocoding_datasource.dart';
 import 'package:ournego/features/business/data/datasources/business_supabase_datasource.dart';
@@ -92,6 +93,8 @@ class BusinessRepositoryImpl implements BusinessRepository {
     } on BusinessRegistrationUnknownException {
       return Left(BusinessRegistrationUnknownFailure());
     } catch (e) {
+      if (isNetworkError(e)) return Left(NetworkFailure());
+      if (isSessionExpiredError(e)) return Left(SessionExpiredFailure());
       return Left(ServerFailure());
     }
   }
@@ -102,6 +105,8 @@ class BusinessRepositoryImpl implements BusinessRepository {
       final isOwner = await businessDatasource.checkIfOwner();
       return Right(isOwner);
     } catch (e) {
+      if (isNetworkError(e)) return Left(NetworkFailure());
+      if (isSessionExpiredError(e)) return Left(SessionExpiredFailure());
       return Left(ServerFailure());
     }
   }
@@ -134,7 +139,9 @@ class BusinessRepositoryImpl implements BusinessRepository {
         hours: hours,
       );
       return Right(profile);
-    } catch (_) {
+    } catch (e) {
+      if (isNetworkError(e)) return Left(NetworkFailure());
+      if (isSessionExpiredError(e)) return Left(SessionExpiredFailure());
       return Left(ServerFailure());
     }
   }
@@ -156,7 +163,8 @@ class BusinessRepositoryImpl implements BusinessRepository {
       return Left(BusinessRegistrationValidationFailure());
     } on BusinessRegistrationNetworkException {
       return Left(BusinessRegistrationNetworkFailure());
-    } catch (_) {
+    } catch (e) {
+      if (isNetworkError(e)) return Left(BusinessRegistrationNetworkFailure());
       return Left(BusinessRegistrationUnknownFailure());
     }
   }
@@ -178,7 +186,8 @@ class BusinessRepositoryImpl implements BusinessRepository {
       return Left(BusinessRegistrationValidationFailure());
     } on BusinessRegistrationNetworkException {
       return Left(BusinessRegistrationNetworkFailure());
-    } catch (_) {
+    } catch (e) {
+      if (isNetworkError(e)) return Left(BusinessRegistrationNetworkFailure());
       return Left(BusinessRegistrationUnknownFailure());
     }
   }
@@ -204,7 +213,8 @@ class BusinessRepositoryImpl implements BusinessRepository {
       return Left(BusinessRegistrationValidationFailure());
     } on BusinessRegistrationNetworkException {
       return Left(BusinessRegistrationNetworkFailure());
-    } catch (_) {
+    } catch (e) {
+      if (isNetworkError(e)) return Left(BusinessRegistrationNetworkFailure());
       return Left(BusinessRegistrationUnknownFailure());
     }
   }
@@ -226,7 +236,8 @@ class BusinessRepositoryImpl implements BusinessRepository {
       return Left(BusinessRegistrationValidationFailure());
     } on BusinessRegistrationNetworkException {
       return Left(BusinessRegistrationNetworkFailure());
-    } catch (_) {
+    } catch (e) {
+      if (isNetworkError(e)) return Left(BusinessRegistrationNetworkFailure());
       return Left(BusinessRegistrationUnknownFailure());
     }
   }
@@ -250,7 +261,8 @@ class BusinessRepositoryImpl implements BusinessRepository {
       return Left(BusinessRegistrationImageUploadFailure());
     } on BusinessRegistrationNetworkException {
       return Left(BusinessRegistrationNetworkFailure());
-    } catch (_) {
+    } catch (e) {
+      if (isNetworkError(e)) return Left(BusinessRegistrationNetworkFailure());
       return Left(BusinessRegistrationUnknownFailure());
     }
   }
@@ -274,7 +286,8 @@ class BusinessRepositoryImpl implements BusinessRepository {
       return Left(BusinessRegistrationImageUploadFailure());
     } on BusinessRegistrationNetworkException {
       return Left(BusinessRegistrationNetworkFailure());
-    } catch (_) {
+    } catch (e) {
+      if (isNetworkError(e)) return Left(BusinessRegistrationNetworkFailure());
       return Left(BusinessRegistrationUnknownFailure());
     }
   }
@@ -296,7 +309,8 @@ class BusinessRepositoryImpl implements BusinessRepository {
       return Left(BusinessRegistrationValidationFailure());
     } on BusinessRegistrationNetworkException {
       return Left(BusinessRegistrationNetworkFailure());
-    } catch (_) {
+    } catch (e) {
+      if (isNetworkError(e)) return Left(BusinessRegistrationNetworkFailure());
       return Left(BusinessRegistrationUnknownFailure());
     }
   }
@@ -316,7 +330,8 @@ class BusinessRepositoryImpl implements BusinessRepository {
       return Left(BusinessRegistrationValidationFailure());
     } on BusinessRegistrationNetworkException {
       return Left(BusinessRegistrationNetworkFailure());
-    } catch (_) {
+    } catch (e) {
+      if (isNetworkError(e)) return Left(BusinessRegistrationNetworkFailure());
       return Left(BusinessRegistrationUnknownFailure());
     }
   }
@@ -338,7 +353,8 @@ class BusinessRepositoryImpl implements BusinessRepository {
       return Left(BusinessRegistrationValidationFailure());
     } on BusinessRegistrationNetworkException {
       return Left(BusinessRegistrationNetworkFailure());
-    } catch (_) {
+    } catch (e) {
+      if (isNetworkError(e)) return Left(BusinessRegistrationNetworkFailure());
       return Left(BusinessRegistrationUnknownFailure());
     }
   }
@@ -357,7 +373,9 @@ class BusinessRepositoryImpl implements BusinessRepository {
         favoriteCount: (data['favorite_count'] as int?) ?? 0,
       );
       return Right(metrics);
-    } catch (_) {
+    } catch (e) {
+      if (isNetworkError(e)) return Left(NetworkFailure());
+      if (isSessionExpiredError(e)) return Left(SessionExpiredFailure());
       return Left(ServerFailure());
     }
   }

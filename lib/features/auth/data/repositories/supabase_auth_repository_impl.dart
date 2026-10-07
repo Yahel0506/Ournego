@@ -4,6 +4,7 @@ import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
 
 import 'package:ournego/core/failures.dart';
+import 'package:ournego/core/network/network_error_classifier.dart';
 import 'package:ournego/features/auth/data/datasources/supabase_auth_datasource.dart';
 import 'package:ournego/features/auth/domain/entities/app_user.dart';
 import 'package:ournego/features/auth/domain/repositories/auth_repository.dart';
@@ -20,6 +21,12 @@ class AuthRepositoryImpl implements AuthRepository {
 
   AuthRepositoryImpl({required this.authDatasource});
 
+  Failure _failureFor(Object error) {
+    if (isNetworkError(error)) return NetworkFailure();
+    if (isSessionExpiredError(error)) return SessionExpiredFailure();
+    return ServerFailure();
+  }
+
   @override
   Future<Either<Failure, AppUser>> signUpWithEmail(
     String email,
@@ -35,13 +42,13 @@ class AuthRepositoryImpl implements AuthRepository {
         return Left(EmailAlreadyInUseFailure());
       }
       debugPrint('AuthException in signUpWithEmail: ${e.message}');
-      return Left(ServerFailure());
+      return Left(_failureFor(e));
     } on SignupException catch (e) {
       debugPrint('SignupException: ${e.message}');
-      return Left(ServerFailure());
+      return Left(_failureFor(e));
     } catch (e) {
       debugPrint('Unknown error in signUpWithEmail: $e');
-      return Left(ServerFailure());
+      return Left(_failureFor(e));
     }
   }
 
@@ -64,7 +71,7 @@ class AuthRepositoryImpl implements AuthRepository {
         return Left(EmailNotVerifiedFailure());
       }
       debugPrint('AuthException in logInWithEmail: ${e.message}');
-      return Left(ServerFailure());
+      return Left(_failureFor(e));
     } on LoginException catch (e) {
       debugPrint('LoginException: ${e.message}');
       return Left(InvalidCredentialsFailure());
@@ -72,7 +79,7 @@ class AuthRepositoryImpl implements AuthRepository {
       return Left(AuthenticationRequiredFailure());
     } catch (e) {
       debugPrint('Unknown error in logInWithEmail: $e');
-      return Left(ServerFailure());
+      return Left(_failureFor(e));
     }
   }
 
@@ -83,10 +90,10 @@ class AuthRepositoryImpl implements AuthRepository {
       return const Right(null);
     } on GoogleSignInException catch (e) {
       debugPrint('GoogleSignInException: ${e.message}');
-      return Left(ServerFailure());
+      return Left(_failureFor(e));
     } catch (e) {
       debugPrint('Unknown error in signInWithGoogle: $e');
-      return Left(ServerFailure());
+      return Left(_failureFor(e));
     }
   }
 
@@ -101,7 +108,7 @@ class AuthRepositoryImpl implements AuthRepository {
       return Left(AuthenticationRequiredFailure());
     } catch (e) {
       debugPrint('Error in updateProfilePicture: $e');
-      return Left(ServerFailure());
+      return Left(_failureFor(e));
     }
   }
 
@@ -114,7 +121,7 @@ class AuthRepositoryImpl implements AuthRepository {
       return Left(AuthenticationRequiredFailure());
     } catch (e) {
       debugPrint('Error in updateUserName: $e');
-      return Left(ServerFailure());
+      return Left(_failureFor(e));
     }
   }
 
@@ -141,7 +148,7 @@ class AuthRepositoryImpl implements AuthRepository {
       return Left(ServerFailure());
     } catch (e) {
       debugPrint('Error in isEmailVerified: $e');
-      return Left(ServerFailure());
+      return Left(_failureFor(e));
     }
   }
 
@@ -152,10 +159,10 @@ class AuthRepositoryImpl implements AuthRepository {
       return const Right(null);
     } on AuthException catch (e) {
       debugPrint('AuthException in resendEmailVerification: ${e.message}');
-      return Left(ServerFailure());
+      return Left(_failureFor(e));
     } catch (e) {
       debugPrint('Error in resendEmailVerification: $e');
-      return Left(ServerFailure());
+      return Left(_failureFor(e));
     }
   }
 
@@ -166,10 +173,10 @@ class AuthRepositoryImpl implements AuthRepository {
       return const Right(null);
     } on AuthException catch (e) {
       debugPrint('AuthException in sendPasswordResetEmail: ${e.message}');
-      return Left(ServerFailure());
+      return Left(_failureFor(e));
     } catch (e) {
       debugPrint('Error in sendPasswordResetEmail: $e');
-      return Left(ServerFailure());
+      return Left(_failureFor(e));
     }
   }
 
@@ -182,7 +189,7 @@ class AuthRepositoryImpl implements AuthRepository {
       return Left(AuthenticationRequiredFailure());
     } catch (e) {
       debugPrint('Error in confirmHasProfile: $e');
-      return Left(ServerFailure());
+      return Left(_failureFor(e));
     }
   }
 
@@ -195,7 +202,7 @@ class AuthRepositoryImpl implements AuthRepository {
       return Left(AuthenticationRequiredFailure());
     } catch (e) {
       debugPrint('Error in checkHasProfile: $e');
-      return Left(ServerFailure());
+      return Left(_failureFor(e));
     }
   }
 
@@ -206,7 +213,7 @@ class AuthRepositoryImpl implements AuthRepository {
       return const Right(null);
     } catch (e) {
       debugPrint('Error in logOut: $e');
-      return Left(ServerFailure());
+      return Left(_failureFor(e));
     }
   }
 }
