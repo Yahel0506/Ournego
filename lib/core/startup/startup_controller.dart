@@ -61,7 +61,8 @@ Future<SupabaseStartupConfig> resolveStartupConfig({
 
   if (!isWeb && (url.trim().isEmpty || anonKey.trim().isEmpty)) {
     try {
-      await (loadDotenv ?? () => dotenv.load(fileName: '.env'))();
+      await (loadDotenv ??
+          () => dotenv.load(fileName: '.env', isOptional: true))();
     } catch (_) {
       // Missing .env is a configuration failure only if a field has no define.
     }
