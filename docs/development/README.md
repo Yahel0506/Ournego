@@ -23,13 +23,17 @@ Required keys:
 - `LOCATIONIQ_API_KEY`
 
 Web reads from `web/config.js` (`window.ENV`).
-Mobile reads from `.env` and/or `--dart-define`.
+Mobile/desktop read compile-time defines: keep the keys in a local,
+git-ignored `.env` and pass it with `--dart-define-from-file=.env`. The `.env`
+file is not bundled as an asset.
 
 ### 3) Run app
 
 ```bash
-flutter run
+flutter run --dart-define-from-file=.env
 ```
+
+The VS Code launch configurations already pass this flag.
 
 ## Architecture
 
