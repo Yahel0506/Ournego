@@ -17,15 +17,15 @@ This guide provides essential information for AI coding agents and developers wo
 # Run on web (development)
 flutter run -d chrome --dart-define=SUPABASE_URL=<url> --dart-define=SUPABASE_ANON_KEY=<key>
 
-# Run on mobile (uses .env file)
-flutter run
+# Run on mobile (reads the local, git-ignored .env as compile-time defines)
+flutter run --dart-define-from-file=.env
 
 # Build for web
 flutter build web
 
 # Build for Android
-flutter build apk
-flutter build appbundle
+flutter build apk --dart-define-from-file=.env
+flutter build appbundle --dart-define-from-file=.env
 ```
 
 ### Testing
@@ -278,11 +278,21 @@ class Business {
 The app uses environment variables for configuration:
 
 - **Web:** Variables loaded from `web/config.js` via `window.ENV`
-- **Mobile:** Variables loaded from `.env` file or `--dart-define` flags
+- **Mobile/desktop:** Variables passed at build time with
+  `--dart-define-from-file=.env` (or individual `--dart-define` flags) and read
+  by `AppEnv` / `resolveStartupConfig`. `.env` is **not** a Flutter asset; a
+  bundled `.env` asset is only used as an optional fallback. The VS Code launch
+  configurations in `.vscode/launch.json` already pass the flag.
 
 Required environment variables:
 - `SUPABASE_URL`
 - `SUPABASE_ANON_KEY`
+- `MAPBOX_ACCESS_TOKEN`, `MAPBOX_USERNAME`, `MAPBOX_STYLE_ID_DARK`,
+  `MAPBOX_STYLE_ID_LIGHT`
+- `LOCATIONIQ_API_KEY`
+
+When adding a new key, also add it to `_compileTimeDefines` in
+`lib/core/app_env.dart` (`String.fromEnvironment` needs constant names).
 
 ## Key Dependencies
 
