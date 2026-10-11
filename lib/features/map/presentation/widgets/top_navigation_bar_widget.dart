@@ -2,12 +2,16 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ournego/core/theme/tokens/ournego_radius_tokens.dart';
 import 'package:ournego/core/theme/tokens/ournego_semantic_tokens.dart';
 import 'package:ournego/core/theme/tokens/ournego_spacing_tokens.dart';
 import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
+import 'package:ournego/features/feedback/presentation/widgets/feedback_dialog_widget.dart';
+import 'package:ournego/features/map/presentation/widgets/profile_menu_dialog_widget.dart';
+import 'package:ournego/features/navigation/presentation/providers/navigation_provider.dart';
 import 'package:ournego/shared/widgets/ournego_alert_dialog.dart';
 import 'package:ournego/shared/widgets/ournego_buttons.dart';
 
@@ -36,7 +40,6 @@ class TopNavigationBarWidget extends ConsumerWidget {
     final isLogged = ref.watch(authSessionStatusProvider);
     final asyncUser = isLogged ? ref.watch(profileStreamProvider) : null;
     final imageUrl = asyncUser?.value?.profilePicture ?? '';
-    final logOutUsecase = ref.watch(logOutUsecaseProvider);
     final colorScheme = Theme.of(context).colorScheme;
 
     return Padding(
@@ -90,40 +93,7 @@ class TopNavigationBarWidget extends ConsumerWidget {
             borderRadius: OurnegoRadiusTokens.container,
             child: ElevatedButton(
               key: const ValueKey('mapProfileButton'),
-              onPressed: () async {
-                if (!context.mounted) return;
-
-                if (isLogged) {
-                  showDialog<void>(
-                    context: context,
-                    builder: (dialogContext) {
-                      return OurnegoAlertDialog(
-                        title: 'Cerrar sesión',
-                        content: '¿Estás seguro de que quieres cerrar sesión?',
-                        actionLabel: 'Cancelar',
-                        onAction: () {
-                          Navigator.of(dialogContext).pop();
-                        },
-                        trailingActions: [
-                          TextButton(
-                            key: const ValueKey('confirmLogoutButton'),
-                            onPressed: () async {
-                              await logOutUsecase();
-                              if (dialogContext.mounted) {
-                                Navigator.of(dialogContext).pop();
-                                dialogContext.go(MapRoutes.map);
-                              }
-                            },
-                            child: const Text('Cerrar sesión'),
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                } else {
-                  context.push(AuthRoutes.authSelection);
-                }
-              },
+              onPressed: () => _openProfileMenu(context, ref),
               style: OurnegoButtonStyles.circularSurface(context: context),
               child: SizedBox(
                 height: 40,
@@ -159,6 +129,67 @@ class TopNavigationBarWidget extends ConsumerWidget {
       ),
     );
   }
+}
+
+Future<void> _openProfileMenu(BuildContext context, WidgetRef ref) async {
+  final action = await showProfileMenuDialog(context);
+  if (action == null || !context.mounted) return;
+
+  switch (action) {
+    case ProfileMenuAction.logIn:
+      context.push(AuthRoutes.authSelection);
+    case ProfileMenuAction.businessPanel:
+      context.go(BusinessRoutes.panel);
+    case ProfileMenuAction.locationPermissions:
+      await Geolocator.openAppSettings();
+    case ProfileMenuAction.reportProblem:
+      await _openFeedbackDialog(context, ref);
+    case ProfileMenuAction.debugPanel:
+      context.go(DebuggingRoutes.debugPanel);
+    case ProfileMenuAction.logOut:
+      await _confirmLogOut(context, ref);
+  }
+}
+
+Future<void> _openFeedbackDialog(BuildContext context, WidgetRef ref) async {
+  if (ref.read(isFeedbackDialogOpenProvider)) return;
+  ref.read(isFeedbackDialogOpenProvider.notifier).setIsOpen();
+  await showDialog<void>(
+    context: context,
+    builder: (_) => const FeedbackDialogWidget(),
+  );
+  ref.read(isFeedbackDialogOpenProvider.notifier).setIsClosed();
+}
+
+Future<void> _confirmLogOut(BuildContext context, WidgetRef ref) {
+  final logOutUsecase = ref.read(logOutUsecaseProvider);
+
+  return showDialog<void>(
+    context: context,
+    builder: (dialogContext) {
+      return OurnegoAlertDialog(
+        title: 'Cerrar sesión',
+        content: '¿Estás seguro de que quieres cerrar sesión?',
+        actionLabel: 'Cancelar',
+        onAction: () {
+          Navigator.of(dialogContext).pop();
+        },
+        trailingActions: [
+          TextButton(
+            key: const ValueKey('confirmLogoutButton'),
+            onPressed: () async {
+              await logOutUsecase();
+              if (dialogContext.mounted) {
+                Navigator.of(dialogContext).pop();
+                dialogContext.go(MapRoutes.map);
+              }
+            },
+            child: const Text('Cerrar sesión'),
+          ),
+        ],
+      );
+    },
+  );
 }
 
 class _CrystalItemContainer extends StatelessWidget {

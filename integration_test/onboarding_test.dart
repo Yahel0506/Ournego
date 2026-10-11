@@ -304,6 +304,10 @@ void main() {
 
         await $.tester.tap(find.byKey(const ValueKey('mapProfileButton')));
         await $.pumpAndSettle();
+        await $.tester.tap(
+          find.byKey(const ValueKey('profileMenuLogoutButton')),
+        );
+        await $.pumpAndSettle();
         await $.tester.tap(find.byKey(const ValueKey('confirmLogoutButton')));
         await $.pumpAndSettle();
 
