@@ -14,6 +14,7 @@ import 'package:ournego/features/map/presentation/providers/map_providers.dart';
 /// exists (see [MapLocationState.reference]).
 class MapNotifier extends AsyncNotifier<MapLocationState> {
   int _generation = 0;
+  int _pendingOperations = 0;
 
   @override
   Future<MapLocationState> build() async {
@@ -22,7 +23,13 @@ class MapNotifier extends AsyncNotifier<MapLocationState> {
         .listen(_onServiceChanged, onError: (Object _) {});
     ref.onDispose(subscription.cancel);
 
-    final results = await Future.wait([_resolve(), _loadSavedZone()]);
+    _pendingOperations++;
+    final List<Object?> results;
+    try {
+      results = await Future.wait([_resolve(), _loadSavedZone()]);
+    } finally {
+      _pendingOperations--;
+    }
     final initial = MapLocationState(
       status: LocationAccessStatus.unavailable,
       manualZone: results[1] as ManualZone?,
@@ -32,7 +39,26 @@ class MapNotifier extends AsyncNotifier<MapLocationState> {
 
   /// Re-reads permission and service state (never prompts) and refreshes the
   /// GPS fix. Call it when the app returns to the foreground.
-  Future<void> recheck() => _update(_resolve);
+  ///
+  /// While the user has already declined the system's "turn on location"
+  /// dialog for the current outage it does nothing, unless [force] is set:
+  /// coming back from that dialog also counts as returning to the app, and
+  /// re-reading the position would open it again.
+  Future<void> recheck({bool force = false}) {
+    if (!force) {
+      final current = state.value;
+      // Nothing to refresh yet, or another read is already running (the
+      // dialog's own lifecycle echo can arrive before its result does).
+      if (current == null || _pendingOperations > 0) {
+        return Future<void>.value();
+      }
+      if (current.status == LocationAccessStatus.serviceDisabled &&
+          current.serviceDialogOffered) {
+        return Future<void>.value();
+      }
+    }
+    return _update(_resolve);
+  }
 
   /// Shows the system permission dialog when it can still be shown.
   Future<void> requestPermission() {
@@ -51,7 +77,7 @@ class MapNotifier extends AsyncNotifier<MapLocationState> {
     return _update(() async {
       final result = await ref.read(enableLocationServiceUsecaseProvider)();
       return result.fold(
-        _outcomeFromFailure,
+        (failure) => _outcomeFromFailure(failure, dialogAlreadyOffered: true),
         (position) => _Outcome(
           status: LocationAccessStatus.granted,
           gpsPosition: position,
@@ -98,17 +124,24 @@ class MapNotifier extends AsyncNotifier<MapLocationState> {
         current.copyWith(
           status: LocationAccessStatus.serviceDisabled,
           clearGpsPosition: true,
+          serviceDialogOffered: false,
         ),
       );
       return;
     }
 
-    unawaited(recheck());
+    unawaited(recheck(force: true));
   }
 
   Future<void> _update(Future<_Outcome> Function() compute) async {
     final generation = ++_generation;
-    final outcome = await compute();
+    _pendingOperations++;
+    final _Outcome outcome;
+    try {
+      outcome = await compute();
+    } finally {
+      _pendingOperations--;
+    }
     // A newer operation (or a service change) already decided the state.
     if (generation != _generation) return;
 
@@ -118,10 +151,16 @@ class MapNotifier extends AsyncNotifier<MapLocationState> {
   }
 
   MapLocationState _apply(MapLocationState base, _Outcome outcome) {
+    final stillOutOfService =
+        outcome.status == LocationAccessStatus.serviceDisabled &&
+        base.status == LocationAccessStatus.serviceDisabled;
     return base.copyWith(
       status: outcome.status,
       gpsPosition: outcome.gpsPosition,
       clearGpsPosition: outcome.gpsPosition == null && !outcome.keepGps,
+      serviceDialogOffered:
+          outcome.serviceDialogOffered ||
+          (stillOutOfService && base.serviceDialogOffered),
     );
   }
 
@@ -150,13 +189,19 @@ class MapNotifier extends AsyncNotifier<MapLocationState> {
       requestPermissionIfNeeded: false,
     );
     return result.fold(
-      _outcomeFromFailure,
+      (failure) => _outcomeFromFailure(failure, dialogAlreadyOffered: true),
       (position) =>
           _Outcome(status: LocationAccessStatus.granted, gpsPosition: position),
     );
   }
 
-  _Outcome _outcomeFromFailure(Failure failure) {
+  /// [dialogAlreadyOffered] is true when the failed attempt ran with the
+  /// location service on (or asked the system to turn it on), so a
+  /// `serviceDisabled` result means the user declined the native dialog.
+  _Outcome _outcomeFromFailure(
+    Failure failure, {
+    bool dialogAlreadyOffered = false,
+  }) {
     if (failure is LocationPermissionDeniedFailure) {
       return const _Outcome(status: LocationAccessStatus.permissionDenied);
     }
@@ -166,7 +211,10 @@ class MapNotifier extends AsyncNotifier<MapLocationState> {
       );
     }
     if (failure is LocationServiceDisabledFailure) {
-      return const _Outcome(status: LocationAccessStatus.serviceDisabled);
+      return _Outcome(
+        status: LocationAccessStatus.serviceDisabled,
+        serviceDialogOffered: dialogAlreadyOffered,
+      );
     }
     // Timeouts and unknown errors: keep whatever fix we already had.
     return const _Outcome(
@@ -183,9 +231,13 @@ class _Outcome {
   /// Keep the previous GPS fix when this outcome carries none.
   final bool keepGps;
 
+  /// The system's native "turn on location" dialog was shown and declined.
+  final bool serviceDialogOffered;
+
   const _Outcome({
     required this.status,
     this.gpsPosition,
     this.keepGps = false,
+    this.serviceDialogOffered = false,
   });
 }

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 
 import 'package:geolocator/geolocator.dart' as geolocator;
 
@@ -10,10 +11,28 @@ import 'package:ournego/core/location/location_datasource.dart';
 import 'package:ournego/core/location/location_exceptions.dart';
 
 class GeolocatorLocationDatasource implements LocationDatasource {
-  static const _positionTimeout = Duration(seconds: 12);
+  GeolocatorLocationDatasource({
+    bool Function()? isAppActive,
+    Duration positionTimeout = const Duration(seconds: 12),
+    Duration timeoutTick = const Duration(milliseconds: 250),
+  }) : _isAppActive = isAppActive ?? _defaultIsAppActive,
+       _positionTimeout = positionTimeout,
+       _timeoutTick = timeoutTick;
 
-  // Leaves room for the user to answer the native "turn on location" dialog.
-  static const _positionTimeoutAfterServiceDialog = Duration(seconds: 60);
+  final bool Function() _isAppActive;
+  final Duration _positionTimeout;
+  final Duration _timeoutTick;
+
+  /// The system's "turn on location" dialog sends the app to `inactive`, so
+  /// the time the user spends deciding must not count against the timeout.
+  static bool _defaultIsAppActive() {
+    try {
+      final state = WidgetsBinding.instance.lifecycleState;
+      return state == null || state == AppLifecycleState.resumed;
+    } catch (_) {
+      return true;
+    }
+  }
 
   @override
   Future<LocationAccessStatus> checkAccessStatus() async {
@@ -76,14 +95,7 @@ class GeolocatorLocationDatasource implements LocationDatasource {
     }
 
     try {
-      final position = await geolocator.Geolocator.getCurrentPosition(
-        locationSettings: geolocator.LocationSettings(
-          accuracy: geolocator.LocationAccuracy.high,
-          timeLimit: serviceEnabled
-              ? _positionTimeout
-              : _positionTimeoutAfterServiceDialog,
-        ),
-      );
+      final position = await _currentPositionWhileActive();
 
       return AppPosition(
         latitude: position.latitude,
@@ -96,6 +108,38 @@ class GeolocatorLocationDatasource implements LocationDatasource {
     } on Exception {
       throw const LocationUnavailableException();
     }
+  }
+
+  /// Like `getCurrentPosition(timeLimit: ...)`, but only the time the app is
+  /// in the foreground counts, so answering a system dialog never times out.
+  Future<geolocator.Position> _currentPositionWhileActive() {
+    final completer = Completer<geolocator.Position>();
+    var activeTime = Duration.zero;
+
+    final timer = Timer.periodic(_timeoutTick, (timer) {
+      if (!_isAppActive()) return;
+      activeTime += _timeoutTick;
+      if (activeTime >= _positionTimeout && !completer.isCompleted) {
+        completer.completeError(
+          TimeoutException('No location fix', _positionTimeout),
+        );
+      }
+    });
+
+    geolocator.Geolocator.getCurrentPosition(
+      locationSettings: const geolocator.LocationSettings(
+        accuracy: geolocator.LocationAccuracy.high,
+      ),
+    ).then(
+      (position) {
+        if (!completer.isCompleted) completer.complete(position);
+      },
+      onError: (Object error, StackTrace stackTrace) {
+        if (!completer.isCompleted) completer.completeError(error, stackTrace);
+      },
+    );
+
+    return completer.future.whenComplete(timer.cancel);
   }
 
   Future<LocationAccessStatus> _statusFor(

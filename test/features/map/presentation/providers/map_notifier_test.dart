@@ -247,4 +247,71 @@ void main() {
     await notifier.clearManualZone();
     expect(zoneRepository.savedZone, isNull);
   });
+
+  group('declined native GPS dialog', () {
+    test('is remembered so coming back does not reopen it', () async {
+      repository.setLocationResult(Left(LocationServiceDisabledFailure()));
+      container = createContainer();
+      await container.read(mapProvider.future);
+
+      expect(current().status, LocationAccessStatus.serviceDisabled);
+      expect(current().serviceDialogOffered, isTrue);
+      final requests = repository.locationRequestCount;
+
+      // Returning from the dialog counts as resuming the app.
+      await container.read(mapProvider.notifier).recheck();
+      expect(repository.locationRequestCount, requests);
+    });
+
+    test('a forced recheck still looks again', () async {
+      repository.setLocationResult(Left(LocationServiceDisabledFailure()));
+      container = createContainer();
+      await container.read(mapProvider.future);
+      final requests = repository.locationRequestCount;
+
+      await container.read(mapProvider.notifier).recheck(force: true);
+      expect(repository.locationRequestCount, requests + 1);
+    });
+
+    test('is not assumed when the service was off before asking', () async {
+      repository.setAccessStatus(LocationAccessStatus.serviceDisabled);
+      container = createContainer();
+      await container.read(mapProvider.future);
+
+      expect(current().status, LocationAccessStatus.serviceDisabled);
+      expect(current().serviceDialogOffered, isFalse);
+    });
+
+    test(
+      'declining the dialog from enableLocationService is remembered',
+      () async {
+        repository.setAccessStatus(LocationAccessStatus.serviceDisabled);
+        repository.setLocationResult(Left(LocationServiceDisabledFailure()));
+        container = createContainer();
+        await container.read(mapProvider.future);
+
+        await container.read(mapProvider.notifier).enableLocationService();
+        expect(current().serviceDialogOffered, isTrue);
+      },
+    );
+
+    test('a new outage offers the dialog again', () async {
+      repository.setLocationResult(Left(LocationServiceDisabledFailure()));
+      container = createContainer();
+      await container.read(mapProvider.future);
+      expect(current().serviceDialogOffered, isTrue);
+
+      repository.setLocationResult(const Right(_gps));
+      repository.emitServiceStatus(enabled: true);
+      await _settle();
+      await _settle();
+      expect(current().status, LocationAccessStatus.granted);
+      expect(current().serviceDialogOffered, isFalse);
+
+      repository.emitServiceStatus(enabled: false);
+      await _settle();
+      expect(current().status, LocationAccessStatus.serviceDisabled);
+      expect(current().serviceDialogOffered, isFalse);
+    });
+  });
 }

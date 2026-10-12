@@ -6,6 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:ournego/core/failures.dart';
+import 'package:ournego/core/location/app_position.dart';
 import 'package:ournego/core/location/location_access_status.dart';
 import 'package:ournego/core/mapbox_config.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
@@ -29,11 +30,12 @@ import 'package:ournego/features/map/presentation/widgets/floating_sheet/floatin
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/models/sheet_business_data.dart';
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/ournego_floating_sheet.dart';
 import 'package:ournego/features/map/presentation/widgets/map_canvas_widget.dart';
+import 'package:ournego/features/map/presentation/widgets/location_access_sheet_widget.dart';
 import 'package:ournego/features/map/presentation/widgets/map_controls_widget.dart';
+import 'package:ournego/features/map/presentation/widgets/map_location_banner_widget.dart';
 import 'package:ournego/features/map/presentation/widgets/map_search_overlay_widget.dart';
 import 'package:ournego/features/map/presentation/widgets/top_navigation_bar_widget.dart';
 import 'package:ournego/features/navigation/presentation/providers/navigation_provider.dart';
-import 'package:ournego/shared/widgets/information_card_widget.dart';
 import 'package:ournego/shared/widgets/nego/nego.dart';
 import 'package:ournego/shared/widgets/ournego_alert_dialog.dart';
 import 'package:ournego/shared/widgets/ournego_content_container.dart';
@@ -181,102 +183,65 @@ class _MapScreenState extends ConsumerState<MapScreen>
     }
   }
 
-  Future<void> _showLocationErrorSheet(LocationAccessStatus status) async {
+  void _onLocationStatusChanged(LocationAccessStatus status) {
+    if (!mounted) {
+      return;
+    }
+
+    switch (status) {
+      case LocationAccessStatus.permissionDenied ||
+          LocationAccessStatus.permissionDeniedForever:
+        _showLocationAccessSheet(status);
+      case LocationAccessStatus.serviceDisabled:
+        // Native "turn on location" dialog; if declined, the banner remains.
+        // Skipped when the system already offered it during this outage.
+        if (ref.read(mapProvider).asData?.value.serviceDialogOffered != true) {
+          ref.read(mapProvider.notifier).enableLocationService();
+        }
+      case LocationAccessStatus.granted || LocationAccessStatus.unavailable:
+        break;
+    }
+  }
+
+  /// Opens Nego's explanation sheet and runs what the user picked. Only one
+  /// location sheet can be open at a time.
+  Future<void> _showLocationAccessSheet(LocationAccessStatus status) async {
     if (_isLocationModalOpen || !mounted) {
       return;
     }
 
     _isLocationModalOpen = true;
-
-    final isDenied = status == LocationAccessStatus.permissionDenied;
-    final isDeniedForever =
-        status == LocationAccessStatus.permissionDeniedForever;
-    final isServiceDisabled = status == LocationAccessStatus.serviceDisabled;
-
-    final title = isDenied
-        ? 'El permiso de ubicacion fue denegado'
-        : isDeniedForever
-        ? 'El permiso de ubicacion fue negado permanentemente'
-        : isServiceDisabled
-        ? 'Los servicios de ubicacion estan desactivados'
-        : 'No se pudo obtener tu ubicacion';
-
-    final description = isDenied
-        ? 'Otorga el permiso para usar la funcion de mapa.'
-        : isDeniedForever
-        ? 'Habilitalo manualmente desde ajustes para usar el mapa.'
-        : isServiceDisabled
-        ? 'Activa el GPS o los servicios de ubicacion del dispositivo.'
-        : 'Verifica el permiso y la señal GPS, luego intenta de nuevo.';
-
-    final actionLabel = isDeniedForever
-        ? 'Abrir ajustes'
-        : isServiceDisabled
-        ? 'Activar ubicacion'
-        : 'Reintentar';
-
-    await showModalBottomSheet<void>(
-      // ⚠️ OUT OF SCOPE — OurnegoFloatingSheet migration
-      // Este showModalBottomSheet maneja errores de permisos de ubicación.
-      // NO modificar, mover ni eliminar como parte de esta tarea.
-      // Relacionado con: _showLocationErrorSheet() / permisos GPS
-      context: context,
-      isDismissible: true,
-      builder: (modalContext) {
-        return SafeArea(
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                InformationCardWidget(
-                  title: title,
-                  description: description,
-                  imagePath: 'assets/images/location_error.png',
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => Navigator.of(modalContext).pop(),
-                          child: const Text('Cerrar'),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: FilledButton(
-                          onPressed: () async {
-                            Navigator.of(modalContext).pop();
-
-                            if (isDeniedForever) {
-                              await Geolocator.openAppSettings();
-                              return;
-                            }
-
-                            final notifier = ref.read(mapProvider.notifier);
-                            if (isServiceDisabled) {
-                              await notifier.enableLocationService();
-                            } else if (isDenied) {
-                              await notifier.requestPermission();
-                            } else {
-                              await notifier.recheck();
-                            }
-                          },
-                          child: Text(actionLabel),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-
+    final action = await showLocationAccessSheet(context, status: status);
     _isLocationModalOpen = false;
+
+    if (!mounted) {
+      return;
+    }
+
+    switch (action) {
+      case LocationAccessSheetAction.allow:
+        await ref.read(mapProvider.notifier).requestPermission();
+      case LocationAccessSheetAction.openSettings:
+        await Geolocator.openAppSettings();
+      case LocationAccessSheetAction.continueWithoutLocation || null:
+        break;
+    }
+  }
+
+  Future<void> _onLocationBannerAction() async {
+    final status = ref.read(mapProvider).asData?.value.status;
+    switch (status) {
+      case LocationAccessStatus.permissionDenied:
+        await ref.read(mapProvider.notifier).requestPermission();
+      case LocationAccessStatus.permissionDeniedForever:
+        await Geolocator.openAppSettings();
+      case LocationAccessStatus.serviceDisabled:
+        await ref.read(mapProvider.notifier).enableLocationService();
+      case LocationAccessStatus.granted ||
+          LocationAccessStatus.unavailable ||
+          null:
+        break;
+    }
   }
 
   Future<void> _showSessionErrorDialog() {
@@ -414,10 +379,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
           );
         }
 
-        if (nextState.status != previousState?.status &&
-            nextState.status != LocationAccessStatus.granted) {
+        if (nextState.status != previousState?.status) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            _showLocationErrorSheet(nextState.status);
+            _onLocationStatusChanged(nextState.status);
           });
         }
       },
@@ -504,6 +468,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final locationState = mapState.asData?.value;
     final location = locationState?.gpsPosition;
     final reference = locationState?.reference ?? ReferenceLocation.defaultZone;
+    final showLocationBanner =
+        !_showSearchPanel && locationStatusNeedsBanner(locationState?.status);
     final businessState = ref.watch(businessesStreamProvider);
     final searchResults = _searchBusinessesUsecase(
       businesses: businessState.asData?.value ?? const <Business>[],
@@ -574,7 +540,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
             },
             markerUiMapper: _businessMarkerUiMapper.call,
           ),
-          if (!_showSearchPanel && isOwnerState.value == false)
+          if (!_showSearchPanel &&
+              !showLocationBanner &&
+              isOwnerState.value == false)
             Positioned(
               top: topBarHeight + 8,
               left: 16,
@@ -605,6 +573,16 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     ],
                   ),
                 ),
+              ),
+            ),
+          if (showLocationBanner)
+            Positioned(
+              top: topBarHeight + 8,
+              left: 16,
+              right: 16,
+              child: MapLocationBanner(
+                status: locationState!.status,
+                onAction: _onLocationBannerAction,
               ),
             ),
           Positioned.fill(
@@ -695,6 +673,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
                         );
                       },
                       onMyLocationTap: _handleMyLocationTap,
+                      hasLocationAccess:
+                          locationState?.gpsPosition != null ||
+                          !locationStatusNeedsBanner(locationState?.status),
                     ),
                     SizedBox(width: 16),
                   ],
@@ -823,40 +804,53 @@ class _MapScreenState extends ConsumerState<MapScreen>
     await Share.share(negocioDeepLinkUrl(business.id), subject: business.name);
   }
 
+  void _centerOnLocation(AppPosition position) {
+    _animatedMapController.animateTo(
+      dest: LatLng(position.latitude, position.longitude),
+      zoom: 15,
+      rotation: 0,
+    );
+  }
+
   Future<void> _handleMyLocationTap() async {
     final notifier = ref.read(mapProvider.notifier);
-    var locationState = ref.read(mapProvider).asData?.value;
+    final current = ref.read(mapProvider).asData?.value;
 
-    if (locationState?.gpsPosition == null) {
-      switch (locationState?.status) {
-        case LocationAccessStatus.permissionDenied:
-          await notifier.requestPermission();
-        case LocationAccessStatus.permissionDeniedForever:
-          await Geolocator.openAppSettings();
-          return;
-        case LocationAccessStatus.serviceDisabled:
-          await notifier.enableLocationService();
-        case LocationAccessStatus.granted ||
-            LocationAccessStatus.unavailable ||
-            null:
-          await notifier.recheck();
-      }
-      locationState = ref.read(mapProvider).asData?.value;
-    }
-
-    final position = locationState?.gpsPosition;
-    if (position != null) {
-      _animatedMapController.animateTo(
-        dest: LatLng(position.latitude, position.longitude),
-        zoom: 15,
-        rotation: 0,
-      );
+    final gps = current?.gpsPosition;
+    if (gps != null) {
+      _centerOnLocation(gps);
       return;
     }
 
-    final status = locationState?.status;
-    if (status != null && status != LocationAccessStatus.granted) {
-      await _showLocationErrorSheet(status);
+    switch (current?.status) {
+      case LocationAccessStatus.permissionDenied ||
+          LocationAccessStatus.permissionDeniedForever:
+        await _showLocationAccessSheet(current!.status);
+        return;
+      case LocationAccessStatus.serviceDisabled:
+        await notifier.enableLocationService();
+      case LocationAccessStatus.granted ||
+          LocationAccessStatus.unavailable ||
+          null:
+        await notifier.recheck();
+    }
+
+    if (!mounted) {
+      return;
+    }
+    final refreshed = ref.read(mapProvider).asData?.value.gpsPosition;
+    if (refreshed != null) {
+      _centerOnLocation(refreshed);
+      return;
+    }
+
+    final status = ref.read(mapProvider).asData?.value.status;
+    if (status == LocationAccessStatus.unavailable) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        OurnegoSnackbars.info(
+          'No pudimos obtener tu ubicación. Inténtalo de nuevo.',
+        ),
+      );
     }
   }
 

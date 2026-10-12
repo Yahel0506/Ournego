@@ -6,6 +6,7 @@ class MapControlsWidget extends StatelessWidget {
   final Future<void> Function() onZoomInTap;
   final Future<void> Function() onZoomOutTap;
   final Future<void> Function() onMyLocationTap;
+  final bool hasLocationAccess;
 
   const MapControlsWidget({
     super.key,
@@ -14,6 +15,7 @@ class MapControlsWidget extends StatelessWidget {
     required this.onZoomInTap,
     required this.onZoomOutTap,
     required this.onMyLocationTap,
+    this.hasLocationAccess = true,
   });
 
   @override
@@ -29,7 +31,9 @@ class MapControlsWidget extends StatelessWidget {
         _MapControlButton(icon: Icons.remove, onPressed: onZoomOutTap),
         const SizedBox(height: 12),
         _MapControlButton(
-          icon: Icons.my_location_rounded,
+          icon: hasLocationAccess
+              ? Icons.my_location_rounded
+              : Icons.location_disabled_rounded,
           onPressed: onMyLocationTap,
         ),
       ],

@@ -50,6 +50,7 @@ class FakeMapRepository implements MapRepository {
       StreamController<bool>.broadcast();
   int permissionRequestCount = 0;
   bool? lastResolveServiceIfDisabled;
+  int locationRequestCount = 0;
 
   void setAccessStatus(
     LocationAccessStatus status, {
@@ -82,6 +83,7 @@ class FakeMapRepository implements MapRepository {
     bool requestPermissionIfNeeded = true,
     bool resolveServiceIfDisabled = false,
   }) async {
+    locationRequestCount++;
     lastResolveServiceIfDisabled = resolveServiceIfDisabled;
     return _locationResult;
   }

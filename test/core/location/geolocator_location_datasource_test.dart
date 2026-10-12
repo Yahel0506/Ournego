@@ -21,7 +21,8 @@ class _FakeGeolocator extends GeolocatorPlatform
   Object? positionError;
   int requestCount = 0;
   int positionCalls = 0;
-  Duration? lastTimeLimit;
+  Duration? positionDelay;
+  bool neverCompletes = false;
   final serviceController = StreamController<ServiceStatus>.broadcast();
 
   @override
@@ -45,7 +46,9 @@ class _FakeGeolocator extends GeolocatorPlatform
     LocationSettings? locationSettings,
   }) async {
     positionCalls++;
-    lastTimeLimit = locationSettings?.timeLimit;
+    if (neverCompletes) return Completer<Position>().future;
+    final delay = positionDelay;
+    if (delay != null) await Future<void>.delayed(delay);
     final error = positionError;
     if (error != null) throw error;
     return Position(
@@ -216,7 +219,6 @@ void main() {
         );
         expect(position.latitude, 19.7);
         expect(fake.positionCalls, 1);
-        expect(fake.lastTimeLimit, const Duration(seconds: 60));
       },
     );
 
@@ -240,9 +242,32 @@ void main() {
       expect(fake.positionCalls, 0);
     });
 
-    test('uses the short timeout when the service is already on', () async {
-      await datasource.getCurrentLocation();
-      expect(fake.lastTimeLimit, const Duration(seconds: 12));
+    test(
+      'times out when no fix arrives while the app is in the foreground',
+      () async {
+        fake.neverCompletes = true;
+        final quick = GeolocatorLocationDatasource(
+          isAppActive: () => true,
+          positionTimeout: const Duration(milliseconds: 60),
+          timeoutTick: const Duration(milliseconds: 10),
+        );
+        await expectLater(
+          quick.getCurrentLocation(),
+          throwsA(isA<LocationUnavailableException>()),
+        );
+      },
+    );
+
+    test('does not count the time spent answering a system dialog', () async {
+      // The app stays inactive (system dialog on top) longer than the budget.
+      fake.positionDelay = const Duration(milliseconds: 200);
+      final patient = GeolocatorLocationDatasource(
+        isAppActive: () => false,
+        positionTimeout: const Duration(milliseconds: 60),
+        timeoutTick: const Duration(milliseconds: 10),
+      );
+      final position = await patient.getCurrentLocation();
+      expect(position.latitude, 19.7);
     });
 
     test('maps timeouts to unavailable', () async {
