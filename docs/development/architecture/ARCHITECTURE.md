@@ -23,6 +23,8 @@ lib/
       app_router.dart
       route_names.dart
     failures.dart
+    geocoding/        # LocationIQ client shared by map and business
+    location/         # device location datasource, access status, exceptions
     ...
   features/
     <feature>/
