@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ournego/core/location/app_position.dart';
 import 'package:ournego/core/location/geolocator_location_datasource.dart';
 import 'package:ournego/core/location/location_datasource.dart';
 import 'package:ournego/features/auth/domain/entities/app_user.dart';
@@ -8,6 +7,7 @@ import 'package:ournego/features/auth/presentation/providers/auth_providers.dart
 import 'package:ournego/features/map/data/datasources/supabase_map_datasource.dart';
 import 'package:ournego/features/map/data/repositories/map_repository_impl.dart';
 import 'package:ournego/features/map/domain/entities/business.dart';
+import 'package:ournego/features/map/domain/entities/map_location_state.dart';
 import 'package:ournego/features/map/domain/repositories/map_repository.dart';
 import 'package:ournego/features/map/domain/usecases/business_favorites_usecase.dart';
 import 'package:ournego/features/map/domain/usecases/get_business_by_id_usecase.dart';
@@ -108,7 +108,7 @@ final trackBusinessVisitUsecaseProvider = Provider<TrackBusinessVisitUsecase>((
 
 final mapTilesEnabledProvider = Provider<bool>((ref) => true);
 
-final mapProvider = AsyncNotifierProvider<MapNotifier, AppPosition>(
+final mapProvider = AsyncNotifierProvider<MapNotifier, MapLocationState>(
   MapNotifier.new,
 );
 

@@ -6,7 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:ournego/core/failures.dart';
-import 'package:ournego/core/location/app_position.dart';
+import 'package:ournego/core/location/location_access_status.dart';
 import 'package:ournego/core/mapbox_config.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/core/routing/route_names.dart';
@@ -15,6 +15,8 @@ import 'package:ournego/features/business/presentation/providers/business_provid
 import 'package:ournego/features/feedback/presentation/widgets/feedback_dialog_widget.dart';
 import 'package:ournego/features/map/domain/entities/business.dart';
 import 'package:ournego/features/map/domain/entities/business_type.dart';
+import 'package:ournego/features/map/domain/entities/map_location_state.dart';
+import 'package:ournego/features/map/domain/entities/reference_location.dart';
 import 'package:ournego/features/map/presentation/controllers/map_session_storage.dart';
 import 'package:ournego/features/map/presentation/controllers/map_view_controller.dart';
 import 'package:ournego/features/map/presentation/controllers/search_businesses_usecase.dart';
@@ -50,7 +52,7 @@ class MapScreen extends ConsumerStatefulWidget {
 }
 
 class _MapScreenState extends ConsumerState<MapScreen>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   static const double _sheetBottomOffset = 96;
   static const double _sheetTopGap = 12;
   static const double _searchPanelGap = 12;
@@ -59,7 +61,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
   late final AnimationController _searchPanelAnimationController;
   late final Animation<double> _searchPanelOpacity;
   late final Animation<Offset> _searchPanelSlide;
-  late ProviderSubscription<AsyncValue<AppPosition>> _providerSubscription;
+  late ProviderSubscription<AsyncValue<MapLocationState>> _providerSubscription;
   late ProviderSubscription<MapVoiceSearchState> _voiceSubscription;
   late final FloatingSheetController _floatingSheetController;
   late final MapViewController _viewController;
@@ -179,24 +181,17 @@ class _MapScreenState extends ConsumerState<MapScreen>
     }
   }
 
-  Future<void> _retryLocationRequest({
-    bool requestPermissionIfNeeded = true,
-  }) async {
-    await ref
-        .read(mapProvider.notifier)
-        .refreshLocation(requestPermissionIfNeeded: requestPermissionIfNeeded);
-  }
-
-  Future<void> _showLocationErrorSheet(Object error) async {
+  Future<void> _showLocationErrorSheet(LocationAccessStatus status) async {
     if (_isLocationModalOpen || !mounted) {
       return;
     }
 
     _isLocationModalOpen = true;
 
-    final isDenied = error is LocationPermissionDeniedFailure;
-    final isDeniedForever = error is LocationPermissionDeniedForeverFailure;
-    final isServiceDisabled = error is LocationServiceDisabledFailure;
+    final isDenied = status == LocationAccessStatus.permissionDenied;
+    final isDeniedForever =
+        status == LocationAccessStatus.permissionDeniedForever;
+    final isServiceDisabled = status == LocationAccessStatus.serviceDisabled;
 
     final title = isDenied
         ? 'El permiso de ubicacion fue denegado'
@@ -259,14 +254,14 @@ class _MapScreenState extends ConsumerState<MapScreen>
                               return;
                             }
 
+                            final notifier = ref.read(mapProvider.notifier);
                             if (isServiceDisabled) {
-                              await Geolocator.openLocationSettings();
-                              return;
+                              await notifier.enableLocationService();
+                            } else if (isDenied) {
+                              await notifier.requestPermission();
+                            } else {
+                              await notifier.recheck();
                             }
-
-                            await _retryLocationRequest(
-                              requestPermissionIfNeeded: true,
-                            );
                           },
                           child: Text(actionLabel),
                         ),
@@ -391,24 +386,40 @@ class _MapScreenState extends ConsumerState<MapScreen>
     );
     _floatingSheetController.addListener(_persistMapAndSheetState);
 
-    _providerSubscription = ref.listenManual<AsyncValue<AppPosition>>(
+    WidgetsBinding.instance.addObserver(this);
+    _providerSubscription = ref.listenManual<AsyncValue<MapLocationState>>(
       mapProvider,
       (previous, next) {
-        next.whenOrNull(
-          data: (data) {
-            if (_viewController.initialCenter == null) {
-              _animatedMapController.animateTo(
-                dest: LatLng(data.latitude, data.longitude),
-                zoom: 15,
-              );
-            }
-          },
-          error: (error, _) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              _showLocationErrorSheet(error);
-            });
-          },
-        );
+        final previousState = previous?.asData?.value;
+        final nextState = next.asData?.value;
+        if (nextState == null) {
+          return;
+        }
+
+        final reference = nextState.reference;
+        final referenceChanged =
+            previousState?.reference.position.latitude !=
+                reference.position.latitude ||
+            previousState?.reference.position.longitude !=
+                reference.position.longitude;
+        if (_viewController.initialCenter == null &&
+            referenceChanged &&
+            reference.source != ReferenceLocationSource.defaultZone) {
+          _animatedMapController.animateTo(
+            dest: LatLng(
+              reference.position.latitude,
+              reference.position.longitude,
+            ),
+            zoom: 15,
+          );
+        }
+
+        if (nextState.status != previousState?.status &&
+            nextState.status != LocationAccessStatus.granted) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _showLocationErrorSheet(nextState.status);
+          });
+        }
       },
     );
     _voiceSubscription = ref.listenManual<MapVoiceSearchState>(
@@ -474,6 +485,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
     _searchFocusNode.dispose();
     _searchPanelAnimationController.dispose();
@@ -489,15 +501,17 @@ class _MapScreenState extends ConsumerState<MapScreen>
   Widget build(BuildContext context) {
     final mapTilesEnabled = ref.watch(mapTilesEnabledProvider);
     final mapState = ref.watch(mapProvider);
-    final location = mapState.asData?.value;
+    final locationState = mapState.asData?.value;
+    final location = locationState?.gpsPosition;
+    final reference = locationState?.reference ?? ReferenceLocation.defaultZone;
     final businessState = ref.watch(businessesStreamProvider);
     final searchResults = _searchBusinessesUsecase(
       businesses: businessState.asData?.value ?? const <Business>[],
       query: _searchQuery,
       filters: _searchFilters,
       now: DateTime.now(),
-      userLatitude: location?.latitude,
-      userLongitude: location?.longitude,
+      userLatitude: reference.position.latitude,
+      userLongitude: reference.position.longitude,
     );
     final voiceState = ref.watch(mapVoiceSearchProvider);
     final isOwnerState = ref.watch(isOwnerProvider);
@@ -535,7 +549,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
             animatedMapController: _animatedMapController,
             initialCenter:
                 _viewController.initialCenter ??
-                LatLng(19.7000112, -103.4654738),
+                LatLng(
+                  ReferenceLocation.defaultZone.position.latitude,
+                  ReferenceLocation.defaultZone.position.longitude,
+                ),
             initialZoom: _viewController.initialZoom ?? 12,
             mapTilesEnabled: mapTilesEnabled,
             hasMapboxConfig: hasMapboxConfig,
@@ -807,32 +824,46 @@ class _MapScreenState extends ConsumerState<MapScreen>
   }
 
   Future<void> _handleMyLocationTap() async {
-    final currentLocation = ref.read(mapProvider).asData?.value;
-    if (currentLocation != null) {
+    final notifier = ref.read(mapProvider.notifier);
+    var locationState = ref.read(mapProvider).asData?.value;
+
+    if (locationState?.gpsPosition == null) {
+      switch (locationState?.status) {
+        case LocationAccessStatus.permissionDenied:
+          await notifier.requestPermission();
+        case LocationAccessStatus.permissionDeniedForever:
+          await Geolocator.openAppSettings();
+          return;
+        case LocationAccessStatus.serviceDisabled:
+          await notifier.enableLocationService();
+        case LocationAccessStatus.granted ||
+            LocationAccessStatus.unavailable ||
+            null:
+          await notifier.recheck();
+      }
+      locationState = ref.read(mapProvider).asData?.value;
+    }
+
+    final position = locationState?.gpsPosition;
+    if (position != null) {
       _animatedMapController.animateTo(
-        dest: LatLng(currentLocation.latitude, currentLocation.longitude),
+        dest: LatLng(position.latitude, position.longitude),
         zoom: 15,
         rotation: 0,
       );
       return;
     }
 
-    await _retryLocationRequest(requestPermissionIfNeeded: true);
-
-    final refreshedState = ref.read(mapProvider);
-    final refreshedLocation = refreshedState.asData?.value;
-    if (refreshedLocation != null) {
-      _animatedMapController.animateTo(
-        dest: LatLng(refreshedLocation.latitude, refreshedLocation.longitude),
-        zoom: 15,
-        rotation: 0,
-      );
-      return;
+    final status = locationState?.status;
+    if (status != null && status != LocationAccessStatus.granted) {
+      await _showLocationErrorSheet(status);
     }
+  }
 
-    final locationError = refreshedState.asError?.error;
-    if (locationError != null) {
-      await _showLocationErrorSheet(locationError);
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      ref.read(mapProvider.notifier).recheck();
     }
   }
 
