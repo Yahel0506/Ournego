@@ -35,6 +35,8 @@ import 'package:ournego/features/map/presentation/widgets/map_controls_widget.da
 import 'package:ournego/features/map/presentation/widgets/map_location_banner_widget.dart';
 import 'package:ournego/features/map/presentation/widgets/map_search_overlay_widget.dart';
 import 'package:ournego/features/map/presentation/widgets/top_navigation_bar_widget.dart';
+import 'package:ournego/features/map/presentation/widgets/zone_chip_widget.dart';
+import 'package:ournego/features/map/presentation/widgets/zone_picker_sheet_widget.dart';
 import 'package:ournego/features/navigation/presentation/providers/navigation_provider.dart';
 import 'package:ournego/shared/widgets/nego/nego.dart';
 import 'package:ournego/shared/widgets/ournego_alert_dialog.dart';
@@ -74,6 +76,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
   final _searchFocusNode = FocusNode();
 
   bool _isLocationModalOpen = false;
+  bool _isZonePickerOpen = false;
   bool _isSearchPanelVisible = false;
   String _searchQuery = '';
   MapSearchFilters _searchFilters = const MapSearchFilters();
@@ -221,10 +224,67 @@ class _MapScreenState extends ConsumerState<MapScreen>
     switch (action) {
       case LocationAccessSheetAction.allow:
         await ref.read(mapProvider.notifier).requestPermission();
+      case LocationAccessSheetAction.chooseZone:
+        await _openZonePicker();
       case LocationAccessSheetAction.openSettings:
         await Geolocator.openAppSettings();
       case LocationAccessSheetAction.continueWithoutLocation || null:
         break;
+    }
+  }
+
+  AppPosition _mapCenterOrReference() {
+    try {
+      final center = _animatedMapController.mapController.camera.center;
+      return AppPosition(
+        latitude: center.latitude,
+        longitude: center.longitude,
+      );
+    } catch (_) {
+      // The map is not attached yet: fall back to the current reference.
+      return (ref.read(mapProvider).asData?.value.reference ??
+              ReferenceLocation.defaultZone)
+          .position;
+    }
+  }
+
+  Future<void> _openZonePicker() async {
+    if (_isZonePickerOpen || !mounted) {
+      return;
+    }
+
+    _isZonePickerOpen = true;
+    final result = await showZonePickerSheet(
+      context,
+      mapCenter: _mapCenterOrReference(),
+      currentZone: ref.read(mapProvider).asData?.value.manualZone,
+    );
+    _isZonePickerOpen = false;
+
+    if (!mounted || result == null) {
+      return;
+    }
+
+    final notifier = ref.read(mapProvider.notifier);
+    switch (result) {
+      case ZonePicked(:final zone):
+        await notifier.setManualZone(zone);
+        _moveCameraTo(zone.position);
+      case ZoneCleared():
+        await notifier.clearManualZone();
+        _moveCameraTo(ReferenceLocation.defaultZone.position);
+    }
+  }
+
+  void _moveCameraTo(AppPosition position) {
+    try {
+      _animatedMapController.animateTo(
+        dest: LatLng(position.latitude, position.longitude),
+        zoom: 15,
+        rotation: 0,
+      );
+    } catch (_) {
+      // The map is not attached yet; the initial center will be used.
     }
   }
 
@@ -470,6 +530,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final reference = locationState?.reference ?? ReferenceLocation.defaultZone;
     final showLocationBanner =
         !_showSearchPanel && locationStatusNeedsBanner(locationState?.status);
+    final showZoneChip =
+        !_showSearchPanel && locationState != null && !reference.isGps;
     final businessState = ref.watch(businessesStreamProvider);
     final searchResults = _searchBusinessesUsecase(
       businesses: businessState.asData?.value ?? const <Business>[],
@@ -542,6 +604,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
           ),
           if (!_showSearchPanel &&
               !showLocationBanner &&
+              !showZoneChip &&
               isOwnerState.value == false)
             Positioned(
               top: topBarHeight + 8,
@@ -575,14 +638,24 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 ),
               ),
             ),
-          if (showLocationBanner)
+          if (showLocationBanner || showZoneChip)
             Positioned(
               top: topBarHeight + 8,
               left: 16,
               right: 16,
-              child: MapLocationBanner(
-                status: locationState!.status,
-                onAction: _onLocationBannerAction,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (showLocationBanner)
+                    MapLocationBanner(
+                      status: locationState!.status,
+                      onAction: _onLocationBannerAction,
+                    ),
+                  if (showLocationBanner && showZoneChip)
+                    const SizedBox(height: 8),
+                  if (showZoneChip)
+                    ZoneChip(label: reference.label, onTap: _openZonePicker),
+                ],
               ),
             ),
           Positioned.fill(
@@ -597,6 +670,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     query: _searchQuery,
                     hasData: businessState.hasValue,
                     location: location,
+                    referenceLabel: reference.isGps ? null : reference.label,
                     topBarHeight: topBarHeight,
                     bottomInset: _searchPanelBottomInset,
                     filters: _searchFilters,

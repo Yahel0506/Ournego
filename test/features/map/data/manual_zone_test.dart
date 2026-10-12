@@ -83,6 +83,7 @@ void main() {
           '[{"lat":"19.7","lon":"-103.4","address":{"name":"Centro","city":"Ciudad Guzmán"}},'
           '{"lat":"19.8","lon":"-103.5","address":{"name":"Centro","city":"Ciudad Guzmán"}},'
           '{"lat":"19.9","lon":"-103.6","address":{"name":"Ciudad Guzmán","city":"Ciudad Guzmán"}},'
+          '{"lat":"19.95","lon":"-103.65","address":{"name":"Mi Centro Ciudad Guzmán","city":"Ciudad Guzmán"}},'
           '{"lat":"20.0","lon":"-103.7","address":{"state":"Jalisco"}}]',
           200,
         );
@@ -95,6 +96,7 @@ void main() {
       expect(zones.map((zone) => zone.label), [
         'Centro, Ciudad Guzmán',
         'Ciudad Guzmán',
+        'Mi Centro Ciudad Guzmán',
         'Jalisco',
       ]);
       expect(zones.first.position.latitude, 19.7);

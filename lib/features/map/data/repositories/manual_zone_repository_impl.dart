@@ -111,7 +111,8 @@ class ManualZoneRepositoryImpl implements ManualZoneRepository {
     final city = part('city');
     final parts = <String>[
       if (name.isNotEmpty) name,
-      if (city.isNotEmpty && city != name) city,
+      // Skip the city when the name already says it ("Mi Centro Ciudad Guzmán").
+      if (city.isNotEmpty && !name.contains(city)) city,
     ];
     if (parts.isEmpty) {
       final state = part('state');

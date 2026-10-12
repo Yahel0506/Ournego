@@ -14,7 +14,7 @@ import '../../../helpers/app_helper.dart';
 
 const _sheetNego = Key('location-access-nego');
 const _sheetPrimary = Key('location-access-primary');
-const _sheetContinue = Key('location-access-continue');
+const _sheetContinue = Key('location-access-secondary');
 const _banner = Key('map-location-banner');
 const _bannerAction = Key('map-location-banner-action');
 

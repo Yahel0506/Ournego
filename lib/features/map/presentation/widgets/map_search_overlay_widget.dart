@@ -13,6 +13,9 @@ class MapSearchOverlayWidget extends StatelessWidget {
   final String query;
   final bool hasData;
   final AppPosition? location;
+
+  /// Name of the zone distances are measured from when there is no GPS fix.
+  final String? referenceLabel;
   final double topBarHeight;
   final double bottomInset;
   final MapSearchFilters filters;
@@ -31,6 +34,7 @@ class MapSearchOverlayWidget extends StatelessWidget {
     required this.query,
     required this.hasData,
     required this.location,
+    this.referenceLabel,
     required this.topBarHeight,
     required this.bottomInset,
     required this.filters,
@@ -238,7 +242,9 @@ class MapSearchOverlayWidget extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
               child: Text(
-                'Activa ubicación para ordenar mejor por cercanía.',
+                referenceLabel != null
+                    ? 'Distancias desde: $referenceLabel'
+                    : 'Activa ubicación para ordenar mejor por cercanía.',
                 style: OurnegoTextStyles.body.copyWith(fontSize: 12),
               ),
             ),
