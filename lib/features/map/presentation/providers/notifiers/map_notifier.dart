@@ -22,8 +22,12 @@ class MapNotifier extends AsyncNotifier<MapLocationState> {
         .listen(_onServiceChanged, onError: (Object _) {});
     ref.onDispose(subscription.cancel);
 
-    const initial = MapLocationState(status: LocationAccessStatus.unavailable);
-    return _apply(initial, await _resolve());
+    final results = await Future.wait([_resolve(), _loadSavedZone()]);
+    final initial = MapLocationState(
+      status: LocationAccessStatus.unavailable,
+      manualZone: results[1] as ManualZone?,
+    );
+    return _apply(initial, results[0] as _Outcome);
   }
 
   /// Re-reads permission and service state (never prompts) and refreshes the
@@ -56,16 +60,28 @@ class MapNotifier extends AsyncNotifier<MapLocationState> {
     });
   }
 
-  void setManualZone(ManualZone zone) {
+  /// Uses [zone] as the reference when there is no GPS fix, and remembers it.
+  Future<void> setManualZone(ManualZone zone) async {
     final current = state.value;
     if (current == null) return;
     state = AsyncData(current.copyWith(manualZone: zone));
+    await ref.read(saveManualZoneUsecaseProvider)(zone);
   }
 
-  void clearManualZone() {
+  Future<void> clearManualZone() async {
     final current = state.value;
     if (current == null) return;
     state = AsyncData(current.copyWith(clearManualZone: true));
+    await ref.read(clearManualZoneUsecaseProvider)();
+  }
+
+  Future<ManualZone?> _loadSavedZone() async {
+    try {
+      final result = await ref.read(getManualZoneUsecaseProvider)();
+      return result.fold((_) => null, (zone) => zone);
+    } catch (_) {
+      return null;
+    }
   }
 
   void _onServiceChanged(bool enabled) {

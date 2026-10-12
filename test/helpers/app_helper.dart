@@ -20,6 +20,8 @@ import 'package:ournego/features/map/presentation/providers/map_providers.dart';
 import 'package:ournego/features/onboarding/domain/repositories/onboarding_repository.dart';
 import 'package:ournego/features/onboarding/presentation/providers/onboarding_providers.dart';
 
+import '../fakes/fake_manual_zone_repository.dart';
+
 Widget buildTestApp(
   List<Override> overrides, {
   required bool startOnMap,
@@ -128,6 +130,9 @@ List<Override> mapOverrides(
 }) {
   return [
     mapRepositoryProvider.overrideWith((ref) => repository),
+    manualZoneRepositoryProvider.overrideWith(
+      (ref) => FakeManualZoneRepository(),
+    ),
     mapTilesEnabledProvider.overrideWith((ref) => mapTilesEnabled),
   ];
 }

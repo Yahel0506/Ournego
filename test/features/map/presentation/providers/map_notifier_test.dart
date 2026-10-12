@@ -10,6 +10,7 @@ import 'package:ournego/features/map/domain/entities/map_location_state.dart';
 import 'package:ournego/features/map/domain/entities/reference_location.dart';
 import 'package:ournego/features/map/presentation/providers/map_providers.dart';
 
+import '../../../../fakes/fake_manual_zone_repository.dart';
 import '../../../../fakes/fake_map_repository.dart';
 
 const _gps = AppPosition(latitude: 19.4, longitude: -99.1);
@@ -22,11 +23,15 @@ Future<void> _settle() => Future<void>.delayed(Duration.zero);
 
 void main() {
   late FakeMapRepository repository;
+  late FakeManualZoneRepository zoneRepository;
   late ProviderContainer container;
 
   ProviderContainer createContainer() {
     final created = ProviderContainer(
-      overrides: [mapRepositoryProvider.overrideWith((ref) => repository)],
+      overrides: [
+        mapRepositoryProvider.overrideWith((ref) => repository),
+        manualZoneRepositoryProvider.overrideWith((ref) => zoneRepository),
+      ],
     );
     addTearDown(created.dispose);
     return created;
@@ -36,6 +41,7 @@ void main() {
 
   setUp(() {
     repository = FakeMapRepository(locationResult: const Right(_gps));
+    zoneRepository = FakeManualZoneRepository();
   });
 
   test('granted access exposes the GPS position as reference', () async {
@@ -198,7 +204,7 @@ void main() {
       expect(current().reference.source, ReferenceLocationSource.manualZone);
       expect(current().reference.label, 'Col. Centro');
 
-      notifier.clearManualZone();
+      await notifier.clearManualZone();
       expect(current().reference.source, ReferenceLocationSource.defaultZone);
     },
   );
@@ -219,4 +225,26 @@ void main() {
       expect(current().reference.source, ReferenceLocationSource.manualZone);
     },
   );
+
+  test('a saved manual zone is restored on startup', () async {
+    zoneRepository.savedZone = _zone;
+    repository.setAccessStatus(LocationAccessStatus.permissionDeniedForever);
+    container = createContainer();
+    final state = await container.read(mapProvider.future);
+
+    expect(state.manualZone, _zone);
+    expect(state.reference.source, ReferenceLocationSource.manualZone);
+  });
+
+  test('setting and clearing the zone is persisted', () async {
+    container = createContainer();
+    await container.read(mapProvider.future);
+    final notifier = container.read(mapProvider.notifier);
+
+    await notifier.setManualZone(_zone);
+    expect(zoneRepository.savedZone, _zone);
+
+    await notifier.clearManualZone();
+    expect(zoneRepository.savedZone, isNull);
+  });
 }
