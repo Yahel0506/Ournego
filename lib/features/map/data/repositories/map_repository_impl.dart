@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:ournego/core/location/app_position.dart';
+import 'package:ournego/core/location/location_access_status.dart';
 import 'package:ournego/core/location/location_datasource.dart';
 import 'package:ournego/core/location/location_exceptions.dart';
 import 'package:ournego/core/failures.dart';
@@ -20,12 +21,29 @@ class MapRepositoryImpl implements MapRepository {
   });
 
   @override
+  Future<LocationAccessStatus> checkLocationAccessStatus() {
+    return geolocationDatasource.checkAccessStatus();
+  }
+
+  @override
+  Future<LocationAccessStatus> requestLocationPermission() {
+    return geolocationDatasource.requestPermission();
+  }
+
+  @override
+  Stream<bool> watchLocationService() {
+    return geolocationDatasource.serviceStatusStream();
+  }
+
+  @override
   Future<Either<Failure, AppPosition>> getCurrentLocation({
     bool requestPermissionIfNeeded = true,
+    bool resolveServiceIfDisabled = false,
   }) async {
     try {
       final position = await geolocationDatasource.getCurrentLocation(
         requestPermissionIfNeeded: requestPermissionIfNeeded,
+        resolveServiceIfDisabled: resolveServiceIfDisabled,
       );
       return Right(position);
     } on LocationPermissionDeniedForeverException {

@@ -12,7 +12,11 @@ import 'package:ournego/features/map/domain/repositories/map_repository.dart';
 import 'package:ournego/features/map/domain/usecases/business_favorites_usecase.dart';
 import 'package:ournego/features/map/domain/usecases/get_business_by_id_usecase.dart';
 import 'package:ournego/features/map/domain/usecases/get_businesses_usecase.dart';
+import 'package:ournego/features/map/domain/usecases/check_location_access_usecase.dart';
+import 'package:ournego/features/map/domain/usecases/enable_location_service_usecase.dart';
 import 'package:ournego/features/map/domain/usecases/get_current_location_usecase.dart';
+import 'package:ournego/features/map/domain/usecases/request_location_permission_usecase.dart';
+import 'package:ournego/features/map/domain/usecases/watch_location_service_usecase.dart';
 import 'package:ournego/features/map/domain/usecases/track_business_visit_usecase.dart';
 import 'package:ournego/features/map/presentation/providers/notifiers/map_notifier.dart';
 import 'package:ournego/features/map/presentation/providers/notifiers/map_voice_search_notifier.dart';
@@ -53,6 +57,31 @@ final getCurrentLocationUsecaseProvider = Provider<GetCurrentLocationUsecase>((
   final repository = ref.watch(mapRepositoryProvider);
   return GetCurrentLocationUsecase(repository: repository);
 });
+
+final checkLocationAccessUsecaseProvider = Provider<CheckLocationAccessUsecase>(
+  (ref) {
+    final repository = ref.watch(mapRepositoryProvider);
+    return CheckLocationAccessUsecase(repository: repository);
+  },
+);
+
+final requestLocationPermissionUsecaseProvider =
+    Provider<RequestLocationPermissionUsecase>((ref) {
+      final repository = ref.watch(mapRepositoryProvider);
+      return RequestLocationPermissionUsecase(repository: repository);
+    });
+
+final enableLocationServiceUsecaseProvider =
+    Provider<EnableLocationServiceUsecase>((ref) {
+      final repository = ref.watch(mapRepositoryProvider);
+      return EnableLocationServiceUsecase(repository: repository);
+    });
+
+final watchLocationServiceUsecaseProvider =
+    Provider<WatchLocationServiceUsecase>((ref) {
+      final repository = ref.watch(mapRepositoryProvider);
+      return WatchLocationServiceUsecase(repository: repository);
+    });
 
 final getBusinessByIdUsecaseProvider = Provider<GetBusinessByIdUsecase>((ref) {
   final repository = ref.watch(mapRepositoryProvider);
