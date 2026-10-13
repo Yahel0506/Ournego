@@ -78,12 +78,33 @@ jobs:
             echo "LOCATIONIQ_API_KEY=$LOCATIONIQ_API_KEY"
           } > "$RUNNER_TEMP/release.env"
 
+      - name: Configure release signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          umask 077
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "::warning::ANDROID_KEYSTORE_BASE64 is not set; signing with the debug key."
+            exit 0
+          fi
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/upload-keystore.jks
+          cat > android/key.properties <<EOF2
+          storeFile=upload-keystore.jks
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          keyPassword=$ANDROID_KEY_PASSWORD
+          EOF2
+
       - name: Build release APK
         run: flutter build apk --release --dart-define-from-file="$RUNNER_TEMP/release.env"
 
-      - name: Remove environment file
+      - name: Remove secrets from disk
         if: always()
-        run: rm -f "$RUNNER_TEMP/release.env"
+        run: rm -f "$RUNNER_TEMP/release.env" android/key.properties android/upload-keystore.jks
 
       - name: Replace the latest release
         env:
