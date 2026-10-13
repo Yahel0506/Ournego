@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
@@ -62,17 +63,21 @@ class OurnegoNavBar extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final itemWidth = constraints.maxWidth / items.length;
-          final top = (constraints.maxHeight - itemSize) / 2;
+          // The contour and padding can leave less than 56 px (e.g. inside
+          // the bottom bar margin): shrink the indicator instead of clipping.
+          final indicatorSize = math.min(itemSize, constraints.maxHeight);
+          final top = (constraints.maxHeight - indicatorSize) / 2;
           return Stack(
             children: [
               AnimatedPositioned(
                 key: ournegoNavIndicatorKey,
                 duration: reduced ? Duration.zero : kNavIndicatorDuration,
                 curve: kEaseOutExpo,
-                left: currentIndex * itemWidth + (itemWidth - itemSize) / 2,
+                left:
+                    currentIndex * itemWidth + (itemWidth - indicatorSize) / 2,
                 top: top,
-                width: itemSize,
-                height: itemSize,
+                width: indicatorSize,
+                height: indicatorSize,
                 child: const DecoratedBox(
                   decoration: BoxDecoration(
                     color: OurnegoGlassPalette.navIndicator,
