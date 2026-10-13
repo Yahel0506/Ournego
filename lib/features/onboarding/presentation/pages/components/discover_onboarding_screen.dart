@@ -3,7 +3,7 @@ import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
-import 'package:ournego/shared/widgets/ournego_buttons.dart';
+import 'package:ournego/shared/widgets/buttons/buttons.dart';
 
 class DiscoverOnboardingScreen extends StatelessWidget {
   const DiscoverOnboardingScreen({
@@ -54,17 +54,14 @@ class DiscoverOnboardingScreen extends StatelessWidget {
                   style: OurnegoTextStyles.body,
                 ),
                 const SizedBox(height: 24),
-                SizedBox(
-                  width: 160,
-                  height: 56,
-                  child: OurnegoNeutralPrimaryButton(
-                    key: const ValueKey('onboardingDiscoverContinueButton'),
-                    onPressed: onNext,
-                    child: const Text(
-                      'Continuar',
-                      style: OurnegoTextStyles.header,
-                    ),
-                  ),
+                OurnegoButton.neutral(
+                  key: const ValueKey('onboardingDiscoverContinueButton'),
+                  size: OurnegoButtonSize.large,
+                  minWidth: 160,
+                  label: 'Continuar',
+                  trailingIcon: Icons.arrow_forward_rounded,
+                  iconMotion: OurnegoIconMotion.nudge,
+                  onPressed: onNext,
                 ),
                 SizedBox(height: bottomGap),
               ],

@@ -15,12 +15,14 @@ import 'package:ournego/core/location/location_datasource.dart';
 import 'package:ournego/core/mapbox_config.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/core/theme/tokens/ournego_color_tokens.dart';
+import 'package:ournego/core/theme/tokens/ournego_spacing_tokens.dart';
 import 'package:ournego/features/business/domain/entities/business_image_data.dart';
 import 'package:ournego/features/business/domain/usecases/get_addresses_suggestions_usecase.dart';
 import 'package:ournego/features/business/presentation/pages/components/business_hours_picker.dart';
 import 'package:ournego/features/feedback/presentation/widgets/feedback_dialog_widget.dart';
 import 'package:ournego/features/navigation/presentation/providers/navigation_provider.dart';
 import 'package:ournego/shared/widgets/animated_background.dart';
+import 'package:ournego/shared/widgets/buttons/buttons.dart';
 import 'package:ournego/shared/widgets/information_card_widget.dart';
 import 'package:ournego/shared/widgets/ournego_alert_dialog.dart';
 import 'package:ournego/shared/widgets/ournego_information_dialog.dart';
@@ -289,19 +291,23 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
           actions: Row(
             children: [
               Expanded(
-                child: OutlinedButton(
+                child: OurnegoButton.secondary(
+                  size: OurnegoButtonSize.compact,
+                  expanded: true,
+                  label: 'Feedback',
                   onPressed: () async {
                     Navigator.of(dialogContext).pop();
                     await _openFeedbackDialogFromErrorDialog(context);
                   },
-                  child: const Text('Feedback'),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: OurnegoSpacingTokens.sm),
               Expanded(
-                child: FilledButton(
+                child: OurnegoButton.primary(
+                  size: OurnegoButtonSize.compact,
+                  expanded: true,
+                  label: 'Entiendo',
                   onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: const Text('Entiendo'),
                 ),
               ),
             ],
@@ -439,43 +445,31 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
                     textAlign: TextAlign.center,
                   ),
                   SizedBox(height: 16),
-                  SizedBox(
-                    height: 56,
-                    child: FilledButton(
-                      onPressed: () async {
-                        final pickedImage = await pickBusinessImage();
-                        if (pickedImage == null) return;
+                  OurnegoButton.tonal(
+                    size: OurnegoButtonSize.large,
+                    expanded: true,
+                    label: 'Subir foto del negocio',
+                    icon:
+                        _pickedImageBytes == null || _pickedImageBytes!.isEmpty
+                        ? Icons.add_a_photo_rounded
+                        : Icons.check_circle_rounded,
+                    iconMotion: OurnegoIconMotion.wiggle,
+                    onPressed: () async {
+                      final pickedImage = await pickBusinessImage();
+                      if (pickedImage == null) return;
 
-                        final bytes = await pickedImage.readAsBytes();
-                        if (bytes.isEmpty) return;
+                      final bytes = await pickedImage.readAsBytes();
+                      if (bytes.isEmpty) return;
 
-                        setState(() {
-                          _pickedImageBytes = bytes;
-                          _pickedImageName = pickedImage.name;
-                          _pickedImageMimeType = pickedImage.mimeType;
-                        });
+                      setState(() {
+                        _pickedImageBytes = bytes;
+                        _pickedImageName = pickedImage.name;
+                        _pickedImageMimeType = pickedImage.mimeType;
+                      });
 
-                        await _persistDraft();
-                        debugPrint(_pickedImageName);
-                      },
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Subir foto del negocio',
-                            style: OurnegoTextStyles.body,
-                          ),
-                          SizedBox(width: 16),
-                          Icon(
-                            _pickedImageBytes == null ||
-                                    _pickedImageBytes!.isEmpty
-                                ? Icons.cloud_upload_rounded
-                                : Icons.check_rounded,
-                            size: 24,
-                          ),
-                        ],
-                      ),
-                    ),
+                      await _persistDraft();
+                      debugPrint(_pickedImageName);
+                    },
                   ),
                   SizedBox(height: 16),
                   (_pickedImageBytes == null || _pickedImageBytes!.isEmpty)
@@ -633,106 +627,101 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
                   SizedBox(height: 24),
                   Divider(),
                   SizedBox(height: 24),
-                  SizedBox(
-                    height: 56,
-                    child: FilledButton(
-                      onPressed: () async {
-                        final hasImage =
-                            _pickedImageBytes != null &&
-                            _pickedImageBytes!.isNotEmpty;
+                  OurnegoButton.primary(
+                    size: OurnegoButtonSize.large,
+                    expanded: true,
+                    label: 'Registrar negocio',
+                    showNego: true,
+                    status: _isSending.value
+                        ? OurnegoButtonStatus.loading
+                        : OurnegoButtonStatus.idle,
+                    onPressed: () async {
+                      final hasImage =
+                          _pickedImageBytes != null &&
+                          _pickedImageBytes!.isNotEmpty;
 
-                        if (_isSending.value) return;
+                      if (_isSending.value) return;
 
-                        if (_formKey.currentState!.validate() && hasImage) {
-                          _isSending.value = true;
-                          setState(() {});
+                      if (_formKey.currentState!.validate() && hasImage) {
+                        _isSending.value = true;
+                        setState(() {});
 
-                          debugPrint('${_isSending.value}');
+                        debugPrint('${_isSending.value}');
 
-                          final hours = _hoursByDay.values
-                              .whereType<AppSchedule>()
-                              .toList(growable: false);
-                          final response = await registerBusinessUsecase(
-                            name: _nameController.text,
-                            description: _descriptionController.text,
-                            category: _selectedCategory ?? 12,
-                            address: _addressController.text,
-                            latitude: _animatedMapController
-                                .mapController
-                                .camera
-                                .center
-                                .latitude,
-                            longitude: _animatedMapController
-                                .mapController
-                                .camera
-                                .center
-                                .longitude,
-                            image: BusinessImageData(
-                              bytes: _pickedImageBytes!,
-                              fileName: _pickedImageName.isNotEmpty
-                                  ? _pickedImageName
-                                  : 'business-image.jpg',
-                              mimeType: _pickedImageMimeType,
-                            ),
-                            phoneNumber: _phoneController.text,
-                            hours: hours,
-                          );
+                        final hours = _hoursByDay.values
+                            .whereType<AppSchedule>()
+                            .toList(growable: false);
+                        final response = await registerBusinessUsecase(
+                          name: _nameController.text,
+                          description: _descriptionController.text,
+                          category: _selectedCategory ?? 12,
+                          address: _addressController.text,
+                          latitude: _animatedMapController
+                              .mapController
+                              .camera
+                              .center
+                              .latitude,
+                          longitude: _animatedMapController
+                              .mapController
+                              .camera
+                              .center
+                              .longitude,
+                          image: BusinessImageData(
+                            bytes: _pickedImageBytes!,
+                            fileName: _pickedImageName.isNotEmpty
+                                ? _pickedImageName
+                                : 'business-image.jpg',
+                            mimeType: _pickedImageMimeType,
+                          ),
+                          phoneNumber: _phoneController.text,
+                          hours: hours,
+                        );
 
-                          await response.fold(
-                            (failure) async {
-                              _isSending.value = false;
-                              setState(() {});
-                              await _showBusinessRegistrationErrorDialog(
-                                failure,
-                              );
-                            },
-                            (success) {
-                              _clearDraft();
-                              if (!mounted) return Future<void>.value();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                OurnegoSnackbars.info(
-                                  'Negocio registrado exitosamente.',
-                                ),
-                              );
-                              ref.invalidate(isOwnerProvider);
-                              Navigator.of(context).pop();
-                              return Future<void>.value();
-                            },
-                          );
+                        await response.fold(
+                          (failure) async {
+                            _isSending.value = false;
+                            setState(() {});
+                            await _showBusinessRegistrationErrorDialog(failure);
+                          },
+                          (success) {
+                            _clearDraft();
+                            if (!mounted) return Future<void>.value();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              OurnegoSnackbars.info(
+                                'Negocio registrado exitosamente.',
+                              ),
+                            );
+                            ref.invalidate(isOwnerProvider);
+                            Navigator.of(context).pop();
+                            return Future<void>.value();
+                          },
+                        );
+                      } else {
+                        String errorMessage;
+                        if (!hasImage) {
+                          errorMessage = 'Por favor sube una foto del negocio.';
                         } else {
-                          String errorMessage;
-                          if (!hasImage) {
-                            errorMessage =
-                                'Por favor sube una foto del negocio.';
-                          } else {
-                            errorMessage =
-                                'Por favor completa todos los campos requeridos.';
-                          }
+                          errorMessage =
+                              'Por favor completa todos los campos requeridos.';
+                        }
 
-                          showDialog(
-                            context: context,
-                            builder: (buildContext) {
-                              return OurnegoAlertDialog(
-                                title: 'Error',
-                                content: errorMessage,
-                                onAction: () {
+                        showDialog(
+                          context: context,
+                          builder: (buildContext) {
+                            return OurnegoAlertDialog(
+                              title: 'Error',
+                              content: errorMessage,
+                              primaryAction: OurnegoDialogAction(
+                                label: 'Entendido',
+                                onPressed: () {
                                   Navigator.of(buildContext).pop();
                                 },
-                              );
-                            },
-                          );
-                        }
-                      },
-                      child: _isSending.value
-                          ? CircularProgressIndicator(
-                              color: Theme.of(context).colorScheme.onPrimary,
-                              strokeWidth: 2,
-                            )
-                          : Text(
-                              'Registrar Negocio',
-                              style: OurnegoTextStyles.button,
-                            ),
-                    ),
+                              ),
+                            );
+                          },
+                        );
+                      }
+                    },
                   ),
                 ],
               ),

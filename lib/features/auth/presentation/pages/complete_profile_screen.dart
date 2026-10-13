@@ -14,7 +14,7 @@ import 'package:ournego/core/routing/route_observer.dart';
 import 'package:ournego/features/auth/domain/usecases/update_profile_usecase.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
 import 'package:ournego/features/onboarding/presentation/providers/onboarding_providers.dart';
-import 'package:ournego/shared/widgets/ournego_buttons.dart';
+import 'package:ournego/shared/widgets/buttons/buttons.dart';
 import 'package:ournego/shared/widgets/ournego_inputs.dart';
 import 'package:ournego/shared/widgets/ournego_page_layout.dart';
 import 'package:ournego/shared/widgets/ournego_snackbars.dart';
@@ -121,7 +121,11 @@ class CompleteProfileScreen extends ConsumerWidget {
                       ),
                       Align(
                         alignment: Alignment.bottomRight,
-                        child: ElevatedButton(
+                        child: OurnegoIconButton(
+                          tone: OurnegoButtonTone.primary,
+                          size: OurnegoIconButtonSize.s44,
+                          icon: Icons.edit_rounded,
+                          semanticLabel: 'Cambiar foto de perfil',
                           onPressed: () async {
                             final path = await cropImage();
 
@@ -132,10 +136,6 @@ class CompleteProfileScreen extends ConsumerWidget {
                               ).updateProfilePicture(profilePicture);
                             }
                           },
-                          style: ButtonStyle(
-                            minimumSize: WidgetStatePropertyAll(Size(50, 50)),
-                          ),
-                          child: Icon(Icons.edit_rounded, size: 20),
                         ),
                       ),
                     ],
@@ -177,17 +177,21 @@ class CompleteProfileScreen extends ConsumerWidget {
                           textAlign: TextAlign.center,
                         ),
                       ),
-                      TextButton(
+                      OurnegoButton.text(
                         key: const Key('profile-load-retry'),
+                        size: OurnegoButtonSize.small,
+                        label: 'Reintentar',
                         onPressed: () => ref.invalidate(profileStreamProvider),
-                        child: const Text('Reintentar'),
                       ),
                     ],
                   ),
                 ],
                 SizedBox(height: 30),
                 // Botón SignUp
-                OurnegoPrimaryButton(
+                OurnegoButton.primary(
+                  label: text.primaryButton,
+                  expanded: true,
+                  showNego: true,
                   onPressed: !ref.watch(isOnlineProvider)
                       ? null
                       : () async {
@@ -243,7 +247,6 @@ class CompleteProfileScreen extends ConsumerWidget {
                             );
                           }
                         },
-                  child: Text(text.primaryButton),
                 ),
               ],
             ),

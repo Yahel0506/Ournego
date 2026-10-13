@@ -31,14 +31,9 @@ The objective is to avoid per-screen inline styling and move to a predictable, m
   - `OurnegoInputField`
   - `OurnegoLabeledInputSection`
   - `OurnegoInputDecorations.filled(...)`
-- `lib/shared/widgets/ournego_buttons.dart`:
-  - `OurnegoPrimaryButton`
-  - `OurnegoButtonStyles.authOutlinedOnSurface(...)`
-  - `OurnegoButtonStyles.authFilledOnSurface(...)`
-  - `OurnegoButtonStyles.circularSurface(...)`
-  - `OurnegoButtonStyles.tonalCardButton(...)`
+- `lib/shared/widgets/buttons/` (barrel `buttons.dart`): `OurnegoButton`, `OurnegoIconButton`, `OurnegoSocialButton`, `OurnegoRowButton`, `OurnegoActionButton`/`OurnegoActionTile`, `OurnegoChip`, `OurnegoGlassIconButton`, `OurnegoGlassSurface`, `OurnegoGlassChip` and `OurnegoNavBar`. See `docs/development/design/BUTTONS_SPEC.md`.
 - `lib/shared/widgets/ournego_snackbars.dart`: `OurnegoSnackbars.info(...)` and `OurnegoSnackbars.error(...)`.
-- `lib/shared/widgets/ournego_alert_dialog.dart`: common alert with primary action + optional `trailingActions`.
+- `lib/shared/widgets/ournego_alert_dialog.dart`: common alert with `primaryAction` + optional `secondaryAction` (`OurnegoDialogAction`).
 - `lib/shared/widgets/ournego_information_dialog.dart`: image + description + action area dialog preset.
 
 ## Migration Workflow
@@ -62,7 +57,7 @@ The objective is to avoid per-screen inline styling and move to a predictable, m
 ## How to Apply the Refactor in New Code
 1. Start from shared widgets/tokens, not raw Material defaults.
 2. For inputs, prefer `OurnegoInputField` or `OurnegoInputDecorations.filled(...)`.
-3. For buttons, use `OurnegoButtonStyles` variants before custom `styleFrom`.
+3. For buttons, use the `lib/shared/widgets/buttons/` family and pick `tone`, `size` and `icon`; raw Material buttons are blocked by `test/architecture/no_raw_material_buttons_test.dart`.
 4. For dialogs/snackbars, use `OurnegoAlertDialog`, `OurnegoInformationDialog`, and `OurnegoSnackbars`.
 5. For spacing/radius values, consume token constants instead of hardcoded magic numbers when practical.
 

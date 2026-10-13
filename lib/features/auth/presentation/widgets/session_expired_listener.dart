@@ -35,18 +35,18 @@ class SessionExpiredListener extends ConsumerWidget {
           title: 'Tu sesión venció',
           content:
               'Por seguridad, vuelve a iniciar sesión para seguir usando tu cuenta.',
-          actionLabel: 'Iniciar sesión',
-          onAction: () {
-            Navigator.of(dialogContext).pop();
-            ref.read(pendingReturnLocationProvider.notifier).set(location);
-            GoRouter.of(navContext).go(AuthRoutes.authSelection);
-          },
-          trailingActions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Seguir como invitado'),
-            ),
-          ],
+          primaryAction: OurnegoDialogAction(
+            label: 'Iniciar sesión',
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              ref.read(pendingReturnLocationProvider.notifier).set(location);
+              GoRouter.of(navContext).go(AuthRoutes.authSelection);
+            },
+          ),
+          secondaryAction: OurnegoDialogAction(
+            label: 'Seguir como invitado',
+            onPressed: () => Navigator.of(dialogContext).pop(),
+          ),
         ),
       ).whenComplete(notifier.acknowledge);
     });

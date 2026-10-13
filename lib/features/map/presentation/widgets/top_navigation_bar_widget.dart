@@ -1,11 +1,7 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
-import 'package:ournego/core/theme/tokens/ournego_radius_tokens.dart';
-import 'package:ournego/core/theme/tokens/ournego_semantic_tokens.dart';
 import 'package:ournego/core/theme/tokens/ournego_spacing_tokens.dart';
 import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
@@ -13,7 +9,7 @@ import 'package:ournego/features/feedback/presentation/widgets/feedback_dialog_w
 import 'package:ournego/features/map/presentation/widgets/profile_menu_dialog_widget.dart';
 import 'package:ournego/features/navigation/presentation/providers/navigation_provider.dart';
 import 'package:ournego/shared/widgets/ournego_alert_dialog.dart';
-import 'package:ournego/shared/widgets/ournego_buttons.dart';
+import 'package:ournego/shared/widgets/buttons/buttons.dart';
 
 final GlobalKey topNavigationBarKey = GlobalKey(debugLabel: 'topNavigationBar');
 
@@ -52,36 +48,31 @@ class TopNavigationBarWidget extends ConsumerWidget {
       ),
       child: Row(
         children: [
-          _CrystalItemContainer(
-            borderRadius: OurnegoRadiusTokens.container,
-            child: ElevatedButton(
-              onPressed: onVoiceSearchTap,
-              style: OurnegoButtonStyles.circularSurface(context: context),
-              child: Icon(
-                isVoiceListening ? Icons.mic_rounded : Icons.mic_none_rounded,
-                size: 26,
-                color: isVoiceListening
-                    ? colorScheme.primary
-                    : colorScheme.onSurface,
-              ),
-            ),
+          OurnegoGlassIconButton(
+            icon: Icons.mic_none_rounded,
+            activeIcon: Icons.mic_rounded,
+            active: isVoiceListening,
+            showHalo: true,
+            semanticLabel: isVoiceListening
+                ? 'Detener búsqueda por voz'
+                : 'Buscar por voz',
+            onPressed: onVoiceSearchTap,
           ),
           const SizedBox(width: OurnegoSpacingTokens.controlGap),
           Expanded(
-            child: _CrystalItemContainer(
-              borderRadius: OurnegoRadiusTokens.container,
+            child: OurnegoGlassSurface(
               child: SearchBar(
                 controller: searchController,
                 focusNode: searchFocusNode,
                 onChanged: onSearchChanged,
                 onTap: onSearchTap,
                 elevation: const WidgetStatePropertyAll(0),
-                backgroundColor: WidgetStatePropertyAll(
-                  colorScheme.surface.withValues(alpha: 0.35),
+                backgroundColor: const WidgetStatePropertyAll(
+                  Colors.transparent,
                 ),
-                leading: Padding(
-                  padding: const EdgeInsets.only(left: 8),
-                  child: Icon(Icons.search, color: colorScheme.onSurface),
+                leading: const Padding(
+                  padding: EdgeInsets.only(left: 8),
+                  child: OurnegoGlassSurfaceIcon(Icons.search_rounded),
                 ),
                 hintText: 'Buscar negocio...',
                 constraints: const BoxConstraints(minHeight: 52),
@@ -89,41 +80,26 @@ class TopNavigationBarWidget extends ConsumerWidget {
             ),
           ),
           const SizedBox(width: OurnegoSpacingTokens.controlGap),
-          _CrystalItemContainer(
-            borderRadius: OurnegoRadiusTokens.container,
-            child: ElevatedButton(
-              key: const ValueKey('mapProfileButton'),
-              onPressed: () => _openProfileMenu(context, ref),
-              style: OurnegoButtonStyles.circularSurface(context: context),
-              child: SizedBox(
-                height: 40,
-                width: 40,
-                child: imageUrl.isNotEmpty
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(30),
-                        child: Image(
-                          image: NetworkImage(imageUrl),
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Icon(
-                              isLogged
-                                  ? Icons.account_circle
-                                  : Icons.login_rounded,
-                              size: 40,
-                              color: colorScheme.onSurface.withValues(
-                                alpha: 0.6,
-                              ),
-                            );
-                          },
-                        ),
-                      )
-                    : Icon(
-                        isLogged ? Icons.account_circle : Icons.login_rounded,
+          OurnegoGlassIconButton(
+            key: const ValueKey('mapProfileButton'),
+            icon: isLogged ? Icons.account_circle_rounded : Icons.login_rounded,
+            semanticLabel: 'Abrir menú de perfil',
+            onPressed: () => _openProfileMenu(context, ref),
+            child: imageUrl.isNotEmpty
+                ? Image(
+                    image: NetworkImage(imageUrl),
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Icon(
+                        isLogged
+                            ? Icons.account_circle_rounded
+                            : Icons.login_rounded,
                         size: 40,
                         color: colorScheme.onSurface.withValues(alpha: 0.6),
-                      ),
-              ),
-            ),
+                      );
+                    },
+                  )
+                : null,
           ),
         ],
       ),
@@ -170,57 +146,25 @@ Future<void> _confirmLogOut(BuildContext context, WidgetRef ref) {
       return OurnegoAlertDialog(
         title: 'Cerrar sesión',
         content: '¿Estás seguro de que quieres cerrar sesión?',
-        actionLabel: 'Cancelar',
-        onAction: () {
-          Navigator.of(dialogContext).pop();
-        },
-        trailingActions: [
-          TextButton(
-            key: const ValueKey('confirmLogoutButton'),
-            onPressed: () async {
-              await logOutUsecase();
-              if (dialogContext.mounted) {
-                Navigator.of(dialogContext).pop();
-                dialogContext.go(MapRoutes.map);
-              }
-            },
-            child: const Text('Cerrar sesión'),
-          ),
-        ],
+        primaryAction: OurnegoDialogAction(
+          key: const ValueKey('confirmLogoutButton'),
+          label: 'Cerrar sesión',
+          isDestructive: true,
+          onPressed: () async {
+            await logOutUsecase();
+            if (dialogContext.mounted) {
+              Navigator.of(dialogContext).pop();
+              dialogContext.go(MapRoutes.map);
+            }
+          },
+        ),
+        secondaryAction: OurnegoDialogAction(
+          label: 'Cancelar',
+          onPressed: () {
+            Navigator.of(dialogContext).pop();
+          },
+        ),
       );
     },
   );
-}
-
-class _CrystalItemContainer extends StatelessWidget {
-  final Widget child;
-  final double borderRadius;
-
-  const _CrystalItemContainer({
-    required this.child,
-    required this.borderRadius,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(borderRadius),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaY: 6, sigmaX: 6),
-        child: Container(
-          decoration: BoxDecoration(
-            color: OurnegoSemanticTokens.surfaceRaised(colorScheme),
-            borderRadius: BorderRadius.circular(borderRadius),
-            border: Border.all(
-              width: 1,
-              color: OurnegoSemanticTokens.borderSubtle(colorScheme),
-            ),
-          ),
-          child: child,
-        ),
-      ),
-    );
-  }
 }

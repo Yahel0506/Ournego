@@ -10,6 +10,7 @@ import 'package:ournego/core/ournego_colors.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/features/map/domain/entities/business.dart';
 import 'package:ournego/features/map/presentation/models/business_marker_ui_model.dart';
+import 'package:ournego/shared/widgets/buttons/buttons.dart';
 
 class MapCanvasWidget extends StatelessWidget {
   final AnimatedMapController animatedMapController;
@@ -202,12 +203,12 @@ class MapCanvasWidget extends StatelessWidget {
               alignment: Alignment.topCenter,
               child: Padding(
                 padding: const EdgeInsets.only(top: 110, left: 16, right: 16),
-                child: ActionChip(
+                child: OurnegoButton.secondary(
                   key: const Key('businesses-load-error'),
-                  avatar: const Icon(Icons.refresh_rounded, size: 18),
-                  label: const Text(
-                    'No pudimos cargar los negocios. Reintentar',
-                  ),
+                  size: OurnegoButtonSize.small,
+                  icon: Icons.refresh_rounded,
+                  iconMotion: OurnegoIconMotion.wiggle,
+                  label: 'No pudimos cargar los negocios. Reintentar',
                   onPressed: onRetryBusinesses,
                 ),
               ),
@@ -221,10 +222,11 @@ class MapCanvasWidget extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 90, left: 10),
             child: Row(
               children: [
-                IconButton(
-                  color: Theme.of(context).colorScheme.onSurface.withAlpha(200),
-                  iconSize: 25,
-                  icon: const Icon(Icons.info_outline),
+                OurnegoIconButton(
+                  tone: OurnegoButtonTone.glass,
+                  size: OurnegoIconButtonSize.s40,
+                  icon: Icons.info_outline_rounded,
+                  semanticLabel: 'Créditos del mapa',
                   onPressed: () {
                     showDialog(
                       animationStyle: AnimationStyle(
@@ -262,17 +264,10 @@ class MapCanvasWidget extends StatelessWidget {
                           ],
                         ),
                         actions: [
-                          TextButton(
-                            style: ButtonStyle(
-                              foregroundColor: WidgetStatePropertyAll(
-                                Theme.of(context).colorScheme.onSurface,
-                              ),
-                            ),
+                          OurnegoButton.text(
+                            size: OurnegoButtonSize.compact,
+                            label: 'Cerrar',
                             onPressed: () => Navigator.of(context).pop(),
-                            child: const Text(
-                              'Cerrar',
-                              style: OurnegoTextStyles.body,
-                            ),
                           ),
                         ],
                       ),

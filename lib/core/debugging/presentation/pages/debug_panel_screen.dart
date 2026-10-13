@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:ournego/core/debugging/presentation/pages/button_gallery_screen.dart';
+
 class DebugPanel extends StatelessWidget {
   const DebugPanel({super.key});
 
@@ -34,6 +36,17 @@ class DebugPanel extends StatelessWidget {
               title: const Text('Reset onboarding'),
               subtitle: const Text('Establece hasSeenOnboarding = false'),
               onTap: () => resetOnboarding(context),
+            ),
+            ListTile(
+              key: const ValueKey('debugButtonGalleryTile'),
+              leading: const Icon(Icons.smart_button_rounded),
+              title: const Text('Galería de botones'),
+              subtitle: const Text('QA visual de la familia de botones'),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const ButtonGalleryScreen(),
+                ),
+              ),
             ),
           ],
         ),

@@ -27,6 +27,8 @@ class NegoTokens {
   static const double lookVerticalMultiplier = 0.78;
   static const double lookIntensityMin = 12;
   static const double blinkScaleY = 0.08;
+  // Vertical eye scale while `eyesClosed` is held (e.g. disabled buttons).
+  static const double eyesClosedScaleY = 0.1;
   static const double blinkOpenScaleY = 1.0;
   static const double blinkClosedDurationMs = 60;
   static const double blinkOpenDurationMs = 120;

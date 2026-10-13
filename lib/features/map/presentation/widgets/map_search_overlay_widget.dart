@@ -6,6 +6,7 @@ import 'package:ournego/features/map/domain/entities/business_type.dart';
 import 'package:ournego/features/map/presentation/controllers/search_businesses_usecase.dart';
 import 'package:ournego/features/map/presentation/mappers/business_marker_ui_mapper.dart';
 import 'package:ournego/features/map/presentation/models/map_search_models.dart';
+import 'package:ournego/shared/widgets/buttons/buttons.dart';
 import 'package:ournego/shared/widgets/ournego_content_container.dart';
 
 class MapSearchOverlayWidget extends StatelessWidget {
@@ -84,67 +85,50 @@ class MapSearchOverlayWidget extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
             child: Row(
               children: [
-                SizedBox(
-                  height: 32,
-                  child: FilterChip(
-                    selected: filters.onlyOpenNow,
-                    visualDensity: VisualDensity.compact,
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    label: Text(
-                      'Abiertos',
-                      style: OurnegoTextStyles.body.copyWith(fontSize: 12),
-                    ),
-                    avatar: Icon(
-                      Icons.access_time_rounded,
-                      size: 14,
-                      color: colorScheme.onSurface.withValues(alpha: 0.8),
-                    ),
-                    onSelected: onOpenNowChanged,
-                  ),
+                OurnegoChip.filter(
+                  label: 'Abiertos',
+                  selected: filters.onlyOpenNow,
+                  onSelected: onOpenNowChanged,
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: _compactDropdown<BusinessType?>(
+                  child: OurnegoChip<BusinessType?>.dropdown(
+                    placeholder: 'Categoría',
                     value: filters.category,
-                    hint: 'Categoría',
-                    items: [
-                      const DropdownMenuItem<BusinessType?>(
+                    options: [
+                      const OurnegoChipOption<BusinessType?>(
                         value: null,
-                        child: Text('Todas'),
+                        label: 'Todas',
                       ),
-                      ...categoryOptions.map((type) {
-                        return DropdownMenuItem<BusinessType?>(
+                      ...categoryOptions.map(
+                        (type) => OurnegoChipOption<BusinessType?>(
                           value: type,
-                          child: Text(businessTypeLabel(type)),
-                        );
-                      }),
+                          label: businessTypeLabel(type),
+                        ),
+                      ),
                     ],
                     onChanged: onCategoryChanged,
-                    colorScheme: colorScheme,
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: _compactDropdown<double?>(
+                  child: OurnegoChip<double?>.dropdown(
+                    placeholder: 'Distancia',
                     value: filters.maxDistanceMeters,
-                    hint: 'Distancia',
-                    items: [
-                      const DropdownMenuItem<double?>(
+                    options: [
+                      const OurnegoChipOption<double?>(
                         value: null,
-                        child: Text('Sin límite'),
+                        label: 'Sin límite',
                       ),
-                      ...distanceOptionsMeters.map((distanceMeters) {
-                        final labelKm = (distanceMeters / 1000).toStringAsFixed(
-                          0,
-                        );
-                        return DropdownMenuItem<double?>(
+                      ...distanceOptionsMeters.map(
+                        (distanceMeters) => OurnegoChipOption<double?>(
                           value: distanceMeters,
-                          child: Text('$labelKm km'),
-                        );
-                      }),
+                          label:
+                              '${(distanceMeters / 1000).toStringAsFixed(0)} km',
+                        ),
+                      ),
                     ],
                     onChanged: onDistanceChanged,
-                    colorScheme: colorScheme,
                   ),
                 ),
               ],
@@ -274,14 +258,17 @@ class MapSearchOverlayWidget extends StatelessWidget {
                       ),
                     ),
                     const Spacer(),
-                    TextButton(
+                    OurnegoButton.text(
+                      size: OurnegoButtonSize.small,
+                      label: 'Limpiar',
                       onPressed: onClear,
-                      child: const Text('Limpiar'),
                     ),
-                    IconButton(
+                    OurnegoIconButton.ghost(
+                      size: OurnegoIconButtonSize.s40,
+                      icon: Icons.close_rounded,
+                      semanticLabel: 'Cerrar búsqueda',
                       tooltip: 'Cerrar búsqueda',
                       onPressed: onClose,
-                      icon: const Icon(Icons.close_rounded),
                     ),
                   ],
                 ),
@@ -302,39 +289,4 @@ class MapSearchOverlayWidget extends StatelessWidget {
       ),
     );
   }
-}
-
-Widget _compactDropdown<T>({
-  required T value,
-  required String hint,
-  required List<DropdownMenuItem<T>> items,
-  required ValueChanged<T?> onChanged,
-  required ColorScheme colorScheme,
-}) {
-  return Container(
-    height: 32,
-    padding: const EdgeInsets.symmetric(horizontal: 8),
-    decoration: BoxDecoration(
-      borderRadius: BorderRadius.circular(10),
-      border: Border.all(color: colorScheme.outline.withValues(alpha: 0.3)),
-      color: colorScheme.surface.withValues(alpha: 0.9),
-    ),
-    child: DropdownButtonHideUnderline(
-      child: DropdownButton<T>(
-        value: value,
-        isExpanded: true,
-        isDense: true,
-        hint: Text(
-          hint,
-          style: OurnegoTextStyles.body.copyWith(fontSize: 12),
-          overflow: TextOverflow.ellipsis,
-        ),
-        style: OurnegoTextStyles.body.copyWith(fontSize: 12),
-        borderRadius: BorderRadius.circular(12),
-        icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 16),
-        onChanged: onChanged,
-        items: items,
-      ),
-    ),
-  );
 }

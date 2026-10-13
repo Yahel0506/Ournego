@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'package:ournego/core/ournego_colors.dart';
 import 'package:ournego/core/startup/startup_controller.dart';
+import 'package:ournego/shared/widgets/buttons/buttons.dart';
 
 typedef StartupAppBuilder = Widget Function(bool startOnMap);
 typedef StartupSupportLauncher = Future<bool> Function(Uri uri);
@@ -365,11 +366,14 @@ class _StartupStatusScreenState extends State<_StartupStatusScreen> {
             ),
           ),
           actions: [
-            TextButton(
+            OurnegoButton.text(
+              size: OurnegoButtonSize.compact,
+              label: 'Cerrar',
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cerrar'),
             ),
-            TextButton(
+            OurnegoButton.primary(
+              size: OurnegoButtonSize.compact,
+              label: 'Contactar soporte',
               onPressed: () async {
                 var opened = false;
                 try {
@@ -383,7 +387,6 @@ class _StartupStatusScreenState extends State<_StartupStatusScreen> {
                   setDialogState(() => _couldNotOpenSupport = true);
                 }
               },
-              child: const Text('Contactar soporte'),
             ),
           ],
         ),
@@ -443,18 +446,17 @@ class _StartupStatusScreenState extends State<_StartupStatusScreen> {
                   if (failure != null) ...[
                     const SizedBox(height: 24),
                     if (failure.canRetry)
-                      FilledButton.icon(
+                      OurnegoButton.primary(
+                        label: 'Reintentar',
+                        icon: Icons.refresh_rounded,
+                        iconMotion: OurnegoIconMotion.wiggle,
                         onPressed: widget.onRetry,
-                        style: FilledButton.styleFrom(
-                          foregroundColor: OurnegoColors.noche,
-                        ),
-                        icon: const Icon(Icons.refresh),
-                        label: const Text('Reintentar'),
                       ),
-                    OutlinedButton.icon(
+                    const SizedBox(height: 12),
+                    OurnegoButton.secondary(
+                      label: 'Ver ayuda',
+                      icon: Icons.help_outline_rounded,
                       onPressed: _showHelp,
-                      icon: const Icon(Icons.help_outline),
-                      label: const Text('Ver ayuda'),
                     ),
                   ],
                 ],

@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ournego/core/theme/tokens/ournego_color_tokens.dart';
-import 'package:ournego/features/navigation/presentation/providers/navigation_provider.dart';
-import 'package:ournego/core/theme/tokens/ournego_radius_tokens.dart';
-import 'package:ournego/core/theme/tokens/ournego_semantic_tokens.dart';
+
 import 'package:ournego/core/theme/tokens/ournego_spacing_tokens.dart';
-import 'package:ournego/core/ournego_motion.dart';
+import 'package:ournego/features/navigation/presentation/providers/navigation_provider.dart';
+import 'package:ournego/shared/widgets/buttons/buttons.dart';
 
 final GlobalKey appNavigationBarKey = GlobalKey(debugLabel: 'appNavigationBar');
 
+/// Bottom navigation of the app. The visuals live in [OurnegoNavBar]; this
+/// widget only feeds it the items and keeps the outer layout.
 class AppNavigationBar extends ConsumerWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
@@ -22,148 +22,30 @@ class AppNavigationBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final datasource = ref.watch(appNavigationBarProvider);
-    final colorScheme = Theme.of(context).colorScheme;
     final icons = datasource.getNavigationBarItemsIcons();
-    final kIsWideScreen = MediaQuery.of(context).size.width > 600;
+    final labels = datasource.getNavigationBarItemsLabels();
+    final isWideScreen = MediaQuery.of(context).size.width > 600;
 
-    const double height = OurnegoSpacingTokens.navHeight;
-    const double borderRadius = OurnegoRadiusTokens.pill;
-    const EdgeInsets marginR = EdgeInsets.fromLTRB(48, 0, 48, 4);
-    const EdgeInsets paddingR = EdgeInsets.fromLTRB(8, 8, 8, 10);
+    const EdgeInsets margin = EdgeInsets.fromLTRB(48, 0, 48, 4);
 
     return BottomAppBar(
       key: appNavigationBarKey,
       color: Colors.transparent,
       padding: EdgeInsets.zero,
       elevation: 0,
-      height: height,
+      height: OurnegoSpacingTokens.navHeight,
       child: Padding(
-        padding: marginR,
-        child: Container(
-          decoration: BoxDecoration(
-            boxShadow: const [
-              BoxShadow(
-                color: OurnegoColorTokens.shadow,
-                blurRadius: 10,
-                spreadRadius: 0.2,
-              ),
-            ],
-            borderRadius: BorderRadius.circular(borderRadius),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(borderRadius),
-            child: Container(
-              padding: paddingR,
-              width: kIsWideScreen ? 400 : double.infinity,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(borderRadius),
-                border: Border.all(
-                  width: 1,
-                  color: OurnegoSemanticTokens.borderSubtle(colorScheme),
-                ),
-                color: colorScheme.surface,
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Row(
-                  children: [
-                    _CrystalNavItem(
-                      icon: icons[0],
-                      isSelected: currentIndex == 0,
-                      selectedColor: colorScheme.primary,
-                      selectedIconColor: colorScheme.surface,
-                      unselectedIconColor: colorScheme.onSurface,
-                      onTap: () => onTap(0),
-                    ),
-                    _CrystalNavItem(
-                      icon: icons[1],
-                      isSelected: currentIndex == 1,
-                      selectedColor: colorScheme.primary,
-                      selectedIconColor: colorScheme.surface,
-                      unselectedIconColor: colorScheme.onSurface,
-                      onTap: () => onTap(1),
-                    ),
-                    _CrystalNavItem(
-                      icon: icons[2],
-                      isSelected: currentIndex == 2,
-                      selectedColor: colorScheme.primary,
-                      selectedIconColor: colorScheme.surface,
-                      unselectedIconColor: colorScheme.onSurface,
-                      onTap: () => onTap(2),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CrystalNavItem extends StatelessWidget {
-  final IconData icon;
-  final bool isSelected;
-  final Color selectedColor;
-  final Color selectedIconColor;
-  final Color unselectedIconColor;
-  final VoidCallback onTap;
-
-  const _CrystalNavItem({
-    required this.icon,
-    required this.isSelected,
-    required this.selectedColor,
-    required this.selectedIconColor,
-    required this.unselectedIconColor,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Material(
-        type: MaterialType.transparency,
-        child: InkResponse(
-          radius: 36,
-          splashColor: selectedColor.withValues(alpha: 0),
-          highlightShape: BoxShape.circle,
-          onTap: onTap,
-          child: Center(
-            child: TweenAnimationBuilder<double>(
-              tween: Tween<double>(begin: 0, end: isSelected ? 1 : 0),
-              duration: kFastDuration,
-              curve: Curves.easeOut,
-              builder: (context, value, _) {
-                final iconScale = 1 + (0.06 * value);
-
-                return Transform.scale(
-                  scale: iconScale,
-                  child: AnimatedContainer(
-                    duration: kFastDuration,
-                    curve: Curves.easeOut,
-                    width: 68,
-                    height: 68,
-                    decoration: BoxDecoration(
-                      color: Color.lerp(
-                        Colors.transparent,
-                        selectedColor,
-                        value,
-                      ),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      icon,
-                      size: 38 + (2 * value),
-                      color: Color.lerp(
-                        unselectedIconColor,
-                        selectedIconColor,
-                        value,
-                      ),
-                    ),
-                  ),
-                );
-              },
+        padding: margin,
+        child: Center(
+          child: SizedBox(
+            width: isWideScreen ? 400 : double.infinity,
+            child: OurnegoNavBar(
+              items: [
+                for (var i = 0; i < icons.length; i++)
+                  OurnegoNavBarItem(icon: icons[i], label: labels[i]),
+              ],
+              currentIndex: currentIndex,
+              onTap: onTap,
             ),
           ),
         ),

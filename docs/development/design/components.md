@@ -1,31 +1,36 @@
 # Ournego Design System Components
 
-## Buttons (`lib/shared/widgets/ournego_buttons.dart`)
+## Buttons (`lib/shared/widgets/buttons/`)
 
-### `OurnegoPrimaryButton`
-Botón principal que se adapta al tema. Usa el color primario y cambia a `azulVerde` cuando es presionado.
+Spec normativo: [`BUTTONS_SPEC.md`](BUTTONS_SPEC.md). Las features importan solo `package:ournego/shared/widgets/buttons/buttons.dart` y eligen `tone`, `size` e `icon`; nunca pasan `Color` ni `TextStyle`. Una prueba de arquitectura (`test/architecture/no_raw_material_buttons_test.dart`) impide volver a usar botones crudos de Material en `lib/`.
 
-**Props:**
-- `onPressed` (VoidCallback?): Acción a ejecutar al presionar el botón.
-- `child` (Widget): Contenido del botón (normalmente un Text).
-- `buttonKey` (Key?): Llave para pruebas o referencias.
-- `minimumSize` (Size): Tamaño mínimo del botón (default: `Size(double.infinity, 50)`).
+### Botones de acción (con labio, sobre `OurnegoPressable`)
 
-### `OurnegoOnboardingPrimaryButton`
-Variante del botón principal específicamente usada para el flujo de onboarding, con un radio de borde diferente y una sombra ligera.
+Labio plano (bloque sólido bajo la cara, sin blur), rebote al soltar, estados hover / pressed / focus / disabled / loading / success. Curvas con rebote (`kOurnegoSpring`) exclusivas de esta línea.
 
-**Props:**
-- `onPressed` (VoidCallback?): Acción a ejecutar al presionar.
-- `child` (Widget): Contenido del botón.
-- `minimumSize` (Size): Tamaño mínimo (default: `Size(double.infinity, 56)`).
-- `radius` (double): Radio de los bordes (default: `24`).
-- `elevation` (double): Elevación del botón (default: `6`).
+- `OurnegoButton` (`.primary`, `.neutral`, `.secondary`, `.tonal`, `.destructive`, `.text`): `label`, `onPressed`, `size` (`large`/`regular`/`compact`/`small`), `icon`, `trailingIcon`, `iconMotion`, `expanded`, `minWidth`, `status` (`idle`/`loading`/`success`), `showNego` (solo `primary`, no `small`).
+- `OurnegoIconButton` (`.ghost`, `.toggle`): `icon`, `semanticLabel` (obligatorio), `size` (`s52` … `s28`), `radius`, `outlined`, `child`.
+- `OurnegoSocialButton` (`.google`): botones de acceso con tres ranuras y badge opcional.
+- `OurnegoRowButton`, `OurnegoActionButton`, `OurnegoActionTile`: acciones del floating sheet.
+- `OurnegoChip.filter` / `OurnegoChip<T>.dropdown`: chips del panel de búsqueda.
+- `NegoEyesLoader` y `OurnegoBurst`: loader de ojos y ráfaga de puntos.
 
-### `OurnegoButtonStyles` (Utility methods para variantes)
-- `authOutlinedOnSurface`: Botón contorneado usado en pantallas de autenticación.
-- `authFilledOnSurface`: Botón rellenado usado en pantallas de autenticación.
-- `circularSurface`: Botón circular para acciones rápidas (default size: `Size(52, 52)`).
-- `tonalCardButton`: Botón usado dentro de tarjetas con fondo tonal claro.
+### Flat glass (sin labio, sobre `OurnegoGlassPressable`)
+
+Para lo que flota sobre el mapa y la navegación: contorno de 1 px (`borderSubtle`), superficie de vidrio y animaciones calmadas sin rebote (`kCalmCurve`, `kEaseOutExpo`).
+
+- `OurnegoGlassIconButton`: micrófono (con halo mientras escucha) y perfil.
+- `OurnegoGlassSurface`: contenedor no presionable del buscador.
+- `OurnegoGlassChip`: chip de zona.
+- `OurnegoNavBar`: barra de navegación opaca con indicador deslizante (alto `navHeight = 72`).
+
+### Diálogos
+
+`OurnegoAlertDialog` recibe `primaryAction` y `secondaryAction` (`OurnegoDialogAction`, con `key` e `isDestructive`).
+
+### Galería de QA
+
+`ButtonGalleryScreen` (`lib/core/debugging/presentation/pages/button_gallery_screen.dart`), accesible desde el panel de depuración.
 
 ## Inputs (`lib/shared/widgets/ournego_inputs.dart`)
 
@@ -59,5 +64,5 @@ Sección que agrupa una etiqueta (`Text`) con su respectivo campo de entrada (`W
 ## Themes & Decorations (`lib/core/theme/`)
 
 - **ThemeData**: Definidos en `OurnegoTheme` (`light` y `dark`). Proveen toda la paleta de Material 3 basada en los tokens de colores.
-- **Button Themes**: Definidos en `OurnegoButtonStyles` (Elevated y Outlined).
+- **Button Themes**: `OurnegoButtonThemes` (Elevated y Outlined) queda solo como red de seguridad para widgets internos de Flutter; la app usa `lib/shared/widgets/buttons/`.
 - **Input Decoration**: Definidos en `OurnegoInputStyles` con radios de `OurnegoRadiusTokens.xl`.

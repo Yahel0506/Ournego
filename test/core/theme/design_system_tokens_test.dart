@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/core/theme/ournego_input_styles.dart';
+import 'package:ournego/core/theme/ournego_theme.dart';
 import 'package:ournego/core/theme/tokens/ournego_color_tokens.dart';
 import 'package:ournego/core/theme/tokens/ournego_radius_tokens.dart';
 import 'package:ournego/core/theme/tokens/ournego_semantic_tokens.dart';
@@ -39,6 +40,37 @@ void main() {
     expect(OurnegoTextStyles.caption.fontSize, 12);
     expect(OurnegoTextStyles.badge.fontSize, 11);
     expect(OurnegoTextStyles.button.fontSize, 16);
+  });
+
+  test('button text styles use w800 and the system font', () {
+    const styles = <(TextStyle, double)>[
+      (OurnegoTextStyles.button, 16),
+      (OurnegoTextStyles.buttonLarge, 17),
+      (OurnegoTextStyles.buttonCompact, 15),
+      (OurnegoTextStyles.buttonSmall, 14),
+      (OurnegoTextStyles.buttonTile, 12),
+    ];
+    for (final (style, size) in styles) {
+      expect(style.fontSize, size);
+      expect(style.fontWeight, FontWeight.w800);
+      expect(style.height, 1.1);
+      expect(style.fontFamily, isNull);
+    }
+    expect(OurnegoTextStyles.button.letterSpacing, 0.08);
+    expect(OurnegoTextStyles.buttonLarge.letterSpacing, 0.08);
+    expect(OurnegoTextStyles.buttonCompact.letterSpacing, 0.08);
+    expect(OurnegoTextStyles.buttonSmall.letterSpacing, 0.08);
+  });
+
+  test('light theme puts noche on aqua and keeps outline undefined', () {
+    final light = OurnegoTheme.light.colorScheme;
+    expect(light.onPrimary, OurnegoColorTokens.noche);
+    expect(light.outline, Colors.black);
+    // 0x4D000000 within float rounding: if this fails, someone defined
+    // `outline` in the light scheme.
+    final border = OurnegoSemanticTokens.borderSubtle(light);
+    expect(border.toARGB32() >> 24, closeTo(0x4D, 1));
+    expect(border.toARGB32() & 0xFFFFFF, 0x000000);
   });
 
   test('input decoration theme centralizes fill and border semantics', () {

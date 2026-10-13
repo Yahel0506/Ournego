@@ -3,7 +3,7 @@ import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/core/theme/tokens/ournego_color_tokens.dart';
 import 'package:ournego/core/theme/tokens/ournego_radius_tokens.dart';
 import 'package:ournego/core/theme/tokens/ournego_spacing_tokens.dart';
-import 'package:ournego/features/business/presentation/widgets/business_panel/business_panel_icon_button.dart';
+import 'package:ournego/shared/widgets/buttons/buttons.dart';
 
 class BusinessPanelGallery extends StatelessWidget {
   const BusinessPanelGallery({
@@ -42,10 +42,11 @@ class BusinessPanelGallery extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: OurnegoSpacingTokens.sm),
-            FilledButton.icon(
+            OurnegoButton.primary(
+              size: OurnegoButtonSize.compact,
+              label: 'Agregar imagen',
+              icon: Icons.add_rounded,
               onPressed: onAddImage,
-              icon: const Icon(Icons.add_rounded),
-              label: const Text('Agregar imagen'),
             ),
           ],
         ),
@@ -114,10 +115,11 @@ class BusinessPanelGallery extends StatelessWidget {
                   Positioned(
                     right: OurnegoSpacingTokens.xs,
                     bottom: OurnegoSpacingTokens.xs,
-                    child: BusinessPanelIconButton(
-                      small: true,
-                      onTap: () => onDeleteImage(imageUrl),
-                      child: const Icon(Icons.delete_outline_rounded, size: 14),
+                    child: OurnegoIconButton(
+                      size: OurnegoIconButtonSize.s28,
+                      icon: Icons.delete_outline_rounded,
+                      semanticLabel: 'Eliminar imagen',
+                      onPressed: () => onDeleteImage(imageUrl),
                     ),
                   ),
               ],

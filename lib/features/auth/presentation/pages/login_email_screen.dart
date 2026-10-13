@@ -18,7 +18,7 @@ import 'package:ournego/features/auth/presentation/providers/auth_providers.dart
 import 'package:ournego/features/onboarding/domain/usecases/get_has_seen_onboarding_usecase.dart';
 import 'package:ournego/features/onboarding/domain/usecases/set_has_seen_onboarding_usecase.dart';
 import 'package:ournego/features/onboarding/presentation/providers/onboarding_providers.dart';
-import 'package:ournego/shared/widgets/ournego_buttons.dart';
+import 'package:ournego/shared/widgets/buttons/buttons.dart';
 import 'package:ournego/shared/widgets/ournego_content_container.dart';
 import 'package:ournego/shared/widgets/ournego_inputs.dart';
 import 'package:ournego/shared/widgets/ournego_page_layout.dart';
@@ -151,8 +151,11 @@ class PrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return OurnegoPrimaryButton(
-      buttonKey: buttonKey,
+    return OurnegoButton.primary(
+      key: buttonKey,
+      label: text.primaryButton,
+      expanded: true,
+      showNego: true,
       onPressed: () async {
         if (formKey.currentState?.validate() ?? false) {
           final usecase = LogInWithEmailUsecase(repository: repository);
@@ -191,7 +194,6 @@ class PrimaryButton extends StatelessWidget {
           );
         }
       },
-      child: Text(text.primaryButton, style: OurnegoTextStyles.button),
     );
   }
 }
@@ -286,15 +288,19 @@ class _PasswordInputState extends State<PasswordInput> {
               return null;
             }
           },
-          suffixIcon: IconButton(
+          suffixIcon: OurnegoIconButton.ghost(
+            size: OurnegoIconButtonSize.s40,
+            icon: _isObscure
+                ? Icons.visibility_off_rounded
+                : Icons.visibility_rounded,
+            semanticLabel: _isObscure
+                ? 'Mostrar contraseña'
+                : 'Ocultar contraseña',
             onPressed: () {
               setState(() {
                 _isObscure = !_isObscure;
               });
             },
-            icon: _isObscure
-                ? Icon(Icons.visibility_off)
-                : Icon(Icons.visibility),
           ),
           hint: Text(widget.text.secondaryHint.toString()),
           obscureText: _isObscure,

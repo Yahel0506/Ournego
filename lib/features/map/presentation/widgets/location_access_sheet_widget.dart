@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:ournego/core/location/location_access_status.dart';
 import 'package:ournego/core/theme/tokens/ournego_spacing_tokens.dart';
+import 'package:ournego/shared/widgets/buttons/buttons.dart';
 import 'package:ournego/shared/widgets/nego/nego.dart';
 
 enum LocationAccessSheetAction {
@@ -65,25 +66,25 @@ class LocationAccessSheet extends StatelessWidget {
               mood: _isPermanent ? NegoMood.idle : NegoMood.excited,
             ),
             const SizedBox(height: OurnegoSpacingTokens.lg),
-            FilledButton(
+            OurnegoButton.primary(
               key: const Key('location-access-primary'),
+              expanded: true,
+              label: _isPermanent ? 'Elegir mi zona' : 'Permitir',
               onPressed: () => Navigator.of(context).pop(
                 _isPermanent
                     ? LocationAccessSheetAction.chooseZone
                     : LocationAccessSheetAction.allow,
               ),
-              child: Text(_isPermanent ? 'Elegir mi zona' : 'Permitir'),
             ),
             const SizedBox(height: OurnegoSpacingTokens.sm),
-            OutlinedButton(
+            OurnegoButton.secondary(
               key: const Key('location-access-secondary'),
+              expanded: true,
+              label: _isPermanent ? 'Abrir ajustes' : 'Continuar sin ubicación',
               onPressed: () => Navigator.of(context).pop(
                 _isPermanent
                     ? LocationAccessSheetAction.openSettings
                     : LocationAccessSheetAction.continueWithoutLocation,
-              ),
-              child: Text(
-                _isPermanent ? 'Abrir ajustes' : 'Continuar sin ubicación',
               ),
             ),
           ],

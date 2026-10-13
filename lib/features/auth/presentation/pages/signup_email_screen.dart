@@ -6,7 +6,7 @@ import 'package:string_validator/string_validator.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
-import 'package:ournego/shared/widgets/ournego_buttons.dart';
+import 'package:ournego/shared/widgets/buttons/buttons.dart';
 import 'package:ournego/shared/widgets/ournego_content_container.dart';
 import 'package:ournego/shared/widgets/ournego_inputs.dart';
 import 'package:ournego/shared/widgets/ournego_page_layout.dart';
@@ -81,7 +81,10 @@ class _SignupEmailScreenState extends ConsumerState<SignupEmailScreen> {
                   ),
                   SizedBox(height: 30),
                   // Botón SignUp
-                  OurnegoPrimaryButton(
+                  OurnegoButton.primary(
+                    label: text.primaryButton,
+                    expanded: true,
+                    showNego: true,
                     onPressed: () {
                       if (_formKey.currentState?.validate() ?? false) {
                         context.push(
@@ -90,7 +93,6 @@ class _SignupEmailScreenState extends ConsumerState<SignupEmailScreen> {
                         );
                       }
                     },
-                    child: Text(text.primaryButton),
                   ),
                 ],
               ),

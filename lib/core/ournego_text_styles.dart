@@ -33,7 +33,31 @@ class OurnegoTextStyles {
   );
   static const TextStyle button = TextStyle(
     fontSize: 16,
-    fontWeight: FontWeight.w700,
+    fontWeight: FontWeight.w800,
+    height: 1.1,
+    letterSpacing: 0.08,
+  );
+  static const TextStyle buttonLarge = TextStyle(
+    fontSize: 17,
+    fontWeight: FontWeight.w800,
+    height: 1.1,
+    letterSpacing: 0.08,
+  );
+  static const TextStyle buttonCompact = TextStyle(
+    fontSize: 15,
+    fontWeight: FontWeight.w800,
+    height: 1.1,
+    letterSpacing: 0.08,
+  );
+  static const TextStyle buttonSmall = TextStyle(
+    fontSize: 14,
+    fontWeight: FontWeight.w800,
+    height: 1.1,
+    letterSpacing: 0.08,
+  );
+  static const TextStyle buttonTile = TextStyle(
+    fontSize: 12,
+    fontWeight: FontWeight.w800,
     height: 1.1,
   );
   static const TextStyle error = TextStyle(

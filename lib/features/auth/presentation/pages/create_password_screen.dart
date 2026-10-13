@@ -6,7 +6,7 @@ import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
 import 'package:ournego/core/theme/tokens/ournego_color_tokens.dart';
-import 'package:ournego/shared/widgets/ournego_buttons.dart';
+import 'package:ournego/shared/widgets/buttons/buttons.dart';
 import 'package:ournego/shared/widgets/ournego_content_container.dart';
 import 'package:ournego/shared/widgets/ournego_inputs.dart';
 import 'package:ournego/shared/widgets/ournego_page_layout.dart';
@@ -195,7 +195,9 @@ class _CreatePasswordScreen extends ConsumerState<CreatePasswordScreen> {
                   ),
                   SizedBox(height: 30),
                   // Botón Login
-                  OurnegoPrimaryButton(
+                  OurnegoButton.primary(
+                    label: text.primaryButton,
+                    expanded: true,
                     onPressed: () async {
                       final bool isValid =
                           hasCapitalLetter &&
@@ -227,7 +229,6 @@ class _CreatePasswordScreen extends ConsumerState<CreatePasswordScreen> {
                         );
                       }
                     },
-                    child: Text(text.primaryButton),
                   ),
                 ],
               ),

@@ -5,8 +5,10 @@ import 'package:ournego/core/theme/tokens/ournego_color_tokens.dart';
 import 'package:ournego/core/theme/tokens/ournego_radius_tokens.dart';
 import 'package:ournego/core/theme/tokens/ournego_semantic_tokens.dart';
 
-class OurnegoButtonStyles {
-  OurnegoButtonStyles._();
+/// Theme-level safety nets for buttons that Flutter builds internally
+/// (pickers, dialogs). App code uses `lib/shared/widgets/buttons/` instead.
+class OurnegoButtonThemes {
+  OurnegoButtonThemes._();
 
   static ElevatedButtonThemeData elevatedButtonTheme(ColorScheme colorScheme) {
     return ElevatedButtonThemeData(

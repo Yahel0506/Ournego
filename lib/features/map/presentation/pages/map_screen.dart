@@ -11,6 +11,7 @@ import 'package:ournego/core/location/location_access_status.dart';
 import 'package:ournego/core/mapbox_config.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/core/routing/route_names.dart';
+import 'package:ournego/core/theme/tokens/ournego_spacing_tokens.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
 import 'package:ournego/features/business/presentation/providers/business_providers.dart';
 import 'package:ournego/features/feedback/presentation/widgets/feedback_dialog_widget.dart';
@@ -35,9 +36,9 @@ import 'package:ournego/features/map/presentation/widgets/map_controls_widget.da
 import 'package:ournego/features/map/presentation/widgets/map_location_banner_widget.dart';
 import 'package:ournego/features/map/presentation/widgets/map_search_overlay_widget.dart';
 import 'package:ournego/features/map/presentation/widgets/top_navigation_bar_widget.dart';
-import 'package:ournego/features/map/presentation/widgets/zone_chip_widget.dart';
 import 'package:ournego/features/map/presentation/widgets/zone_picker_sheet_widget.dart';
 import 'package:ournego/features/navigation/presentation/providers/navigation_provider.dart';
+import 'package:ournego/shared/widgets/buttons/buttons.dart';
 import 'package:ournego/shared/widgets/nego/nego.dart';
 import 'package:ournego/shared/widgets/ournego_alert_dialog.dart';
 import 'package:ournego/shared/widgets/ournego_content_container.dart';
@@ -316,7 +317,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
           actions: Row(
             children: [
               Expanded(
-                child: OutlinedButton(
+                child: OurnegoButton.secondary(
+                  size: OurnegoButtonSize.compact,
+                  expanded: true,
+                  label: 'Feedback',
                   onPressed: () async {
                     Navigator.of(dialogContext).pop();
                     if (ref.read(isFeedbackDialogOpenProvider)) {
@@ -331,14 +335,15 @@ class _MapScreenState extends ConsumerState<MapScreen>
                         .read(isFeedbackDialogOpenProvider.notifier)
                         .setIsClosed();
                   },
-                  child: const Text('Feedback'),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: OurnegoSpacingTokens.sm),
               Expanded(
-                child: FilledButton(
+                child: OurnegoButton.primary(
+                  size: OurnegoButtonSize.compact,
+                  expanded: true,
+                  label: 'Entiendo',
                   onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: const Text('Entiendo'),
                 ),
               ),
             ],
@@ -654,7 +659,13 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   if (showLocationBanner && showZoneChip)
                     const SizedBox(height: 8),
                   if (showZoneChip)
-                    ZoneChip(label: reference.label, onTap: _openZonePicker),
+                    OurnegoGlassChip(
+                      key: const Key('zone-chip'),
+                      label: 'Zona: ${reference.label}',
+                      actionLabel: 'Cambiar',
+                      semanticLabel: 'Zona: ${reference.label}. Cambiar',
+                      onPressed: _openZonePicker,
+                    ),
                 ],
               ),
             ),
@@ -842,8 +853,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
             title: 'Sin teléfono disponible',
             content:
                 'Lamentablemente, este negocio no cuenta con número de teléfono :(',
-            actionLabel: 'Entiendo',
-            onAction: () => Navigator.of(dialogContext).pop(),
+            primaryAction: OurnegoDialogAction(
+              label: 'Entiendo',
+              onPressed: () => Navigator.of(dialogContext).pop(),
+            ),
           );
         },
       );
