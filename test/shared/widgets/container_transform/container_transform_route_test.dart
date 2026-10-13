@@ -283,10 +283,75 @@ void main() {
     expect(_triggerHidden(tester), isFalse);
   });
 
-  testWidgets('opening arcs past the final Y and settles back; X is direct', (
+  testWidgets('the content travels with the container, it does not stay put', (
     tester,
   ) async {
     await _pump(tester);
+    await tester.tap(find.byKey(_trigger));
+    await tester.pump();
+    await _frames(tester, 1);
+
+    final distances = <double>[];
+    final itemStarts = <Offset>[];
+    for (var i = 0; i < 40; i++) {
+      await _frames(tester, 1);
+      final container = _rect(tester).center;
+      final item = tester.getCenter(find.byKey(_item));
+      // The item sits at the middle of the surface, so it rides the middle of
+      // the container the whole way.
+      distances.add((item - container).distance);
+      itemStarts.add(item);
+    }
+    expect(distances.every((d) => d < 1), isTrue, reason: '$distances');
+
+    await tester.pumpAndSettle();
+    final finalItem = tester.getCenter(find.byKey(_item));
+    // Early on it is far from where it ends: it moves, it is not revealed in
+    // place.
+    expect((itemStarts.first - finalItem).distance, greaterThan(80));
+  });
+
+  testWidgets('it starts gently: no snap in the first frames', (tester) async {
+    await _pump(tester);
+    await tester.tap(find.byKey(_trigger));
+    await tester.pump();
+    await _frames(tester, 1);
+    final start = _rect(tester);
+
+    await _frames(tester, 3);
+    final early = _rect(tester);
+    await tester.pumpAndSettle();
+    final end = _rect(tester);
+
+    final progress = (early.width - start.width) / (end.width - start.width);
+    expect(progress, lessThan(0.25), reason: 'after about 50 ms');
+  });
+
+  testWidgets('it takes a calm amount of time to settle', (tester) async {
+    await _pump(tester);
+    await tester.tap(find.byKey(_trigger));
+    await tester.pump();
+
+    var frames = 0;
+    final end = Size(300, 200);
+    while (frames < 120) {
+      await _frames(tester, 1);
+      frames++;
+      final r = _rect(tester);
+      if ((r.width - end.width).abs() < 1.5 &&
+          (r.height - end.height).abs() < 1.5) {
+        break;
+      }
+    }
+    // About a third of a second, not a snap and not sluggish.
+    expect(frames * 16, inInclusiveRange(250, 520));
+  });
+
+  testWidgets('opening curves: Y leans in, passes its end slightly, settles', (
+    tester,
+  ) async {
+    await _pump(tester);
+    final trigger = tester.getRect(find.byKey(_trigger));
     await tester.tap(find.byKey(_trigger));
     await tester.pump();
 
@@ -299,16 +364,25 @@ void main() {
       sizes.add(r.size);
     }
     final end = _rect(tester);
+    final travelY = end.center.dy - trigger.center.dy;
+    final travelX = end.center.dx - trigger.center.dx;
 
-    // Y goes past where it ends and comes back: a small arc, not a line.
+    // It passes where it ends by a few percent of the travel, not more...
     final peakY = path.map((o) => o.dy).reduce((a, b) => a > b ? a : b);
-    expect(peakY, greaterThan(end.center.dy + 3));
-    expect(peakY, lessThan(end.center.dy + 60), reason: 'small, not wild');
-    expect(path.last.dy, closeTo(end.center.dy, 0.5));
-    // ...and it does so late, after most of the travel is done.
+    final overshoot = (peakY - end.center.dy) / travelY;
+    expect(overshoot, inInclusiveRange(0.015, 0.06));
+    // ...late in the path, and comes back to exactly where it ends.
     final peakAt = path.indexWhere((o) => o.dy == peakY);
-    expect(path[peakAt].dy, greaterThan(path.first.dy));
-    expect(peakAt, lessThan(path.length - 1));
+    expect(peakAt, greaterThan(path.length ~/ 6));
+    expect(path.last.dy, closeTo(end.center.dy, 0.5));
+
+    // The path is a curve, not a diagonal: Y runs ahead of X.
+    final lead = [
+      for (final o in path)
+        (o.dy - trigger.center.dy) / travelY -
+            (o.dx - trigger.center.dx) / travelX,
+    ].reduce((a, b) => a > b ? a : b);
+    expect(lead, greaterThan(0.1));
 
     // The other axis takes the plain route: it never passes its destination.
     final minX = path.map((o) => o.dx).reduce((a, b) => a < b ? a : b);
@@ -318,24 +392,68 @@ void main() {
     expect(sizes.every((z) => z.height <= end.height + 0.5), isTrue);
   });
 
-  testWidgets('closing goes straight back: no arc past the final Y', (
+  testWidgets('the motion is smooth: no abrupt change of speed', (
     tester,
   ) async {
     await _pump(tester);
+    final trigger = tester.getRect(find.byKey(_trigger));
+    await tester.tap(find.byKey(_trigger));
+    await tester.pump();
+
+    final ys = <double>[];
+    final widths = <double>[];
+    for (var i = 0; i < 60; i++) {
+      await _frames(tester, 1);
+      ys.add(_rect(tester).center.dy);
+      widths.add(_rect(tester).width);
+    }
+    final end = _rect(tester);
+    final travelY = end.center.dy - trigger.center.dy;
+
+    double worst(List<double> v, double scale) {
+      var max = 0.0;
+      for (var i = 2; i < v.length; i++) {
+        final d2 = (v[i] - 2 * v[i - 1] + v[i - 2]).abs() / scale;
+        if (d2 > max) max = d2;
+      }
+      return max;
+    }
+
+    // Change of speed per frame, as a fraction of the travel.
+    expect(worst(ys, travelY), lessThan(0.04));
+    expect(worst(widths, end.width - 44), lessThan(0.04));
+  });
+
+  testWidgets('closing retraces the same curve, with no jump', (tester) async {
+    await _pump(tester);
+    final trigger = tester.getRect(find.byKey(_trigger));
     await tester.tap(find.byKey(_trigger));
     await tester.pumpAndSettle();
     final end = _rect(tester);
+    final travelY = end.center.dy - trigger.center.dy;
 
     await tester.binding.handlePopRoute();
-    var worst = double.negativeInfinity;
-    for (var i = 0; i < 60; i++) {
+    final ys = <double>[end.center.dy];
+    for (var i = 0; i < 90; i++) {
       await _frames(tester, 1);
       if (find.byType(ContainerTransformDestination).evaluate().isEmpty) break;
-      final dy = _rect(tester).center.dy - end.center.dy;
-      if (dy > worst) worst = dy;
+      ys.add(_rect(tester).center.dy);
     }
-    // On the way out the container only moves toward the trigger (up).
-    expect(worst, lessThan(2));
+    expect(ys.length, greaterThan(8));
+
+    // The same gentle excursion as opening, in reverse, never more.
+    final excursion =
+        (ys.reduce((a, b) => a > b ? a : b) - end.center.dy) / travelY;
+    expect(excursion, lessThan(0.06));
+    // And it is smooth.
+    var worst = 0.0;
+    for (var i = 2; i < ys.length; i++) {
+      final d2 = (ys[i] - 2 * ys[i - 1] + ys[i - 2]).abs() / travelY;
+      if (d2 > worst) worst = d2;
+    }
+    expect(worst, lessThan(0.05));
+    // It ends back over the trigger.
+    expect(ys.last, lessThan(end.center.dy));
   });
 
   testWidgets('reversing mid-way keeps the vertical position continuous', (

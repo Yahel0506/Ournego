@@ -32,11 +32,12 @@ void main() {
   testWidgets('a calm preset never overshoots visibly', (tester) async {
     clock.animateTo(1);
     var peak = 0.0;
-    for (var t = 0; t < 600; t += 16) {
+    for (var t = 0; t < 1200; t += 16) {
       await tester.pump(const Duration(milliseconds: 16));
       if (clock.value > peak) peak = clock.value;
     }
     expect(peak, lessThan(1.02));
+    expect(clock.isAnimating, isFalse);
   });
 
   testWidgets('reversing mid-way keeps the position and the velocity', (
@@ -110,6 +111,8 @@ void main() {
     clock.dragTo(0.2);
     clock.release(velocity: 0);
     expect(clock.target, 0);
+    await run(tester);
+    expect(clock.value, closeTo(0, 0.01));
   });
 
   testWidgets('jumpTo restores a value without animating', (tester) async {

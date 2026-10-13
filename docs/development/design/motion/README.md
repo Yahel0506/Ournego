@@ -14,10 +14,14 @@ clock is bounded to [0, 1] (`P_MAX = 1`), so nothing grows past its destination.
 The strong rebound of `kOurnegoSpring` stays exclusive to the lip buttons.
 
 The one deliberate exception is the path. A window does not travel in a straight
-line: while opening, its vertical position runs a little past its destination
-and settles back (`OurnegoSpringPreset.pathOvershoot`, 7 % of the vertical
-travel for the dialog preset), while the horizontal position and the size follow
-the plain route. It is a small arc, not a bounce. Closing goes straight back.
+line: its vertical position follows its own smooth curve over the whole path
+(`kWindowVerticalPath`, `Cubic(0.5, 0.2, 0.7, 1.25)`). It leans ahead of the
+horizontal position by up to about 20 % of the travel, passes its destination by
+about 3.5 % at 90 % of the way and settles back with a gentle slope, while the
+horizontal position and the size follow the plain route. It is one continuous
+curve, not a kick, and the same curve is used to open and to close, so reversing
+mid-way never jumps. `OurnegoSpringPreset.verticalPath` sets it, or removes it
+(null).
 
 ## Pieces
 
@@ -42,9 +46,12 @@ Open dialogs only with `showOurnegoDialog` / `showOurnegoMenu`;
 2. The route's controller is driven by `createSimulation`, so it starts from the
    current value and velocity on every push and pop. Closing half way through
    opening continues from where it was.
-3. `p` drives, through its own window each: the container's rect (linear in `p`;
-   the spring is the curve), its radius (trigger radius to 24), its fill, the
-   content's alpha, its 8 dp rise and its blur, and the scrim.
+3. `p` drives, through its own window each: the container's rect (linear in `p`
+   horizontally and in size, `kWindowVerticalPath` vertically; the spring is the
+   rest of the curve), its radius (trigger radius to 24), its fill, the content's
+   alpha and blur, and the scrim. The content travels with the container, with
+   its center on the container's center, and the container's clip shows as much
+   of it as fits; it is not revealed in place.
 4. The trigger is hidden (it keeps its layout) once the container covers it, at
    `p = 0.12`, and comes back at the same point on the way out.
 5. The origin is measured again when closing starts. If the trigger is gone, the
@@ -57,11 +64,8 @@ A window that has no `ContainerTransformDestination` still fades in and out.
 - The trigger's icon is not drawn inside the growing container. The container
   fills in over the first 12 % of `p` (`seg(p, 0, 0.12)`) and the trigger steps
   aside at that point, which reads as the same dissolve.
-- The container's vertical position arcs past its destination while opening
-  (the spec has a straight path). The arc is a bump on top of the linear path,
-  zero outside `p` in [0.65, 1], peaking at its midpoint, and it is weighted
-  1 while opening and 0 while closing. The weight eases between the two over
-  about 30 ms so a reversal never makes the container jump.
+- The vertical path is a curve with a small overshoot (the spec has a straight
+  path), see Character above.
 - The blur (level B) is applied to the whole content, not to each item.
 - No stagger in the account menu (decision D10).
 - The future of `showOurnegoDialog` completes when the pop starts, like
@@ -82,26 +86,27 @@ fade, and so does the scrim. The trigger is not hidden.
 ```
 ANIMATION: dialog / account menu        TYPE: dialog (menu variant)
 Trigger: profile button, 52 dp circle (radius 26) on the map, 44 dp (22) in the business panel
-Destination strategy: center-expand
+Destination strategy: center-expand; the content rides the container's center
 Destination: measured, centered, max width 360 (menu) / 320 (alert) / 460 (information)
-P_MAX: 1
+P_MAX: 1 (size and X); Y passes by ~3.5 % and settles
 
 SPRING        k     zeta   ~ settle
-  open       350   0.88    0.24 s
-  close      450   1.0     ~0.2 s
+  open       170   0.9     ~0.35 s
+  close      185   1.0     ~0.4 s
 
 LAYER / PROPERTY      FROM -> TO                      WINDOW (in p)   CURVE
-  container rect      trigger -> destination          g = clamp(p, 0, 1)   linear
-  container Y (open)  + arc, 7 % of the Y travel      [0.65, 1]       smoothstep bump
+  container rect X    trigger -> destination          g = clamp(p, 0, 1)   linear
+  container rect Y    trigger -> destination (+3.5 %)  [0, 1]         kWindowVerticalPath
+  container size      trigger -> destination          g               linear
   container radius    trigger radius -> 24            [0, 1]          easeOut
   container fill      trigger color -> surface        [0, 0.5]        easeOut
-  container fill a    0 -> 1 -> 0                     [0, 0.12] then [0.6, 1]
-  content alpha       0 -> 1                          [0.30, 0.70]    easeOut
-  content rise        +8 dp -> 0                      [0.30, 0.70]    easeOut
-  content blur        8 -> 0 (level B only)           [0.30, 0.70]    easeOut
+  container fill a    0 -> 1 -> 0                     [0, 0.12] then [0.45, 1]
+  content position    rides the container's center    [0, 1]
+  content alpha       0 -> 1                          [0.10, 0.55]    easeOut
+  content blur        8 -> 0 (level B only)           [0.10, 0.55]    easeOut
   scrim alpha         0 -> 0.30 (menu) / 0.50         [0, 0.6]        linear
 
-CLOSE: symmetric windows; its own, faster spring
+CLOSE: the same curve and windows in reverse; its own spring (k 185, zeta 1)
 REDUCED MOTION: final rect, 120 ms fade, no hiding of the trigger
 BLUR LEVELS: B blur of content; C none (web); R fade only
 FOCUS: Navigator restores focus to the previous node on close

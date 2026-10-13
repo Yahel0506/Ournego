@@ -1,9 +1,7 @@
-import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/scheduler.dart';
 
 import 'package:ournego/core/motion/motion_window.dart';
 import 'package:ournego/core/motion/ournego_motion_level.dart';
@@ -201,29 +199,9 @@ class RenderContainerTransformDestination extends RenderProxyBox {
   @visibleForTesting
   Rect? lastPaintedRect;
 
-  // How much of the vertical arc is applied: 1 while opening, 0 while closing.
-  // It eases between the two over a few frames so reversing mid-way never makes
-  // the container jump.
-  double? _arcWeight;
-  Duration? _arcStamp;
-
-  double _arcWeightNow() {
-    final target = _controller.animation.status == AnimationStatus.reverse
-        ? 0.0
-        : 1.0;
-    final now = SchedulerBinding.instance.currentFrameTimeStamp;
-    final previous = _arcStamp;
-    final weight = _arcWeight;
-    if (previous == null || weight == null) {
-      _arcWeight = target;
-    } else {
-      final dt =
-          (now - previous).inMicroseconds / Duration.microsecondsPerSecond;
-      _arcWeight = weight + (target - weight) * (1 - math.exp(-dt / 0.03));
-    }
-    _arcStamp = now;
-    return _arcWeight!;
-  }
+  // Where the content is painted relative to its final place while the window
+  // opens: it rides the container's center. Zero at rest.
+  Offset _contentOffset = Offset.zero;
 
   @override
   void attach(PipelineOwner owner) {
@@ -252,7 +230,18 @@ class RenderContainerTransformDestination extends RenderProxyBox {
     if (_controller.animation.value < 1 && _contentProgress <= 0.5) {
       return false;
     }
-    return super.hitTestChildren(result, position: position);
+    final child = this.child;
+    if (child == null) return false;
+    return result.addWithPaintOffset(
+      offset: _contentOffset,
+      position: position,
+      hitTest: (result, position) => child.hitTest(result, position: position),
+    );
+  }
+
+  @override
+  void applyPaintTransform(RenderObject child, Matrix4 transform) {
+    transform.translateByDouble(_contentOffset.dx, _contentOffset.dy, 0, 1);
   }
 
   @override
@@ -266,11 +255,13 @@ class RenderContainerTransformDestination extends RenderProxyBox {
 
     // At rest this is the plain child: no clip, no layer.
     if (p >= 1) {
+      _contentOffset = Offset.zero;
       context.paintChild(child, offset);
       return;
     }
 
     if (_controller.level == OurnegoMotionLevel.r) {
+      _contentOffset = Offset.zero;
       if (p <= 0) return;
       context.pushOpacity(
         offset,
@@ -304,18 +295,14 @@ class RenderContainerTransformDestination extends RenderProxyBox {
 
     var globalRect = Rect.lerp(from, destination, g)!;
 
-    // A small arc: the container's vertical position runs past its destination
-    // late in the travel and settles back, while the horizontal position and the
-    // size follow the plain route. The bump is zero outside [0.65, 1].
-    final overshoot = preset.pathOvershoot;
-    if (overshoot > 0) {
-      const bumpStart = 0.65;
-      const bumpPeak = (bumpStart + 1) / 2;
+    // The vertical position follows its own smooth curve over the whole path
+    // (it leans in, passes the destination slightly and settles back); the
+    // horizontal position and the size follow the plain route.
+    final verticalPath = preset.verticalPath;
+    if (verticalPath != null) {
       final travelY = destination.center.dy - from.center.dy;
-      final bump = math.sin(math.pi * _smoothstep(bumpStart, 1, g));
-      final amount = overshoot + (1 - bumpPeak);
       globalRect = globalRect.shift(
-        Offset(0, travelY * amount * bump * _arcWeightNow()),
+        Offset(0, (verticalPath.transform(g) - g) * travelY),
       );
     }
     lastPaintedRect = globalRect;
@@ -345,6 +332,11 @@ class RenderContainerTransformDestination extends RenderProxyBox {
       );
     }
 
+    // The content is not revealed in place: it travels with the container,
+    // keeping its center on the container's center, and the container's clip
+    // shows as much of it as fits.
+    _contentOffset = globalRect.center - destination.center;
+
     final t = _contentProgress;
     if (t <= 0) return;
 
@@ -355,16 +347,8 @@ class RenderContainerTransformDestination extends RenderProxyBox {
       context.pushOpacity(
         offset,
         (t * 255).round(),
-        (context, offset) => context.paintChild(
-          child,
-          offset + Offset(0, (1 - t) * kWindowContentOffset),
-        ),
+        (context, offset) => context.paintChild(child, offset + _contentOffset),
       );
     });
   }
-}
-
-double _smoothstep(double edge0, double edge1, double x) {
-  final t = ((x - edge0) / (edge1 - edge0)).clamp(0.0, 1.0);
-  return t * t * (3 - 2 * t);
 }
