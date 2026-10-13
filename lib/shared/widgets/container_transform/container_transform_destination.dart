@@ -1,7 +1,9 @@
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
 
 import 'package:ournego/core/motion/motion_window.dart';
 import 'package:ournego/core/motion/ournego_motion_level.dart';
@@ -199,6 +201,30 @@ class RenderContainerTransformDestination extends RenderProxyBox {
   @visibleForTesting
   Rect? lastPaintedRect;
 
+  // How much of the vertical arc is applied: 1 while opening, 0 while closing.
+  // It eases between the two over a few frames so reversing mid-way never makes
+  // the container jump.
+  double? _arcWeight;
+  Duration? _arcStamp;
+
+  double _arcWeightNow() {
+    final target = _controller.animation.status == AnimationStatus.reverse
+        ? 0.0
+        : 1.0;
+    final now = SchedulerBinding.instance.currentFrameTimeStamp;
+    final previous = _arcStamp;
+    final weight = _arcWeight;
+    if (previous == null || weight == null) {
+      _arcWeight = target;
+    } else {
+      final dt =
+          (now - previous).inMicroseconds / Duration.microsecondsPerSecond;
+      _arcWeight = weight + (target - weight) * (1 - math.exp(-dt / 0.03));
+    }
+    _arcStamp = now;
+    return _arcWeight!;
+  }
+
   @override
   void attach(PipelineOwner owner) {
     super.attach(owner);
@@ -276,7 +302,22 @@ class RenderContainerTransformDestination extends RenderProxyBox {
       fromColor = _fill;
     }
 
-    final globalRect = Rect.lerp(from, destination, g)!;
+    var globalRect = Rect.lerp(from, destination, g)!;
+
+    // A small arc: the container's vertical position runs past its destination
+    // late in the travel and settles back, while the horizontal position and the
+    // size follow the plain route. The bump is zero outside [0.65, 1].
+    final overshoot = preset.pathOvershoot;
+    if (overshoot > 0) {
+      const bumpStart = 0.65;
+      const bumpPeak = (bumpStart + 1) / 2;
+      final travelY = destination.center.dy - from.center.dy;
+      final bump = math.sin(math.pi * _smoothstep(bumpStart, 1, g));
+      final amount = overshoot + (1 - bumpPeak);
+      globalRect = globalRect.shift(
+        Offset(0, travelY * amount * bump * _arcWeightNow()),
+      );
+    }
     lastPaintedRect = globalRect;
     // Relative to this box, which is what pushClipRRect expects together with
     // the paint offset.
@@ -321,4 +362,9 @@ class RenderContainerTransformDestination extends RenderProxyBox {
       );
     });
   }
+}
+
+double _smoothstep(double edge0, double edge1, double x) {
+  final t = ((x - edge0) / (edge1 - edge0)).clamp(0.0, 1.0);
+  return t * t * (3 - 2 * t);
 }

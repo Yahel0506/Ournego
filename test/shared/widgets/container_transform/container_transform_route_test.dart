@@ -283,6 +283,87 @@ void main() {
     expect(_triggerHidden(tester), isFalse);
   });
 
+  testWidgets('opening arcs past the final Y and settles back; X is direct', (
+    tester,
+  ) async {
+    await _pump(tester);
+    await tester.tap(find.byKey(_trigger));
+    await tester.pump();
+
+    final path = <Offset>[];
+    final sizes = <Size>[];
+    for (var i = 0; i < 90; i++) {
+      await _frames(tester, 1);
+      final r = _rect(tester);
+      path.add(r.center);
+      sizes.add(r.size);
+    }
+    final end = _rect(tester);
+
+    // Y goes past where it ends and comes back: a small arc, not a line.
+    final peakY = path.map((o) => o.dy).reduce((a, b) => a > b ? a : b);
+    expect(peakY, greaterThan(end.center.dy + 3));
+    expect(peakY, lessThan(end.center.dy + 60), reason: 'small, not wild');
+    expect(path.last.dy, closeTo(end.center.dy, 0.5));
+    // ...and it does so late, after most of the travel is done.
+    final peakAt = path.indexWhere((o) => o.dy == peakY);
+    expect(path[peakAt].dy, greaterThan(path.first.dy));
+    expect(peakAt, lessThan(path.length - 1));
+
+    // The other axis takes the plain route: it never passes its destination.
+    final minX = path.map((o) => o.dx).reduce((a, b) => a < b ? a : b);
+    expect(minX, greaterThanOrEqualTo(end.center.dx - 0.5));
+    // Neither does the size.
+    expect(sizes.every((z) => z.width <= end.width + 0.5), isTrue);
+    expect(sizes.every((z) => z.height <= end.height + 0.5), isTrue);
+  });
+
+  testWidgets('closing goes straight back: no arc past the final Y', (
+    tester,
+  ) async {
+    await _pump(tester);
+    await tester.tap(find.byKey(_trigger));
+    await tester.pumpAndSettle();
+    final end = _rect(tester);
+
+    await tester.binding.handlePopRoute();
+    var worst = double.negativeInfinity;
+    for (var i = 0; i < 60; i++) {
+      await _frames(tester, 1);
+      if (find.byType(ContainerTransformDestination).evaluate().isEmpty) break;
+      final dy = _rect(tester).center.dy - end.center.dy;
+      if (dy > worst) worst = dy;
+    }
+    // On the way out the container only moves toward the trigger (up).
+    expect(worst, lessThan(2));
+  });
+
+  testWidgets('reversing mid-way keeps the vertical position continuous', (
+    tester,
+  ) async {
+    await _pump(tester);
+    await tester.tap(find.byKey(_trigger));
+    await tester.pump();
+
+    final ys = <double>[];
+    for (var i = 0; i < 120; i++) {
+      await _frames(tester, 1);
+      ys.add(_rect(tester).center.dy);
+      if (_rect(tester).width > 220) break;
+    }
+    final openStep = _maxStep(ys);
+
+    await tester.binding.handlePopRoute();
+    final out = <double>[ys.last];
+    for (var i = 0; i < 120; i++) {
+      await _frames(tester, 1);
+      if (find.byType(ContainerTransformDestination).evaluate().isEmpty) break;
+      out.add(_rect(tester).center.dy);
+    }
+    expect(out.length, greaterThan(4));
+    expect(_maxStep(out), lessThan(openStep * 1.5));
+  });
+
   testWidgets('closing and reopening quickly does not stack windows', (
     tester,
   ) async {

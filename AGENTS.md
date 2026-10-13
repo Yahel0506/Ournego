@@ -320,6 +320,17 @@ Configured in `analysis_options.yaml`:
 - Write clear commit messages in English
 - Don't commit `.env` files or secrets
 
+## Opening dialogs and menus
+
+Open every dialog with `showOurnegoDialog` and every menu with
+`showOurnegoMenu` (`lib/shared/widgets/container_transform/`), never with
+`showDialog`: they return the same `Future<T?>`, and every window shares the
+same spring, scrim and closing behavior. `test/architecture/no_raw_dialogs_test.dart`
+enforces it. To make a window grow out of a button, wrap the button in
+`ContainerTransformTrigger` and pass its controller as `origin`. A dialog widget
+marks its visible glass surface with `ContainerTransformDestination`. See
+`docs/development/design/motion/README.md`.
+
 ## Navigation with GoRouter
 
 The app uses GoRouter for declarative routing. All routes are defined in `lib/core/routing/`.
@@ -554,6 +565,7 @@ This repo has multiple documentation entrypoints. Before creating new docs, pref
 - `TESTING.md`: testing strategy and how to run tests.
 - `MODELS_TEMPLATE.md`: guidelines for models vs entities and serialization.
 - `DESIGN_SYSTEM.md`: visual design system (tokens, components, patterns) documented from current UI implementation.
+- `docs/development/design/motion/README.md`: container transform (windows that grow out of their trigger): pieces, presets and differences from the spec.
 - `SYSTEM_DESIGN.md`: alias entrypoint; canonical doc is `DESIGN_SYSTEM.md`.
 - `components.md`: project-specific component notes.
 

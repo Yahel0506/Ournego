@@ -53,6 +53,7 @@ class OurnegoSpringPreset {
     this.stagger = 0,
     this.scrimAlpha = 0,
     this.maxItemBlur = 0,
+    this.pathOvershoot = 0,
   });
 
   final double openStiffness;
@@ -73,6 +74,12 @@ class OurnegoSpringPreset {
   /// Per-item blur sigma in dp at `p = contentStart`. 0 means no blur (level C).
   final double maxItemBlur;
 
+  /// How far the container's vertical position travels past its destination
+  /// before settling back, as a fraction of the vertical travel. 0 is a
+  /// straight path. Only the vertical axis arcs, and only while opening; the
+  /// size and the horizontal position never exceed their destination.
+  final double pathOvershoot;
+
   SpringDescription get open => SpringDescription.withDampingRatio(
     mass: 1,
     stiffness: openStiffness,
@@ -85,7 +92,11 @@ class OurnegoSpringPreset {
     ratio: closeDamping,
   );
 
-  OurnegoSpringPreset copyWith({double? scrimAlpha, double? maxItemBlur}) {
+  OurnegoSpringPreset copyWith({
+    double? scrimAlpha,
+    double? maxItemBlur,
+    double? pathOvershoot,
+  }) {
     return OurnegoSpringPreset(
       openStiffness: openStiffness,
       openDamping: openDamping,
@@ -96,6 +107,7 @@ class OurnegoSpringPreset {
       stagger: stagger,
       scrimAlpha: scrimAlpha ?? this.scrimAlpha,
       maxItemBlur: maxItemBlur ?? this.maxItemBlur,
+      pathOvershoot: pathOvershoot ?? this.pathOvershoot,
     );
   }
 }
@@ -118,6 +130,7 @@ const OurnegoSpringPreset kDialogSpring = OurnegoSpringPreset(
   contentEnd: 0.70,
   scrimAlpha: 0.30,
   maxItemBlur: 8,
+  pathOvershoot: 0.07,
 );
 const double kDialogScrimAlpha = 0.50;
 
