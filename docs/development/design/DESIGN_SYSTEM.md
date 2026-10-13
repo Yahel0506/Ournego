@@ -54,7 +54,7 @@ Definidos en `lib/core/theme/tokens/ournego_color_tokens.dart` y expuestos por `
 
 - Light:
   - `primary #3BCFED`
-  - `onPrimary #FFFFFF`
+  - `onPrimary #161616` (noche on aqua; was `#FFFFFF`)
   - `primaryContainer #D8F7FD`
   - `onPrimaryContainer #009ABE`
   - `secondary #7EEFC2`
@@ -137,7 +137,7 @@ Defined in `lib/core/ournego_text_styles.dart`:
 - `OurnegoTextStyles.bodyCompact`: `fontSize: 14`.
 - `OurnegoTextStyles.caption`: `fontSize: 12`.
 - `OurnegoTextStyles.badge`: `fontSize: 11`, `fontWeight: 600`.
-- `OurnegoTextStyles.button`: `fontSize: 16`, `fontWeight: 700`.
+- `OurnegoTextStyles.button`: `fontSize: 16`, `fontWeight: 800` (plus `buttonLarge` 17, `buttonCompact` 15, `buttonSmall` 14 and `buttonTile` 12).
 - `OurnegoTextStyles.error`: `fontSize: 14`, `fontWeight: 600`, semantic error color.
 
 Legacy aliases are still present for migration: `onboardingHeader`, `header`, `link` and `errorText`.
@@ -252,12 +252,10 @@ The app is mostly flat. Depth is reserved for floating UI above map or navigatio
 
 ### Implemented shadows/elevation
 
-- `OurnegoPrimaryButton`: elevation `0`.
-- `OurnegoNeutralPrimaryButton`: default elevation `6`.
-- Auth filled surface button: elevation `2`.
-- Circular surface buttons and tonal card buttons: elevation `0`.
+- Lip buttons: no elevation or blurred shadow; depth is a solid lip.
+- Flat glass elements: no shadow, except the navigation bar's soft one.
 - Bottom navigation: `BoxShadow(color: #26000000, blurRadius: 10, spreadRadius: 0.2)`.
-- Map controls: `Material` elevation `5`, `shadowColor: Colors.black alpha 0.2`.
+- Map controls: lip buttons (`glass` tone, radius 16); no `Material` elevation.
 - Floating sheets: black alpha `0.35`, `blurRadius: 24`, `spreadRadius: -4`, `offset: Offset(0, 8)`.
 - User location marker: green shadow alpha `150`, `spreadRadius: 1`, `blurRadius: 5`.
 - `AnimatedBackground`: blurred colored circles with `ImageFilter.blur` sigma `80`.
@@ -316,36 +314,14 @@ Use this for centered auth-style pages.
 
 ## 9. Component System
 
-### Primary button
+### Buttons
 
-- Class: `OurnegoPrimaryButton` in `lib/shared/widgets/ournego_buttons.dart`.
-- Visual: full-width default, min size `double.infinity x 50`, primary background, pressed `azulVerde`, foreground `noche`, elevation `0`.
-- Use for primary submit/continue actions in auth and location onboarding.
-- Avoid custom primary buttons unless a feature already uses Material `FilledButton` and needs Material defaults.
+Resolved by the button family in `lib/shared/widgets/buttons/`. The normative spec is [`BUTTONS_SPEC.md`](BUTTONS_SPEC.md) (tokens, sizes, states, motion and migration). Summary:
 
-### Neutral primary button
-
-- Class: `OurnegoNeutralPrimaryButton`.
-- Visual: black-on-white or white-on-black depending brightness, min size `56` high, radius `24`, elevation `6`.
-- Used in early onboarding CTAs.
-- Use when CTA should feel branded and high contrast over animated backgrounds.
-
-### Auth buttons
-
-- `OurnegoButtonStyles.authOutlinedOnSurface`: `surface alpha 0.7`, outline alpha `0.3`, onSurface alpha `0.9`.
-- `authFilledOnSurface`: white background, `noche` foreground, elevation `2`.
-- Existing auth rows use icon/image left, centered text, `Spacer`s, height `50`.
-
-### Circular surface buttons
-
-- `OurnegoButtonStyles.circularSurface`: `CircleBorder`, min `52 x 52`, surface alpha default `0.6`, elevation `0`.
-- Used in top map mic/profile controls.
-- Icons are `26-40` depending content.
-
-### Tonal card buttons
-
-- `OurnegoButtonStyles.tonalCardButton`: inverseSurface alpha `0.12`, outline alpha `0.28`, radius passed by caller.
-- Used inside floating sheet actions.
+- Lip buttons (action buttons, map controls, sheet controls): flat solid lip under the face, bounce on release, `kOurnegoSpring`.
+- Flat glass (map top bar, zone chip, navigation bar): no lip, 1 px `borderSubtle` contour, calm curves without overshoot.
+- Ink over aqua is always `noche` in both themes; `onPrimary` in the light scheme is `noche`.
+- Button text uses `OurnegoTextStyles.button*` (`w800`, system font).
 
 ### Content container/card
 
@@ -614,7 +590,7 @@ Structure: Material `AlertDialog` with two `ListTile` options. Visual style is l
 ### Do
 
 - Use `OurnegoColorTokens`, `OurnegoColors`, `Theme.of(context).colorScheme`, `OurnegoSpacingTokens` and `OurnegoRadiusTokens`.
-- Reuse `OurnegoPrimaryButton`, `OurnegoNeutralPrimaryButton`, `OurnegoInputField`, `OurnegoContentContainer`, `InformationCardWidget` and `OurnegoInformationDialog`.
+- Reuse `OurnegoButton`, `OurnegoInputField`, `OurnegoContentContainer`, `InformationCardWidget` and `OurnegoInformationDialog`.
 - Keep large surfaces rounded (`30`) and bordered with outline alpha around `0.3`.
 - Use `AnimatedBackground` for auth/onboarding/form-like branded screens.
 - Use Material rounded icons and existing icon sizes.
@@ -643,22 +619,22 @@ When an AI agent creates or modifies Ournego UI:
 6. If a repeated value is missing as a token, mention it as a candidate before adding a new magic number.
 7. Keep `OurnegoContentContainer` as the default card/surface primitive.
 8. Keep form fields on `OurnegoInputField`.
-9. Keep primary actions on `OurnegoPrimaryButton` or the feature's existing Material button pattern.
+9. Keep primary actions on `OurnegoButton.primary`; never use raw Material buttons.
 10. For map UI, account for `TopNavigationBarWidget`, `AppNavigationBar`, search overlay and floating sheet.
 11. For onboarding, respect `MediaQuery.disableAnimationsOf(context)` and `TickerMode`.
 12. Explain which tokens/components were reused in the implementation summary.
 
 ## 19. Current Inconsistencies
 
-- `lib/core/theme/ournego_button_styles.dart` and `OurnegoTheme` now apply shared button/input themes, but some screens still bypass them with custom Material button styles.
-- There are two `OurnegoButtonStyles` classes: one in `lib/core/theme/ournego_button_styles.dart` and one in `lib/shared/widgets/ournego_buttons.dart`.
+- ~~Custom Material button styles bypassing the theme~~: resolved by the button family (`BUTTONS_SPEC.md`).
+- ~~Two `OurnegoButtonStyles` classes~~: resolved; the theme one is now `OurnegoButtonThemes`.
 - `OurnegoTextStyles` now exposes the expanded semantic scale, but some screens still use hardcoded `fontSize` overrides for compact map labels and sheet content.
 - Spacing aliases now exist, but many screens still use hardcoded `10`, `14`, `18`, `20`, `28`, `30`, `56`, `72`, `108`, `120`.
 - Radius aliases now exist, but many components still hardcode `30`, `24`, `18`, `16`, `14`, `12`, `10`, `8`, `999`.
 - `OurnegoInputStyles.inputDecorationTheme` is now wired into `ThemeData`, but a few feature surfaces still bypass `OurnegoInputField` or `OurnegoInputDecorations`.
 - Feedback dialog uses raw Material `AlertDialog` and `ListTile` styling, unlike `OurnegoInformationDialog`.
-- Some buttons use `ElevatedButton`, some `FilledButton`, some custom shared buttons, with inconsistent heights/foreground colors.
-- Top navigation `_CrystalItemContainer` now has a real blur, but it is still a good candidate for a lighter fallback on low-power or reduced-motion contexts.
+- ~~Mixed Material buttons with inconsistent heights/foregrounds~~: resolved; `test/architecture/no_raw_material_buttons_test.dart` guards it. Light `onPrimary` contrast is also resolved.
+- The flat glass elements (`OurnegoGlassPressable`, `OurnegoGlassSurface`) use a real blur and are good candidates for a lighter fallback on low-power contexts.
 - Business form map style selection appears inverted by variable name: `isDarkModeOn ? styleIdLight : styleIdDark`.
 - `pubspec.yaml` includes `assets/fonts/MyIcons.ttf` as a file asset but not as a registered font; `MyIcons.google` is unused.
 - Category marker colors are hardcoded Material colors, not semantic/category tokens.
@@ -723,7 +699,7 @@ Shared visual widgets:
 
 - `lib/shared/widgets/animated_background.dart`
 - `lib/shared/widgets/animated_particles.dart`
-- `lib/shared/widgets/ournego_buttons.dart`
+- `lib/shared/widgets/buttons/` (button family)
 - `lib/shared/widgets/ournego_inputs.dart`
 - `lib/shared/widgets/ournego_content_container.dart`
 - `lib/shared/widgets/ournego_page_layout.dart`
