@@ -98,13 +98,17 @@ class ContainerTransformDestination extends StatelessWidget {
         child: child,
         builder: (context, child) {
           final preset = controller.preset;
-          final t = seg(
+          // Static blur while the container travels. It clears over the last
+          // stretch, slowly at first and faster toward the end (the spring's
+          // tail is slow, so a linear fade would look sharp well before the
+          // container stops), and is 0 exactly when the animation ends (p = 1).
+          final cleared = seg(
             controller.animation.value,
-            preset.contentStart,
-            preset.contentEnd,
-            Curves.easeOut,
+            preset.blurClearStart,
+            1,
+            Curves.easeInQuad,
           );
-          final sigma = preset.maxItemBlur * (1 - t);
+          final sigma = preset.maxItemBlur * (1 - cleared);
           return ImageFiltered(
             enabled: sigma > 0.1,
             imageFilter: ui.ImageFilter.blur(
@@ -199,6 +203,10 @@ class RenderContainerTransformDestination extends RenderProxyBox {
   @visibleForTesting
   Rect? lastPaintedRect;
 
+  /// The opacity the content was painted with last. For tests.
+  @visibleForTesting
+  double lastContentOpacity = 0;
+
   // Where the content is painted relative to its final place while the window
   // opens: it rides the container's center. Zero at rest.
   Offset _contentOffset = Offset.zero;
@@ -223,13 +231,21 @@ class RenderContainerTransformDestination extends RenderProxyBox {
     Curves.easeOut,
   );
 
-  /// Items only respond once they are at least half visible; the scrim and the
-  /// back gesture respond from the first frame.
+  /// Items respond once they are readable: when the blur starts to clear, or at
+  /// half opacity for a window without blur. The scrim and the back gesture
+  /// respond from the first frame.
+  bool get _isInteractive {
+    final p = _controller.animation.value;
+    if (p >= 1) return true;
+    final preset = _controller.preset;
+    return preset.maxItemBlur > 0
+        ? p >= preset.blurClearStart
+        : _contentProgress > 0.5;
+  }
+
   @override
   bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
-    if (_controller.animation.value < 1 && _contentProgress <= 0.5) {
-      return false;
-    }
+    if (!_isInteractive) return false;
     final child = this.child;
     if (child == null) return false;
     return result.addWithPaintOffset(
@@ -256,6 +272,7 @@ class RenderContainerTransformDestination extends RenderProxyBox {
     // At rest this is the plain child: no clip, no layer.
     if (p >= 1) {
       _contentOffset = Offset.zero;
+      lastContentOpacity = 1;
       context.paintChild(child, offset);
       return;
     }
@@ -318,8 +335,7 @@ class RenderContainerTransformDestination extends RenderProxyBox {
 
     // The container takes over from the trigger in the first frames, and gives
     // way to the surface's own glass at the end.
-    final fillAlpha =
-        seg(p, 0, kTriggerCoveredAt) * (1 - seg(p, preset.contentEnd - 0.1, 1));
+    final fillAlpha = seg(p, 0, kTriggerCoveredAt) * (1 - seg(p, 0.45, 1));
     if (fillAlpha > 0) {
       final color = Color.lerp(
         fromColor,
@@ -338,6 +354,7 @@ class RenderContainerTransformDestination extends RenderProxyBox {
     _contentOffset = globalRect.center - destination.center;
 
     final t = _contentProgress;
+    lastContentOpacity = t;
     if (t <= 0) return;
 
     context.pushClipRRect(needsCompositing, offset, localRect, rrect, (

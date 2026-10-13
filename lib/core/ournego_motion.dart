@@ -40,7 +40,10 @@ const Duration kNavIndicatorDuration = Duration(milliseconds: 380);
 /// Spring and window parameters of one container-transform preset.
 ///
 /// All springs have mass 1. [contentStart] and [contentEnd] are the window of
-/// the progress clock `p` in which the destination content fades in.
+/// the progress clock `p` in which the destination content fades in. With a
+/// blur ([maxItemBlur] > 0) the content arrives fully blurred and stays so
+/// while the container travels; the blur clears over [blurClearStart] to 1 and
+/// is gone exactly when the container's animation ends.
 @immutable
 class OurnegoSpringPreset {
   const OurnegoSpringPreset({
@@ -53,6 +56,7 @@ class OurnegoSpringPreset {
     this.stagger = 0,
     this.scrimAlpha = 0,
     this.maxItemBlur = 0,
+    this.blurClearStart = 0.65,
     this.verticalPath,
   });
 
@@ -71,8 +75,13 @@ class OurnegoSpringPreset {
   final double stagger;
   final double scrimAlpha;
 
-  /// Per-item blur sigma in dp at `p = contentStart`. 0 means no blur (level C).
+  /// Blur sigma in dp of the content while it travels. 0 means no blur (level C).
+  /// It is constant (static) until [blurClearStart].
   final double maxItemBlur;
+
+  /// Where in `p` the blur starts to clear, linearly, reaching 0 at `p = 1`.
+  /// Items also start to respond to touches here.
+  final double blurClearStart;
 
   /// Shapes the container's vertical travel over the whole path, so the window
   /// leans into its destination, passes it slightly and settles back, while the
@@ -108,6 +117,7 @@ class OurnegoSpringPreset {
       stagger: stagger,
       scrimAlpha: scrimAlpha ?? this.scrimAlpha,
       maxItemBlur: maxItemBlur ?? this.maxItemBlur,
+      blurClearStart: blurClearStart,
       verticalPath: verticalPath ?? this.verticalPath,
     );
   }
@@ -132,10 +142,11 @@ const OurnegoSpringPreset kDialogSpring = OurnegoSpringPreset(
   openDamping: 0.9,
   closeStiffness: 185,
   closeDamping: 1,
-  contentStart: 0.10,
-  contentEnd: 0.55,
+  contentStart: 0.05,
+  contentEnd: 0.30,
   scrimAlpha: 0.30,
-  maxItemBlur: 8,
+  maxItemBlur: 12,
+  blurClearStart: 0.62,
   verticalPath: kWindowVerticalPath,
 );
 const double kDialogScrimAlpha = 0.50;

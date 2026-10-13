@@ -52,6 +52,13 @@ Open dialogs only with `showOurnegoDialog` / `showOurnegoMenu`;
    alpha and blur, and the scrim. The content travels with the container, with
    its center on the container's center, and the container's clip shows as much
    of it as fits; it is not revealed in place.
+   The content appears early and **fully blurred**, with a static blur (12 dp,
+   level B) that does not change while the container travels. Over the last
+   stretch (`blurClearStart`, `p` from 0.62) the blur clears, slowly at first and
+   faster toward the end (`easeInQuad`; the spring's tail is slow, so a linear
+   fade would look sharp well before the container stops), and it is exactly 0
+   when the container's animation ends (`p = 1`). Items respond to touches from
+   `blurClearStart`.
 4. The trigger is hidden (it keeps its layout) once the container covers it, at
    `p = 0.12`, and comes back at the same point on the way out.
 5. The origin is measured again when closing starts. If the trigger is gone, the
@@ -66,7 +73,8 @@ A window that has no `ContainerTransformDestination` still fades in and out.
   aside at that point, which reads as the same dissolve.
 - The vertical path is a curve with a small overshoot (the spec has a straight
   path), see Character above.
-- The blur (level B) is applied to the whole content, not to each item.
+- The blur (level B) is applied to the whole content, not to each item, and it
+  is static then clearing at the end, instead of easing out during the travel.
 - No stagger in the account menu (decision D10).
 - The future of `showOurnegoDialog` completes when the pop starts, like
   `showDialog`'s, so a caller can chain the next window while this one animates
@@ -101,9 +109,10 @@ LAYER / PROPERTY      FROM -> TO                      WINDOW (in p)   CURVE
   container radius    trigger radius -> 24            [0, 1]          easeOut
   container fill      trigger color -> surface        [0, 0.5]        easeOut
   container fill a    0 -> 1 -> 0                     [0, 0.12] then [0.45, 1]
+  input               blocked until the blur starts to clear  p >= 0.62
   content position    rides the container's center    [0, 1]
-  content alpha       0 -> 1                          [0.10, 0.55]    easeOut
-  content blur        8 -> 0 (level B only)           [0.10, 0.55]    easeOut
+  content alpha       0 -> 1                          [0.05, 0.30]    easeOut
+  content blur        12 dp static, then 12 -> 0      [0.62, 1]       easeInQuad (level B only)
   scrim alpha         0 -> 0.30 (menu) / 0.50         [0, 0.6]        linear
 
 CLOSE: the same curve and windows in reverse; its own spring (k 185, zeta 1)

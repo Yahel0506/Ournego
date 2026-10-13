@@ -23,6 +23,26 @@ RenderContainerTransformDestination _destination(WidgetTester tester) =>
 
 Rect _rect(WidgetTester tester) => _destination(tester).lastPaintedRect!;
 
+/// The clock `p` of the open window.
+double _progress(WidgetTester tester) => ContainerTransformScope.maybeOf(
+  tester.element(find.byType(ContainerTransformDestination)),
+)!.animation.value;
+
+/// The blur sigma applied to the content right now (0 when there is none).
+double _blur(WidgetTester tester) {
+  final filtered = tester.widget<ImageFiltered>(
+    find.descendant(
+      of: find.byType(ContainerTransformDestination),
+      matching: find.byType(ImageFiltered),
+    ),
+  );
+  if (!filtered.enabled) return 0;
+  final match = RegExp(
+    r'blur\(([\d.]+),',
+  ).firstMatch('${filtered.imageFilter}');
+  return double.parse(match!.group(1)!);
+}
+
 /// Whether the trigger is hidden (opacity 0) at this moment.
 bool _triggerHidden(WidgetTester tester) {
   final opacity = tester.widget<Opacity>(
@@ -346,6 +366,73 @@ void main() {
     // About a third of a second, not a snap and not sluggish.
     expect(frames * 16, inInclusiveRange(250, 520));
   });
+
+  testWidgets('the content appears fully blurred and stays so while it travels', (
+    tester,
+  ) async {
+    await _pump(tester);
+    await tester.tap(find.byKey(_trigger));
+    await tester.pump();
+
+    final samples = <(double, double, double)>[];
+    for (var i = 0; i < 80; i++) {
+      await _frames(tester, 1);
+      samples.add((
+        _progress(tester),
+        _blur(tester),
+        _destination(tester).lastContentOpacity,
+      ));
+    }
+    const maxBlur = 12.0;
+
+    // The content is already visible while the container is still travelling...
+    final early = samples.where((s) => s.$1 >= 0.35 && s.$1 <= 0.55);
+    expect(early, isNotEmpty);
+    expect(early.every((s) => s.$3 == 1), isTrue, reason: '$early');
+    // ...and fully blurred: the same strong blur the whole time, not easing.
+    expect(
+      samples
+          .where((s) => s.$1 >= 0.08 && s.$1 <= 0.55)
+          .every((s) => s.$2 == maxBlur),
+      isTrue,
+      reason: '$samples',
+    );
+  });
+
+  testWidgets(
+    'the blur clears in the last moments and ends with the container',
+    (tester) async {
+      await _pump(tester);
+      await tester.tap(find.byKey(_trigger));
+      await tester.pump();
+
+      final samples = <(double, double)>[];
+      for (var i = 0; i < 120; i++) {
+        await _frames(tester, 1);
+        samples.add((_progress(tester), _blur(tester)));
+        if (_progress(tester) >= 1) break;
+      }
+      // It really goes through the clearing, not a jump.
+      final clearing = samples.where((s) => s.$1 > 0.7 && s.$1 < 0.99).toList();
+      expect(clearing.length, greaterThan(4));
+      for (var i = 1; i < clearing.length; i++) {
+        expect(clearing[i].$2, lessThanOrEqualTo(clearing[i - 1].$2));
+      }
+      expect(clearing.first.$2, greaterThan(clearing.last.$2));
+      // Gradual: no frame changes the blur by more than a fifth of its range.
+      var worst = 0.0;
+      for (var i = 1; i < samples.length; i++) {
+        final step = (samples[i].$2 - samples[i - 1].$2).abs();
+        if (step > worst) worst = step;
+      }
+      expect(worst, lessThan(12 / 5));
+
+      // It is gone at the exact moment the container's animation finishes.
+      await tester.pumpAndSettle();
+      expect(_progress(tester), 1);
+      expect(_blur(tester), 0);
+    },
+  );
 
   testWidgets('opening curves: Y leans in, passes its end slightly, settles', (
     tester,
