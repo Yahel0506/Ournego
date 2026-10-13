@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ournego/features/auth/domain/entities/app_user.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
-import 'package:ournego/features/map/presentation/widgets/profile_menu_dialog_widget.dart';
+import 'package:ournego/features/navigation/presentation/widgets/profile_menu/profile_menu_dialog_widget.dart';
 
 void main() {
   Future<ProfileMenuAction?> openAndTap(
@@ -118,5 +118,44 @@ void main() {
     );
 
     expect(result, ProfileMenuAction.logIn);
+  });
+
+  testWidgets('from the business panel the business entry is not offered', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authSessionStatusProvider.overrideWithValue(true),
+          profileStreamProvider.overrideWith(
+            (ref) => Stream.value(
+              const AppUser(uid: 'u1', name: 'Ana', email: 'ana@test.com'),
+            ),
+          ),
+        ],
+        child: const MaterialApp(
+          home: ProfileMenuDialogWidget(
+            origin: ProfileMenuOrigin.businessPanel,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('profileMenuBusinessButton')),
+      findsNothing,
+    );
+    // The section would be empty without that entry.
+    expect(find.text('CUENTA'), findsNothing);
+    // Everything else stays.
+    expect(
+      find.byKey(const ValueKey('profileMenuLogoutButton')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('profileMenuFeedbackButton')),
+      findsOneWidget,
+    );
   });
 }
