@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/features/onboarding/presentation/pages/components/onboarding_responsive_layout.dart';
 import 'package:ournego/shared/widgets/animated_particles.dart';
-import 'package:ournego/shared/widgets/ournego_buttons.dart';
+import 'package:ournego/shared/widgets/buttons/buttons.dart';
 
 class ExploreOnboardingScreen extends StatelessWidget {
   const ExploreOnboardingScreen({
@@ -48,17 +48,14 @@ class ExploreOnboardingScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 48),
-              SizedBox(
-                width: 200,
-                height: 56,
-                child: OurnegoNeutralPrimaryButton(
-                  key: const ValueKey('onboardingExploreContinueButton'),
-                  onPressed: onNext,
-                  child: const Text(
-                    'Explorar',
-                    style: OurnegoTextStyles.header,
-                  ),
-                ),
+              OurnegoButton.neutral(
+                key: const ValueKey('onboardingExploreContinueButton'),
+                size: OurnegoButtonSize.large,
+                minWidth: 200,
+                label: 'Explorar',
+                trailingIcon: Icons.arrow_forward_rounded,
+                iconMotion: OurnegoIconMotion.nudge,
+                onPressed: onNext,
               ),
             ],
           ),

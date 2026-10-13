@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:ournego/core/theme/tokens/ournego_color_tokens.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/features/onboarding/presentation/pages/components/onboarding_responsive_layout.dart';
-import 'package:ournego/shared/widgets/ournego_buttons.dart';
+import 'package:ournego/shared/widgets/buttons/buttons.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class LocationOnboardingScreen extends StatefulWidget {
@@ -107,17 +107,12 @@ class _LocationOnboardingScreenState extends State<LocationOnboardingScreen>
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
-          SizedBox(
-            width: 160,
-            height: 60,
-            child: OurnegoPrimaryButton(
-              key: const ValueKey('activateLocationButton'),
-              onPressed: _onPrimaryAction,
-              child: Text(
-                _isPermissionGranted ? 'Continuar' : 'Activar',
-                style: OurnegoTextStyles.header,
-              ),
-            ),
+          OurnegoButton.primary(
+            key: const ValueKey('activateLocationButton'),
+            size: OurnegoButtonSize.large,
+            minWidth: 160,
+            label: _isPermissionGranted ? 'Continuar' : 'Activar',
+            onPressed: _onPrimaryAction,
           ),
           const SizedBox(height: 32),
           Icon(

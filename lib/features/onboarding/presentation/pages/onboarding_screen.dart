@@ -13,6 +13,7 @@ import 'package:ournego/features/onboarding/presentation/pages/components/locati
 import 'package:ournego/features/onboarding/presentation/pages/components/role_selection_onboarding_screen.dart';
 import 'package:ournego/features/onboarding/presentation/providers/onboarding_providers.dart';
 import 'package:ournego/shared/widgets/animated_background.dart';
+import 'package:ournego/shared/widgets/buttons/buttons.dart';
 import 'package:ournego/shared/widgets/nego/nego.dart';
 import 'package:ournego/shared/widgets/ournego_information_dialog.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -60,20 +61,22 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           actions: Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              TextButton(
+              OurnegoButton.text(
+                size: OurnegoButtonSize.compact,
+                label: 'Entendido',
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Entendido'),
               ),
               if (isDeniedForever) ...[
                 const SizedBox(width: 8),
-                FilledButton(
+                OurnegoButton.primary(
+                  size: OurnegoButtonSize.compact,
+                  label: 'Abrir ajustes',
                   onPressed: () async {
                     await openAppSettings();
                     if (context.mounted) {
                       Navigator.of(context).pop();
                     }
                   },
-                  child: const Text('Abrir ajustes'),
                 ),
               ],
             ],
@@ -388,11 +391,13 @@ class _OnboardingBackArrow extends StatelessWidget {
         curve: Curves.easeOut,
         child: IgnorePointer(
           ignoring: !isVisible,
-          child: IconButton(
+          child: OurnegoIconButton.ghost(
             key: const ValueKey('onboardingBackButton'),
+            size: OurnegoIconButtonSize.s48,
+            icon: Icons.arrow_back_rounded,
+            semanticLabel: 'Regresar',
             tooltip: 'Regresar',
             onPressed: onBack,
-            icon: const Icon(Icons.arrow_back),
           ),
         ),
       ),
