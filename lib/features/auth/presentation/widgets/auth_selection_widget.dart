@@ -7,7 +7,7 @@ import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
 import 'package:ournego/features/onboarding/presentation/providers/onboarding_providers.dart';
-import 'package:ournego/shared/widgets/ournego_buttons.dart';
+import 'package:ournego/shared/widgets/buttons/buttons.dart';
 import 'package:ournego/shared/widgets/ournego_content_container.dart';
 import 'package:ournego/shared/widgets/ournego_snackbars.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -137,27 +137,15 @@ class GuestAccessButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final setHasSeenOnboarding = ref.read(setHasSeenOnboardingUsecaseProvider);
 
-    return SizedBox(
-      width: double.infinity,
-      height: 50,
-      child: OutlinedButton(
-        key: const ValueKey('guestAccessButton'),
-        onPressed: () async {
-          await setHasSeenOnboarding();
-          if (!context.mounted) return;
-          context.go(MapRoutes.map);
-        },
-        style: OurnegoButtonStyles.authOutlinedOnSurface(context),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.person, size: 25),
-            const Spacer(),
-            Text('Continuar como invitado'),
-            const Spacer(),
-          ],
-        ),
-      ),
+    return OurnegoSocialButton(
+      key: const ValueKey('guestAccessButton'),
+      leading: const Icon(Icons.person_rounded),
+      label: 'Continuar como invitado',
+      onPressed: () async {
+        await setHasSeenOnboarding();
+        if (!context.mounted) return;
+        context.go(MapRoutes.map);
+      },
     );
   }
 }
@@ -169,22 +157,12 @@ class PhoneLoginButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return SizedBox(
-      width: double.infinity,
-      height: 50,
-      child: OutlinedButton(
-        onPressed: () {},
-        style: OurnegoButtonStyles.authOutlinedOnSurface(context),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.phone, size: 25),
-            const Spacer(),
-            Text('Continuar con número telefónico'),
-            const Spacer(),
-          ],
-        ),
-      ),
+    // Disabled on purpose: phone login does not exist yet.
+    return const OurnegoSocialButton(
+      leading: Icon(Icons.call_rounded),
+      label: 'Continuar con número telefónico',
+      badge: 'Pronto',
+      onPressed: null,
     );
   }
 }
@@ -196,25 +174,13 @@ class MailLoginButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return SizedBox(
-      width: double.infinity,
-      height: 50,
-      child: OutlinedButton(
-        key: const ValueKey('emailAccessButton'),
-        onPressed: () {
-          context.push(AuthRoutes.loginEmail);
-        },
-        style: OurnegoButtonStyles.authOutlinedOnSurface(context),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.email, size: 25),
-            const Spacer(),
-            Text('Continuar con correo'),
-            const Spacer(),
-          ],
-        ),
-      ),
+    return OurnegoSocialButton(
+      key: const ValueKey('emailAccessButton'),
+      leading: const Icon(Icons.mail_rounded),
+      label: 'Continuar con correo',
+      onPressed: () {
+        context.push(AuthRoutes.loginEmail);
+      },
     );
   }
 }
@@ -228,41 +194,25 @@ class GoogleLoginButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final setHasSeenOnboarding = ref.read(setHasSeenOnboardingUsecaseProvider);
 
-    return SizedBox(
-      width: double.infinity,
-      height: 50,
-      child: ElevatedButton(
-        onPressed: () async {
-          await setHasSeenOnboarding();
-          if (!context.mounted) return;
-          final googleSignIn = await ref.read(
-            signInWithGoogleUsecaseProvider,
-          )();
-          if (!context.mounted) return;
-          googleSignIn.fold(
-            (failure) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                OurnegoSnackbars.info('Error: ${failure.toString()}'),
-              );
-            },
-            (_) async {
-              if (!kIsWeb && config.onSuccess != null) {
-                config.onSuccess!();
-              }
-            },
-          );
-        },
-        style: OurnegoButtonStyles.authFilledOnSurface(context),
-        child: Row(
-          children: [
-            // Asegúrate de que esta imagen exista
-            Image.asset('assets/images/google.png', width: 25),
-            const Spacer(),
-            Text('Continuar con Google'),
-            const Spacer(),
-          ],
-        ),
-      ),
+    return OurnegoSocialButton.google(
+      onPressed: () async {
+        await setHasSeenOnboarding();
+        if (!context.mounted) return;
+        final googleSignIn = await ref.read(signInWithGoogleUsecaseProvider)();
+        if (!context.mounted) return;
+        googleSignIn.fold(
+          (failure) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              OurnegoSnackbars.info('Error: ${failure.toString()}'),
+            );
+          },
+          (_) async {
+            if (!kIsWeb && config.onSuccess != null) {
+              config.onSuccess!();
+            }
+          },
+        );
+      },
     );
   }
 }

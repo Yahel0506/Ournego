@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:ournego/core/network/connectivity_providers.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/core/routing/route_names.dart';
-import 'package:ournego/shared/widgets/ournego_buttons.dart';
+import 'package:ournego/shared/widgets/buttons/buttons.dart';
 import 'package:ournego/shared/widgets/ournego_page_layout.dart';
 
 /// Shown when a signed-in user's account could not be checked because the
@@ -43,19 +43,19 @@ class AccountCheckFailedScreen extends ConsumerWidget {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
-          OurnegoPrimaryButton(
-            buttonKey: const Key('account-check-retry'),
+          OurnegoButton.primary(
+            key: const Key('account-check-retry'),
+            label: 'Reintentar',
+            icon: Icons.refresh_rounded,
+            iconMotion: OurnegoIconMotion.wiggle,
+            expanded: true,
             onPressed: () => _retry(context),
-            child: const Text('Reintentar'),
           ),
           const SizedBox(height: 12),
-          TextButton(
+          OurnegoButton.text(
             key: const Key('account-check-continue'),
+            label: 'Continuar al mapa',
             onPressed: () => context.go(MapRoutes.map),
-            child: const Text(
-              'Continuar al mapa',
-              style: OurnegoTextStyles.button,
-            ),
           ),
         ],
       ),

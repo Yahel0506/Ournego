@@ -6,7 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
-import 'package:ournego/shared/widgets/ournego_buttons.dart';
+import 'package:ournego/shared/widgets/buttons/buttons.dart';
 import 'package:ournego/shared/widgets/ournego_page_layout.dart';
 import 'package:ournego/shared/widgets/ournego_snackbars.dart';
 
@@ -129,7 +129,11 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
             ),
           ),
           const SizedBox(height: 30),
-          OurnegoPrimaryButton(
+          OurnegoButton.primary(
+            label: isCoolingDown
+                ? 'Reenviar en ${_secondsRemaining}s'
+                : 'Reenviar correo',
+            expanded: true,
             onPressed: targetEmail == null || isCoolingDown
                 ? null
                 : () async {
@@ -160,11 +164,6 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
                       },
                     );
                   },
-            child: Text(
-              isCoolingDown
-                  ? 'Reenviar en ${_secondsRemaining}s'
-                  : 'Reenviar correo',
-            ),
           ),
           const Spacer(),
         ],
