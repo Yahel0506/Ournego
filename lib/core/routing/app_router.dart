@@ -31,6 +31,7 @@ import 'package:ournego/features/community/presentation/pages/community_screen.d
 import 'package:ournego/features/map/presentation/pages/map_screen.dart';
 import 'package:ournego/features/navigation/presentation/pages/main_layout_screen.dart';
 import 'package:ournego/features/onboarding/presentation/pages/onboarding_screen.dart';
+import 'package:ournego/shared/widgets/buttons/buttons.dart';
 
 import '../debugging/presentation/pages/debug_panel_screen.dart';
 
@@ -324,9 +325,9 @@ GoRouter createAppRouter({
               style: const TextStyle(fontSize: 18),
             ),
             const SizedBox(height: 16),
-            ElevatedButton(
+            OurnegoButton.primary(
+              label: 'Ir al mapa',
               onPressed: () => context.go(MapRoutes.map),
-              child: const Text('Go to Home'),
             ),
           ],
         ),

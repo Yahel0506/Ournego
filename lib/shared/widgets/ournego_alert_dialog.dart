@@ -28,40 +28,22 @@ class OurnegoAlertDialog extends StatelessWidget {
     super.key,
     required this.title,
     required this.content,
-    this.primaryAction,
+    required this.primaryAction,
     this.secondaryAction,
-    @Deprecated('Use primaryAction') this.actionLabel = 'OK',
-    @Deprecated('Use primaryAction') this.onAction,
-    @Deprecated('Use secondaryAction') this.trailingActions = const [],
-  }) : assert(primaryAction != null || onAction != null);
+  });
 
   final String title;
   final String content;
 
   /// The real action, rendered as a primary (or destructive) button.
-  final OurnegoDialogAction? primaryAction;
+  final OurnegoDialogAction primaryAction;
 
   /// Usually "Cancelar", rendered as a text button before the primary one.
   final OurnegoDialogAction? secondaryAction;
 
-  @Deprecated('Use primaryAction')
-  final String actionLabel;
-  @Deprecated('Use primaryAction')
-  final VoidCallback? onAction;
-  @Deprecated('Use secondaryAction')
-  final List<Widget> trailingActions;
-
   @override
   Widget build(BuildContext context) {
-    // ignore: deprecated_member_use_from_same_package
-    final legacyAction = onAction;
-    final primary =
-        primaryAction ??
-        OurnegoDialogAction(
-          // ignore: deprecated_member_use_from_same_package
-          label: actionLabel,
-          onPressed: legacyAction!,
-        );
+    final primary = primaryAction;
     final secondary = secondaryAction;
 
     return Center(
@@ -102,8 +84,6 @@ class OurnegoAlertDialog extends StatelessWidget {
                           label: primary.label,
                           onPressed: primary.onPressed,
                         ),
-                  // ignore: deprecated_member_use_from_same_package
-                  ...trailingActions,
                 ],
               ),
             ],
