@@ -13,6 +13,7 @@ import 'package:ournego/core/location/app_position.dart';
 import 'package:ournego/core/location/geolocator_location_datasource.dart';
 import 'package:ournego/core/location/location_datasource.dart';
 import 'package:ournego/core/mapbox_config.dart';
+import 'package:ournego/core/ournego_motion.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/core/theme/tokens/ournego_color_tokens.dart';
 import 'package:ournego/core/theme/tokens/ournego_spacing_tokens.dart';
@@ -880,7 +881,7 @@ class BusinessAddressInput extends StatelessWidget {
         _animatedMapController.animateTo(
           dest: LatLng(place.latitude ?? 0.0, place.longitude ?? 0.0),
           zoom: 16,
-          curve: Curves.bounceInOut,
+          curve: kEaseOutCubic,
         );
 
         _addressController.text = place.address;

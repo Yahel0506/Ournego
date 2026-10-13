@@ -11,6 +11,8 @@ import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/features/map/domain/entities/business.dart';
 import 'package:ournego/features/map/presentation/models/business_marker_ui_model.dart';
 import 'package:ournego/shared/widgets/buttons/buttons.dart';
+import 'package:ournego/shared/widgets/ournego_alert_dialog.dart';
+import 'package:ournego/shared/widgets/ournego_form_dialog.dart';
 
 class MapCanvasWidget extends StatelessWidget {
   final AnimatedMapController animatedMapController;
@@ -229,18 +231,14 @@ class MapCanvasWidget extends StatelessWidget {
                   semanticLabel: 'Créditos del mapa',
                   onPressed: () {
                     showDialog(
-                      animationStyle: AnimationStyle(
-                        curve: Curves.bounceInOut,
-                        duration: Durations.medium1,
-                      ),
                       context: context,
-                      builder: (context) => AlertDialog(
-                        backgroundColor: Theme.of(context).colorScheme.surface,
-                        title: const Text(
-                          'Créditos del Mapa',
-                          style: OurnegoTextStyles.body,
+                      builder: (context) => OurnegoFormDialog(
+                        title: 'Créditos del Mapa',
+                        primaryAction: OurnegoDialogAction(
+                          label: 'Cerrar',
+                          onPressed: () => Navigator.of(context).pop(),
                         ),
-                        content: Column(
+                        child: Column(
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -263,13 +261,6 @@ class MapCanvasWidget extends StatelessWidget {
                             ),
                           ],
                         ),
-                        actions: [
-                          OurnegoButton.text(
-                            size: OurnegoButtonSize.compact,
-                            label: 'Cerrar',
-                            onPressed: () => Navigator.of(context).pop(),
-                          ),
-                        ],
                       ),
                     );
                   },
