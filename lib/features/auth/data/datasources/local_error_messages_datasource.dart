@@ -16,4 +16,18 @@ class LocalErrorMessagesDatasource {
       return 'Ha habido un error. Por favor, inténtalo de nuevo.';
     }
   }
+
+  /// Message for a failed or cancelled Google sign-in. Always invites to retry
+  /// and never exposes the raw error.
+  String getGoogleSignInErrorMessage(Failure failure) {
+    if (failure is GoogleSignInCancelledFailure) {
+      return 'Cancelaste el inicio de sesión con Google. Puedes volver a intentarlo.';
+    } else if (failure is GoogleSignInUnavailableFailure) {
+      return 'No pudimos abrir el inicio de sesión de Google en este dispositivo. Inténtalo de nuevo.';
+    } else if (failure is NetworkFailure) {
+      return getErrorMessage(failure);
+    } else {
+      return 'No pudimos iniciar sesión con Google. Inténtalo de nuevo.';
+    }
+  }
 }

@@ -192,26 +192,41 @@ class GoogleLoginButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final setHasSeenOnboarding = ref.read(setHasSeenOnboardingUsecaseProvider);
-
     return OurnegoSocialButton.google(
-      onPressed: () async {
-        await setHasSeenOnboarding();
-        if (!context.mounted) return;
-        final googleSignIn = await ref.read(signInWithGoogleUsecaseProvider)();
-        if (!context.mounted) return;
-        googleSignIn.fold(
-          (failure) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              OurnegoSnackbars.info('Error: ${failure.toString()}'),
-            );
-          },
-          (_) async {
-            if (!kIsWeb && config.onSuccess != null) {
-              config.onSuccess!();
-            }
-          },
-        );
+      onPressed: () => _signInWithGoogle(context, ref),
+    );
+  }
+
+  /// Signs in with Google. On failure or cancellation it shows a clear message
+  /// in a snackbar whose "Reintentar" action runs this same flow again.
+  Future<void> _signInWithGoogle(BuildContext context, WidgetRef ref) async {
+    await ref.read(setHasSeenOnboardingUsecaseProvider)();
+    if (!context.mounted) return;
+    final googleSignIn = await ref.read(signInWithGoogleUsecaseProvider)();
+    if (!context.mounted) return;
+    googleSignIn.fold(
+      (failure) {
+        final message = ref
+            .read(authErrorMessagesProvider)
+            .getGoogleSignInErrorMessage(failure);
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            OurnegoSnackbars.error(
+              context,
+              message,
+              actionLabel: 'Reintentar',
+              onAction: () {
+                if (!context.mounted) return;
+                _signInWithGoogle(context, ref);
+              },
+            ),
+          );
+      },
+      (_) {
+        if (!kIsWeb && config.onSuccess != null) {
+          config.onSuccess!();
+        }
       },
     );
   }
