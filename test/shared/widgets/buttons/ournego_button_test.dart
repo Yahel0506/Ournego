@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ournego/core/ournego_motion.dart';
 import 'package:ournego/core/theme/ournego_theme.dart';
 import 'package:ournego/shared/widgets/buttons/buttons.dart';
+import 'package:ournego/shared/widgets/buttons/ournego_pressable.dart';
 import 'package:ournego/shared/widgets/nego/nego.dart';
 
 import 'button_test_helpers.dart';
@@ -145,6 +146,8 @@ void main() {
       width: 320,
     );
     expect(tester.getSize(find.byKey(_key)).width, 320);
+    // The face stretches too, not only the lip.
+    expect(tester.getSize(find.byKey(ournegoPressableFaceKey)).width, 320);
   });
 
   testWidgets('minWidth keeps a minimum width', (tester) async {
@@ -158,6 +161,7 @@ void main() {
       ),
     );
     expect(tester.getSize(find.byKey(_key)).width, 200);
+    expect(tester.getSize(find.byKey(ournegoPressableFaceKey)).width, 200);
   });
 
   testWidgets('uses tone colors in both themes', (tester) async {

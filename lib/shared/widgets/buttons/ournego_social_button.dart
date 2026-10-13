@@ -106,7 +106,10 @@ class _OurnegoSocialButtonState extends State<OurnegoSocialButton> {
             width: side,
             child: widget.badge == null
                 ? null
-                : Align(
+                // The spec keeps the slot at 56; a longer badge grows to the
+                // left instead of wrapping.
+                : OverflowBox(
+                    maxWidth: double.infinity,
                     alignment: Alignment.centerRight,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
@@ -119,6 +122,8 @@ class _OurnegoSocialButtonState extends State<OurnegoSocialButton> {
                       ),
                       child: Text(
                         widget.badge!.toUpperCase(),
+                        maxLines: 1,
+                        softWrap: false,
                         style: TextStyle(
                           fontSize: 10.5,
                           fontWeight: FontWeight.w800,

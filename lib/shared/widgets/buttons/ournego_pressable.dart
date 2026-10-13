@@ -452,6 +452,9 @@ class _OurnegoPressableState extends State<OurnegoPressable>
 
     return Stack(
       clipBehavior: Clip.none,
+      // The face takes the parent constraints, so expanded and minWidth
+      // buttons stretch the face, not only the lip.
+      fit: StackFit.passthrough,
       children: [
         if (lip > 0)
           Positioned(
