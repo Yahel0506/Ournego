@@ -33,6 +33,9 @@ class MapCanvasWidget extends StatelessWidget {
   final BusinessMarkerUiModel Function(Business business) markerUiMapper;
   final VoidCallback? onRetryBusinesses;
 
+  /// Called when the user taps the map itself, not a marker or a control.
+  final VoidCallback? onMapTap;
+
   const MapCanvasWidget({
     super.key,
     required this.animatedMapController,
@@ -52,6 +55,7 @@ class MapCanvasWidget extends StatelessWidget {
     required this.onBusinessTap,
     required this.markerUiMapper,
     this.onRetryBusinesses,
+    this.onMapTap,
   });
 
   @override
@@ -64,6 +68,7 @@ class MapCanvasWidget extends StatelessWidget {
         initialZoom: initialZoom,
         minZoom: 3,
         maxZoom: 21,
+        onTap: onMapTap == null ? null : (tapPosition, point) => onMapTap!(),
         onPositionChanged: (camera, hasGesture) async {
           await onCameraChanged(camera.zoom);
         },

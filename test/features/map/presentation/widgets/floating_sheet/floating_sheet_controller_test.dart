@@ -28,6 +28,7 @@ void open(FakeAsync async, FloatingSheetController c, SheetBusinessData b) {
 }
 
 void main() {
+  backTests();
   group('openBusiness', () {
     test('starts minimized and settles to collapsed after 40 ms', () {
       fakeAsync((async) {
@@ -396,6 +397,55 @@ void main() {
       expect(c.toggleFavoriteForBusiness('b'), isTrue);
       expect(c.comparisonBusiness!.isFavorite, isTrue);
       expect(c.toggleFavoriteForBusiness('zzz'), isFalse);
+    });
+  });
+}
+
+// Back, Esc and the scrim step the sheet back one level.
+void backTests() {
+  group('handleBack', () {
+    test('expanded collapses, collapsed closes, then nothing is left', () {
+      fakeAsync((async) {
+        final c = FloatingSheetController();
+        open(async, c, biz('a'));
+        c.transitionTo(FloatingSheetState.expanded);
+
+        expect(c.handleBack(), isTrue);
+        expect(c.state, FloatingSheetState.collapsed);
+
+        expect(c.handleBack(), isTrue);
+        expect(c.pendingClearActive, isTrue);
+
+        // Closing already: a further back is not ours to handle.
+        expect(c.canHandleBack, isFalse);
+        expect(c.handleBack(), isFalse);
+      });
+    });
+
+    test('is not handled without a business or while still opening', () {
+      fakeAsync((async) {
+        final c = FloatingSheetController();
+        expect(c.handleBack(), isFalse);
+
+        c.openBusiness(biz('a'));
+        expect(c.state, FloatingSheetState.minimized);
+        expect(c.canHandleBack, isFalse);
+      });
+    });
+
+    test('in comparison it returns the second card to the stack', () {
+      fakeAsync((async) {
+        final c = FloatingSheetController();
+        open(async, c, biz('a'));
+        open(async, c, biz('b'));
+        c.onMinimizedBusinessTap('a');
+        expect(c.isComparisonMode, isTrue);
+
+        expect(c.handleBack(), isTrue);
+        expect(c.isComparisonMode, isFalse);
+        expect(c.activeBusiness?.id, 'b');
+        expect(c.minimizedBusinesses.map((b) => b.id), ['a']);
+      });
     });
   });
 }

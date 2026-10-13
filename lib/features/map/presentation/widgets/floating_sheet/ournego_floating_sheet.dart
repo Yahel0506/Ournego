@@ -138,7 +138,12 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet> {
           : 0,
       child: IgnorePointer(
         ignoring: !shouldBlock,
-        child: Container(color: Colors.black),
+        child: GestureDetector(
+          key: const ValueKey('floatingSheetScrim'),
+          behavior: HitTestBehavior.opaque,
+          onTap: widget.controller.handleBack,
+          child: Container(color: Colors.black),
+        ),
       ),
     );
   }

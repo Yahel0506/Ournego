@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
@@ -76,9 +77,20 @@ class _MapScreenState extends ConsumerState<MapScreen>
   final _searchController = TextEditingController();
   final _searchFocusNode = FocusNode();
 
+  /// Keeps keyboard focus inside the screen after the search field lets go of
+  /// it, so Esc still reaches [_handleBackOrEscape].
+  final _keysFocusNode = FocusNode(
+    debugLabel: 'mapScreenKeys',
+    skipTraversal: true,
+  );
+
   bool _isLocationModalOpen = false;
   bool _isZonePickerOpen = false;
   bool _isSearchPanelVisible = false;
+
+  /// The user dismissed the panel (back, Esc, tap on the map) but the query
+  /// stays in the bar. Cleared as soon as they interact with the bar again.
+  bool _isSearchPanelDismissed = false;
   String _searchQuery = '';
   MapSearchFilters _searchFilters = const MapSearchFilters();
 
@@ -497,6 +509,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
     _viewController.restoreSheetStateFromPrefs();
     _searchFocusNode.addListener(() {
       if (!mounted) return;
+      if (_searchFocusNode.hasFocus) {
+        _isSearchPanelDismissed = false;
+      }
       _syncSearchPanelVisibility();
     });
   }
@@ -517,6 +532,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
     WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
     _searchFocusNode.dispose();
+    _keysFocusNode.dispose();
     _searchPanelAnimationController.dispose();
     _floatingSheetController.removeListener(_persistMapAndSheetState);
     _animatedMapController.dispose();
@@ -572,7 +588,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
         myUsername.isNotEmpty &&
         currentStyleId.isNotEmpty;
 
-    return Scaffold(
+    final scaffold = Scaffold(
       key: const ValueKey('mapScreen'),
       resizeToAvoidBottomInset: false,
       body: Stack(
@@ -604,6 +620,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
             },
             onBusinessTap: (business) {
               _viewController.openBusinessSheet(business, source: 'map');
+            },
+            onMapTap: () {
+              if (_isSearchPanelVisible) _dismissSearchPanel();
             },
             markerUiMapper: _businessMarkerUiMapper.call,
           ),
@@ -789,22 +808,45 @@ class _MapScreenState extends ConsumerState<MapScreen>
               if (!_searchFocusNode.hasFocus) {
                 _searchFocusNode.requestFocus();
               }
-              _syncSearchPanelVisibility();
+              _revealSearchPanel();
               await ref.read(mapVoiceSearchProvider.notifier).toggleListening();
             },
             onSearchTap: () {
               if (!mounted) return;
-              _syncSearchPanelVisibility();
+              _revealSearchPanel();
             },
             onSearchChanged: (value) {
               if (!mounted) return;
               setState(() {
                 _searchQuery = value;
               });
-              _syncSearchPanelVisibility();
+              _revealSearchPanel();
             },
           ),
         ],
+      ),
+    );
+
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.escape): _handleBackOrEscape,
+      },
+      child: Focus(
+        focusNode: _keysFocusNode,
+        autofocus: true,
+        child: ListenableBuilder(
+          listenable: _floatingSheetController,
+          child: scaffold,
+          builder: (context, child) => PopScope(
+            canPop:
+                !_isSearchPanelVisible &&
+                !_floatingSheetController.canHandleBack,
+            onPopInvokedWithResult: (didPop, _) {
+              if (!didPop) _handleBackOrEscape();
+            },
+            child: child!,
+          ),
+        ),
       ),
     );
   }
@@ -948,7 +990,33 @@ class _MapScreenState extends ConsumerState<MapScreen>
     }
   }
 
+  /// Back and Esc step back one level: the search panel first, then the sheet.
+  void _handleBackOrEscape() {
+    if (_isSearchPanelVisible) {
+      _dismissSearchPanel();
+      return;
+    }
+    _floatingSheetController.handleBack();
+  }
+
+  /// Hides the panel but keeps the query in the bar. Focusing or editing the
+  /// bar again brings the same results back.
+  void _dismissSearchPanel() {
+    _isSearchPanelDismissed = true;
+    if (_searchFocusNode.hasFocus) {
+      _keysFocusNode.requestFocus();
+    }
+    _syncSearchPanelVisibility();
+  }
+
+  void _revealSearchPanel() {
+    _isSearchPanelDismissed = false;
+    _syncSearchPanelVisibility();
+  }
+
+  /// The close button: hides the panel and clears the query.
   void _closeSearchOverlay() {
+    _isSearchPanelDismissed = false;
     _searchFocusNode.unfocus();
     setState(() {
       _searchQuery = '';
@@ -968,7 +1036,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
   void _syncSearchPanelVisibility() {
     final shouldShow =
-        _searchFocusNode.hasFocus || _searchQuery.trim().isNotEmpty;
+        !_isSearchPanelDismissed &&
+        (_searchFocusNode.hasFocus || _searchQuery.trim().isNotEmpty);
     if (shouldShow == _isSearchPanelVisible) {
       return;
     }
@@ -995,6 +1064,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
     setState(() {
       _searchQuery = transcript;
     });
-    _syncSearchPanelVisibility();
+    _revealSearchPanel();
   }
 }
