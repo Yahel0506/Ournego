@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/core/routing/route_names.dart';
+import 'package:ournego/features/navigation/presentation/widgets/profile_menu/profile_menu_actions.dart';
+import 'package:ournego/features/navigation/presentation/widgets/profile_menu/profile_menu_dialog_widget.dart';
 import 'package:ournego/shared/widgets/buttons/buttons.dart';
 
-class BusinessPanelHeader extends StatelessWidget {
+class BusinessPanelHeader extends ConsumerWidget {
   const BusinessPanelHeader({
     super.key,
     required this.profileImageUrl,
@@ -15,7 +18,7 @@ class BusinessPanelHeader extends StatelessWidget {
   final bool isLogged;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return SizedBox(
       height: 56,
       child: Row(
@@ -31,7 +34,14 @@ class BusinessPanelHeader extends StatelessWidget {
             icon: isLogged ? Icons.account_circle_rounded : Icons.login_rounded,
             semanticLabel: isLogged ? 'Perfil' : 'Iniciar sesión',
             onPressed: () {
-              if (isLogged) return;
+              if (isLogged) {
+                openProfileMenu(
+                  context,
+                  ref,
+                  origin: ProfileMenuOrigin.businessPanel,
+                );
+                return;
+              }
               context.push(AuthRoutes.authSelection);
             },
             child: profileImageUrl.isNotEmpty

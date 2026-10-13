@@ -14,14 +14,7 @@ class NegoPaths {
     return Path()
       ..moveTo(radius, 0)
       ..lineTo(width - radius, 0)
-      ..cubicTo(
-        width - radius / 2,
-        0,
-        width,
-        radius / 2,
-        width,
-        radius,
-      )
+      ..cubicTo(width - radius / 2, 0, width, radius / 2, width, radius)
       ..lineTo(width, bottomY)
       ..cubicTo(
         width,
@@ -32,14 +25,7 @@ class NegoPaths {
         height,
       )
       ..lineTo(radius, height)
-      ..cubicTo(
-        radius / 2,
-        height,
-        0,
-        height - radius / 2,
-        0,
-        bottomY,
-      )
+      ..cubicTo(radius / 2, height, 0, height - radius / 2, 0, bottomY)
       ..lineTo(0, radius)
       ..cubicTo(0, radius / 2, radius / 2, 0, radius, 0)
       ..close();

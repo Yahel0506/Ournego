@@ -1,14 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:go_router/go_router.dart';
 import 'package:ournego/core/theme/tokens/ournego_spacing_tokens.dart';
-import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
-import 'package:ournego/features/feedback/presentation/widgets/feedback_dialog_widget.dart';
-import 'package:ournego/features/map/presentation/widgets/profile_menu_dialog_widget.dart';
-import 'package:ournego/features/navigation/presentation/providers/navigation_provider.dart';
-import 'package:ournego/shared/widgets/ournego_alert_dialog.dart';
+import 'package:ournego/features/navigation/presentation/widgets/profile_menu/profile_menu_actions.dart';
 import 'package:ournego/shared/widgets/buttons/buttons.dart';
 
 final GlobalKey topNavigationBarKey = GlobalKey(debugLabel: 'topNavigationBar');
@@ -84,7 +78,7 @@ class TopNavigationBarWidget extends ConsumerWidget {
             key: const ValueKey('mapProfileButton'),
             icon: isLogged ? Icons.account_circle_rounded : Icons.login_rounded,
             semanticLabel: 'Abrir menú de perfil',
-            onPressed: () => _openProfileMenu(context, ref),
+            onPressed: () => openProfileMenu(context, ref),
             child: imageUrl.isNotEmpty
                 ? Image(
                     image: NetworkImage(imageUrl),
@@ -105,66 +99,4 @@ class TopNavigationBarWidget extends ConsumerWidget {
       ),
     );
   }
-}
-
-Future<void> _openProfileMenu(BuildContext context, WidgetRef ref) async {
-  final action = await showProfileMenuDialog(context);
-  if (action == null || !context.mounted) return;
-
-  switch (action) {
-    case ProfileMenuAction.logIn:
-      context.push(AuthRoutes.authSelection);
-    case ProfileMenuAction.businessPanel:
-      context.go(BusinessRoutes.panel);
-    case ProfileMenuAction.locationPermissions:
-      await Geolocator.openAppSettings();
-    case ProfileMenuAction.reportProblem:
-      await _openFeedbackDialog(context, ref);
-    case ProfileMenuAction.debugPanel:
-      context.go(DebuggingRoutes.debugPanel);
-    case ProfileMenuAction.logOut:
-      await _confirmLogOut(context, ref);
-  }
-}
-
-Future<void> _openFeedbackDialog(BuildContext context, WidgetRef ref) async {
-  if (ref.read(isFeedbackDialogOpenProvider)) return;
-  ref.read(isFeedbackDialogOpenProvider.notifier).setIsOpen();
-  await showDialog<void>(
-    context: context,
-    builder: (_) => const FeedbackDialogWidget(),
-  );
-  ref.read(isFeedbackDialogOpenProvider.notifier).setIsClosed();
-}
-
-Future<void> _confirmLogOut(BuildContext context, WidgetRef ref) {
-  final logOutUsecase = ref.read(logOutUsecaseProvider);
-
-  return showDialog<void>(
-    context: context,
-    builder: (dialogContext) {
-      return OurnegoAlertDialog(
-        title: 'Cerrar sesión',
-        content: '¿Estás seguro de que quieres cerrar sesión?',
-        primaryAction: OurnegoDialogAction(
-          key: const ValueKey('confirmLogoutButton'),
-          label: 'Cerrar sesión',
-          isDestructive: true,
-          onPressed: () async {
-            await logOutUsecase();
-            if (dialogContext.mounted) {
-              Navigator.of(dialogContext).pop();
-              dialogContext.go(MapRoutes.map);
-            }
-          },
-        ),
-        secondaryAction: OurnegoDialogAction(
-          label: 'Cancelar',
-          onPressed: () {
-            Navigator.of(dialogContext).pop();
-          },
-        ),
-      );
-    },
-  );
 }

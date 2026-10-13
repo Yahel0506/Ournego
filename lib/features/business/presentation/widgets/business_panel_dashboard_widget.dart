@@ -17,7 +17,8 @@ import 'package:ournego/features/business/presentation/widgets/business_panel/bu
 import 'package:ournego/features/business/presentation/widgets/business_panel/business_panel_states.dart';
 import 'package:ournego/features/business/presentation/widgets/business_panel/dialogs/location_editor_dialog.dart';
 import 'package:ournego/features/business/presentation/widgets/business_panel/models/location_editor_result.dart';
-import 'package:ournego/shared/widgets/buttons/buttons.dart';
+import 'package:ournego/shared/widgets/ournego_alert_dialog.dart';
+import 'package:ournego/shared/widgets/ournego_form_dialog.dart';
 import 'package:ournego/shared/widgets/ournego_inputs.dart';
 import 'package:ournego/shared/widgets/ournego_snackbars.dart';
 
@@ -69,49 +70,43 @@ class _BusinessPanelDashboardWidgetState
       builder: (dialogContext) {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
-            return AlertDialog(
-              title: const Text('Editar informacion'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    OurnegoInputField(
-                      controller: nameController,
-                      labelText: 'Nombre del negocio',
-                    ),
-                    const SizedBox(height: OurnegoSpacingTokens.sm),
-                    OurnegoInputField(
-                      controller: descriptionController,
-                      labelText: 'Descripcion',
-                      maxLines: 3,
-                    ),
-                    const SizedBox(height: OurnegoSpacingTokens.sm),
-                    DropdownButtonFormField<int>(
-                      initialValue: category,
-                      items: categoryOptions,
-                      onChanged: (value) {
-                        setStateDialog(() => category = value ?? category);
-                      },
-                      decoration: OurnegoInputDecorations.filled(
-                        context: dialogContext,
-                        labelText: 'Categoria',
-                      ),
-                    ),
-                  ],
-                ),
+            return OurnegoFormDialog(
+              title: 'Editar informacion',
+              primaryAction: OurnegoDialogAction(
+                label: 'Guardar',
+                onPressed: () => Navigator.of(dialogContext).pop(true),
               ),
-              actions: [
-                OurnegoButton.text(
-                  size: OurnegoButtonSize.compact,
-                  label: 'Cancelar',
-                  onPressed: () => Navigator.of(dialogContext).pop(false),
-                ),
-                OurnegoButton.primary(
-                  size: OurnegoButtonSize.compact,
-                  label: 'Guardar',
-                  onPressed: () => Navigator.of(dialogContext).pop(true),
-                ),
-              ],
+              secondaryAction: OurnegoDialogAction(
+                label: 'Cancelar',
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  OurnegoInputField(
+                    controller: nameController,
+                    labelText: 'Nombre del negocio',
+                  ),
+                  const SizedBox(height: OurnegoSpacingTokens.sm),
+                  OurnegoInputField(
+                    controller: descriptionController,
+                    labelText: 'Descripcion',
+                    maxLines: 3,
+                  ),
+                  const SizedBox(height: OurnegoSpacingTokens.sm),
+                  DropdownButtonFormField<int>(
+                    initialValue: category,
+                    items: categoryOptions,
+                    onChanged: (value) {
+                      setStateDialog(() => category = value ?? category);
+                    },
+                    decoration: OurnegoInputDecorations.filled(
+                      context: dialogContext,
+                      labelText: 'Categoria',
+                    ),
+                  ),
+                ],
+              ),
             );
           },
         );
@@ -187,26 +182,22 @@ class _BusinessPanelDashboardWidgetState
     final didConfirm = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Editar telefono'),
-          content: OurnegoInputField(
+        return OurnegoFormDialog(
+          title: 'Editar telefono',
+          primaryAction: OurnegoDialogAction(
+            label: 'Guardar',
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+          ),
+          secondaryAction: OurnegoDialogAction(
+            label: 'Cancelar',
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+          ),
+          child: OurnegoInputField(
             controller: controller,
             keyboardType: TextInputType.phone,
             labelText: 'Telefono',
             hintText: '1234 567 8900',
           ),
-          actions: [
-            OurnegoButton.text(
-              size: OurnegoButtonSize.compact,
-              label: 'Cancelar',
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-            ),
-            OurnegoButton.primary(
-              size: OurnegoButtonSize.compact,
-              label: 'Guardar',
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-            ),
-          ],
         );
       },
     );
@@ -239,41 +230,31 @@ class _BusinessPanelDashboardWidgetState
     final didConfirm = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Editar horarios'),
-          content: SizedBox(
-            width: 360,
-            child: SingleChildScrollView(
-              child: Column(
-                children: List.generate(7, (day) {
-                  return Padding(
-                    padding: const EdgeInsets.only(
-                      bottom: OurnegoSpacingTokens.xs,
-                    ),
-                    child: BusinessHoursPicker(
-                      day: day,
-                      initialSchedule: draft[day],
-                      onChanged: (schedule) {
-                        draft[day] = schedule;
-                      },
-                    ),
-                  );
-                }),
-              ),
-            ),
+        return OurnegoFormDialog(
+          title: 'Editar horarios',
+          maxWidth: 420,
+          primaryAction: OurnegoDialogAction(
+            label: 'Guardar',
+            onPressed: () => Navigator.of(dialogContext).pop(true),
           ),
-          actions: [
-            OurnegoButton.text(
-              size: OurnegoButtonSize.compact,
-              label: 'Cancelar',
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-            ),
-            OurnegoButton.primary(
-              size: OurnegoButtonSize.compact,
-              label: 'Guardar',
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-            ),
-          ],
+          secondaryAction: OurnegoDialogAction(
+            label: 'Cancelar',
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+          ),
+          child: Column(
+            children: List.generate(7, (day) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: OurnegoSpacingTokens.xs),
+                child: BusinessHoursPicker(
+                  day: day,
+                  initialSchedule: draft[day],
+                  onChanged: (schedule) {
+                    draft[day] = schedule;
+                  },
+                ),
+              );
+            }),
+          ),
         );
       },
     );

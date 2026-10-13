@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:ournego/core/theme/tokens/ournego_color_tokens.dart';
+import 'package:ournego/core/theme/tokens/ournego_radius_tokens.dart';
 import '../../../../features/navigation/presentation/providers/navigation_provider.dart';
 import '../providers/feedback_providers.dart';
 
@@ -32,6 +33,9 @@ class _FeedbackDialogWidgetState extends ConsumerState<FeedbackDialogWidget> {
         }
       },
       child: AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(OurnegoRadiusTokens.window),
+        ),
         title: Text("¿Algo salió mal? Cuéntanos"),
         content: Column(
           mainAxisSize: MainAxisSize.min,

@@ -1,0 +1,70 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:go_router/go_router.dart';
+
+import 'package:ournego/core/routing/route_names.dart';
+import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
+import 'package:ournego/features/feedback/presentation/widgets/feedback_flow.dart';
+import 'package:ournego/features/navigation/presentation/widgets/profile_menu/profile_menu_dialog_widget.dart';
+import 'package:ournego/shared/widgets/ournego_alert_dialog.dart';
+
+/// Opens the profile menu from [context] and performs the chosen entry.
+///
+/// Every screen that offers the profile button calls this, so the menu and what
+/// its entries do stay the same everywhere.
+Future<void> openProfileMenu(
+  BuildContext context,
+  WidgetRef ref, {
+  ProfileMenuOrigin origin = ProfileMenuOrigin.map,
+}) async {
+  final action = await showProfileMenuDialog(context, origin: origin);
+  if (action == null || !context.mounted) return;
+
+  switch (action) {
+    case ProfileMenuAction.logIn:
+      context.push(AuthRoutes.authSelection);
+    case ProfileMenuAction.businessPanel:
+      context.go(BusinessRoutes.panel);
+    case ProfileMenuAction.locationPermissions:
+      await Geolocator.openAppSettings();
+    case ProfileMenuAction.reportProblem:
+      await openFeedbackDialog(context, ref);
+    case ProfileMenuAction.debugPanel:
+      context.go(DebuggingRoutes.debugPanel);
+    case ProfileMenuAction.logOut:
+      await _confirmLogOut(context, ref);
+  }
+}
+
+Future<void> _confirmLogOut(BuildContext context, WidgetRef ref) {
+  final logOutUsecase = ref.read(logOutUsecaseProvider);
+
+  return showDialog<void>(
+    context: context,
+    builder: (dialogContext) {
+      return OurnegoAlertDialog(
+        title: 'Cerrar sesión',
+        content: '¿Estás seguro de que quieres cerrar sesión?',
+        primaryAction: OurnegoDialogAction(
+          key: const ValueKey('confirmLogoutButton'),
+          label: 'Cerrar sesión',
+          isDestructive: true,
+          onPressed: () async {
+            await logOutUsecase();
+            if (dialogContext.mounted) {
+              Navigator.of(dialogContext).pop();
+              dialogContext.go(MapRoutes.map);
+            }
+          },
+        ),
+        secondaryAction: OurnegoDialogAction(
+          label: 'Cancelar',
+          onPressed: () {
+            Navigator.of(dialogContext).pop();
+          },
+        ),
+      );
+    },
+  );
+}

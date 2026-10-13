@@ -6,9 +6,7 @@ import 'package:ournego/shared/widgets/nego/nego_tokens.dart';
 
 void main() {
   test('idle uses the base circular geometry', () {
-    final geometry = NegoGeometryState.forMood(
-      mood: NegoMood.idle,
-    );
+    final geometry = NegoGeometryState.forMood(mood: NegoMood.idle);
 
     expect(geometry.eyeWidth, NegoTokens.eyeIdleWidth);
     expect(geometry.eyeHeight, NegoTokens.eyeIdleHeight);
@@ -19,12 +17,8 @@ void main() {
   });
 
   test('excited and winking share the lifted active geometry', () {
-    final excited = NegoGeometryState.forMood(
-      mood: NegoMood.excited,
-    );
-    final winking = NegoGeometryState.forMood(
-      mood: NegoMood.winking,
-    );
+    final excited = NegoGeometryState.forMood(mood: NegoMood.excited);
+    final winking = NegoGeometryState.forMood(mood: NegoMood.winking);
 
     expect(excited.eyeWidth, NegoTokens.eyeExcitedWidth);
     expect(excited.eyeGroupYOffset, -10.0);
@@ -34,9 +28,7 @@ void main() {
   });
 
   test('happy overrides the persistent mood geometry', () {
-    final geometry = NegoGeometryState.forMood(
-      mood: NegoMood.happy,
-    );
+    final geometry = NegoGeometryState.forMood(mood: NegoMood.happy);
 
     expect(geometry.eyeWidth, NegoTokens.eyeHappyWidth);
     expect(geometry.eyeHeight, NegoTokens.eyeHappyHeight);

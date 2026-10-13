@@ -138,7 +138,12 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet> {
           : 0,
       child: IgnorePointer(
         ignoring: !shouldBlock,
-        child: Container(color: Colors.black),
+        child: GestureDetector(
+          key: const ValueKey('floatingSheetScrim'),
+          behavior: HitTestBehavior.opaque,
+          onTap: widget.controller.handleBack,
+          child: Container(color: Colors.black),
+        ),
       ),
     );
   }
@@ -248,7 +253,7 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet> {
           color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
           width: 1,
         ),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(OurnegoRadiusTokens.window),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.35),
@@ -407,7 +412,9 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet> {
                       ).colorScheme.outline.withValues(alpha: 0.3),
                       width: 1,
                     ),
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(
+                      OurnegoRadiusTokens.window,
+                    ),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.35),

@@ -30,7 +30,7 @@ class OurnegoInformationDialog extends StatelessWidget {
         constraints: BoxConstraints(maxWidth: maxWidth),
         child: OurnegoContentContainer(
           hasBlur: true,
-          borderRadius: OurnegoRadiusTokens.sheet,
+          borderRadius: OurnegoRadiusTokens.window,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [

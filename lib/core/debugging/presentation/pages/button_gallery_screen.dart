@@ -365,7 +365,7 @@ class _SecondarySection extends StatelessWidget {
           padding: const EdgeInsets.all(OurnegoSpacingTokens.md),
           decoration: BoxDecoration(
             color: scheme.surface,
-            borderRadius: BorderRadius.circular(OurnegoRadiusTokens.sheet),
+            borderRadius: BorderRadius.circular(OurnegoRadiusTokens.window),
             border: Border.all(
               color: OurnegoSemanticTokens.borderSubtle(scheme),
             ),
@@ -612,7 +612,7 @@ class _FlatGlassSectionState extends State<_FlatGlassSection> {
       children: [
         Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(OurnegoRadiusTokens.sheet),
+            borderRadius: BorderRadius.circular(OurnegoRadiusTokens.window),
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,

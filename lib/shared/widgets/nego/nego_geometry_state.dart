@@ -92,7 +92,11 @@ class NegoGeometryState {
       eyeWidth: lerpDouble(begin.eyeWidth, end.eyeWidth, t)!,
       eyeHeight: lerpDouble(begin.eyeHeight, end.eyeHeight, t)!,
       eyeRadius: lerpDouble(begin.eyeRadius, end.eyeRadius, t)!,
-      eyeGroupYOffset: lerpDouble(begin.eyeGroupYOffset, end.eyeGroupYOffset, t)!,
+      eyeGroupYOffset: lerpDouble(
+        begin.eyeGroupYOffset,
+        end.eyeGroupYOffset,
+        t,
+      )!,
       bodyScale: lerpDouble(begin.bodyScale, end.bodyScale, t)!,
       glowScale: lerpDouble(begin.glowScale, end.glowScale, t)!,
       glowOpacity: lerpDouble(begin.glowOpacity, end.glowOpacity, t)!,

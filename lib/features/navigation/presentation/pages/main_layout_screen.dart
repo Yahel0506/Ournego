@@ -1,8 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:ournego/features/feedback/presentation/widgets/feedback_dialog_widget.dart';
-import 'package:ournego/features/navigation/presentation/providers/navigation_provider.dart';
+import 'package:ournego/features/feedback/presentation/widgets/feedback_flow.dart';
 import 'package:ournego/features/navigation/presentation/widgets/navigation_bar_widget.dart';
 import 'package:shake/shake.dart';
 
@@ -73,19 +74,7 @@ class _FeedbackShakeListenerState extends ConsumerState<FeedbackShakeListener>
           return;
         }
 
-        if (ref.read(isFeedbackDialogOpenProvider)) {
-          return;
-        }
-
-        ref.read(isFeedbackDialogOpenProvider.notifier).setIsOpen();
-        showDialog<void>(
-          context: context,
-          builder: (_) => const FeedbackDialogWidget(),
-        ).then((_) {
-          if (context.mounted) {
-            ref.read(isFeedbackDialogOpenProvider.notifier).setIsClosed();
-          }
-        });
+        unawaited(openFeedbackDialog(context, ref));
       },
       shakeThresholdGravity: 2.7,
     );

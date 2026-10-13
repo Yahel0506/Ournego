@@ -219,13 +219,13 @@ Formal tokens in `lib/core/theme/tokens/ournego_radius_tokens.dart`:
 | `md` | `12` | Action tiles, minimized sheet icons |
 | `lg` | `14` | Image thumbnails and inner cards |
 | `xl` | `30` | Inputs, content containers, large cards |
+| `window` | `24` | Every window that grows out of an element: menus, dialogs, the search panel and sheets (bottom sheets round only the top corners) |
 | `full` | `1000` | Avatars/circles |
 
 ### Implemented and repeated radii
 
 - `30`: `OurnegoContentContainer`, inputs, search/top bar items, role cards, business image/map selector.
-- `24`: neutral primary button default, search overlay container.
-- `18`: floating business sheet and comparison sheets.
+- `24` (`window`): menus, dialogs, search overlay container, floating business sheet and comparison sheets, bottom sheets (top corners). Also the neutral primary button default.
 - `16`: map control buttons.
 - `14`: floating sheet images/cards/wide buttons.
 - `12`: action tiles, minimized stack icon, compact action buttons.
@@ -237,7 +237,7 @@ Formal tokens in `lib/core/theme/tokens/ournego_radius_tokens.dart`:
 
 - `OurnegoRadiusTokens.input = 30`
 - `OurnegoRadiusTokens.container = 30`
-- `OurnegoRadiusTokens.sheet = 18`
+- `OurnegoRadiusTokens.window = 24`
 - `OurnegoRadiusTokens.button = 24`
 - `OurnegoRadiusTokens.innerCard = 14`
 - `OurnegoRadiusTokens.actionTile = 12`
@@ -361,7 +361,7 @@ Resolved by the button family in `lib/shared/widgets/buttons/`. The normative sp
 
 ### Cards and sheets
 
-- Floating sheet: surface background, radius `18`, border outline alpha `0.3`, shadow black alpha `0.35`, padding `14/12/14/14`.
+- Floating sheet: surface background, radius `24`, border outline alpha `0.3`, shadow black alpha `0.35`, padding `14/12/14/14`.
 - Comparison cards use the same sheet styling.
 - Inner action/contact/catalog cards: inverseSurface alpha `0.1`, radius `14`, border outline alpha `0.28`, padding `12`.
 - Action tiles: radius `12`, padding `10`, inverseSurface alpha `0.07`, border alpha `0.12`.
@@ -384,7 +384,9 @@ Resolved by the button family in `lib/shared/widgets/buttons/`. The normative sp
 - `OurnegoAlertDialog`: wraps transparent `AlertDialog` in blurred `OurnegoContentContainer`, constrained `300 x 400`.
 - `OurnegoInformationDialog`: transparent `Dialog`, max width default `460`, content as `InformationCardWidget` plus action row.
 - Location errors in `MapScreen` use `showModalBottomSheet` with `InformationCardWidget` and action row.
-- Feedback uses raw `AlertDialog` with `ListTile`s and Material default styling.
+- `OurnegoFormDialog`: glass shell with a widget body, scrollable content (optional), its own keyboard avoidance and an `isSaving` state. Used by the business panel edit dialogs, the location editor and the map credits.
+- Feedback uses an `AlertDialog` with `ListTile`s, rounded with `OurnegoRadiusTokens.window`.
+- Bottom sheets (`showLocationAccessSheet`, `showZonePickerSheet`) round only the top corners with `OurnegoRadiusTokens.window`.
 
 ### Empty, loading and error states
 
@@ -653,7 +655,7 @@ Only based on repeated existing patterns:
 - `AppSpacing.pagePaddingLarge = 32`.
 - `AppRadius.input = 30`.
 - `AppRadius.contentContainer = 30`.
-- `AppRadius.sheet = 18`.
+- `AppRadius.window = 24`.
 - `AppRadius.innerCard = 14`.
 - `AppRadius.actionTile = 12`.
 - `AppRadius.iconButton = 8`.

@@ -13,19 +13,17 @@ import 'package:ournego/core/location/app_position.dart';
 import 'package:ournego/core/location/geolocator_location_datasource.dart';
 import 'package:ournego/core/location/location_datasource.dart';
 import 'package:ournego/core/mapbox_config.dart';
+import 'package:ournego/core/ournego_motion.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/core/theme/tokens/ournego_color_tokens.dart';
-import 'package:ournego/core/theme/tokens/ournego_spacing_tokens.dart';
 import 'package:ournego/features/business/domain/entities/business_image_data.dart';
 import 'package:ournego/features/business/domain/usecases/get_addresses_suggestions_usecase.dart';
 import 'package:ournego/features/business/presentation/pages/components/business_hours_picker.dart';
-import 'package:ournego/features/feedback/presentation/widgets/feedback_dialog_widget.dart';
-import 'package:ournego/features/navigation/presentation/providers/navigation_provider.dart';
+import 'package:ournego/features/feedback/presentation/widgets/feedback_flow.dart';
 import 'package:ournego/shared/widgets/animated_background.dart';
 import 'package:ournego/shared/widgets/buttons/buttons.dart';
 import 'package:ournego/shared/widgets/information_card_widget.dart';
 import 'package:ournego/shared/widgets/ournego_alert_dialog.dart';
-import 'package:ournego/shared/widgets/ournego_information_dialog.dart';
 import 'package:ournego/shared/widgets/ournego_inputs.dart';
 import 'package:ournego/shared/widgets/ournego_snackbars.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -262,58 +260,16 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
     );
   }
 
-  Future<void> _openFeedbackDialogFromErrorDialog(BuildContext context) async {
-    if (ref.read(isFeedbackDialogOpenProvider)) {
-      return;
-    }
-
-    ref.read(isFeedbackDialogOpenProvider.notifier).setIsOpen();
-    await showDialog<void>(
-      context: context,
-      builder: (_) => const FeedbackDialogWidget(),
-    );
-    ref.read(isFeedbackDialogOpenProvider.notifier).setIsClosed();
-  }
-
   Future<void> _showBusinessRegistrationErrorDialog(Failure failure) async {
     if (!mounted) return;
 
     final content = _mapFailureToDialog(failure);
-
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: true,
-      builder: (dialogContext) {
-        return OurnegoInformationDialog(
-          title: content.title,
-          description: content.description,
-          imagePath: _genericBusinessErrorImage,
-          actions: Row(
-            children: [
-              Expanded(
-                child: OurnegoButton.secondary(
-                  size: OurnegoButtonSize.compact,
-                  expanded: true,
-                  label: 'Feedback',
-                  onPressed: () async {
-                    Navigator.of(dialogContext).pop();
-                    await _openFeedbackDialogFromErrorDialog(context);
-                  },
-                ),
-              ),
-              const SizedBox(width: OurnegoSpacingTokens.sm),
-              Expanded(
-                child: OurnegoButton.primary(
-                  size: OurnegoButtonSize.compact,
-                  expanded: true,
-                  label: 'Entiendo',
-                  onPressed: () => Navigator.of(dialogContext).pop(),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+    await showErrorWithFeedbackDialog(
+      context,
+      ref,
+      title: content.title,
+      description: content.description,
+      imagePath: _genericBusinessErrorImage,
     );
   }
 
@@ -880,7 +836,7 @@ class BusinessAddressInput extends StatelessWidget {
         _animatedMapController.animateTo(
           dest: LatLng(place.latitude ?? 0.0, place.longitude ?? 0.0),
           zoom: 16,
-          curve: Curves.bounceInOut,
+          curve: kEaseOutCubic,
         );
 
         _addressController.text = place.address;

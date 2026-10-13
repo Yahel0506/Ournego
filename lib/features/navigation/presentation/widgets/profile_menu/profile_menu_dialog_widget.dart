@@ -20,17 +20,28 @@ enum ProfileMenuAction {
   logOut,
 }
 
+/// Screen the profile menu was opened from. Entries that lead to where the
+/// user already is are not offered.
+enum ProfileMenuOrigin { map, businessPanel }
+
 /// Centered menu with access to the account and the app's settings modules.
 ///
 /// Use [showProfileMenuDialog] to open it.
 class ProfileMenuDialogWidget extends ConsumerWidget {
-  const ProfileMenuDialogWidget({super.key});
+  const ProfileMenuDialogWidget({
+    super.key,
+    this.origin = ProfileMenuOrigin.map,
+  });
+
+  final ProfileMenuOrigin origin;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isLogged = ref.watch(authSessionStatusProvider);
     final user = isLogged ? ref.watch(profileStreamProvider).value : null;
     final colorScheme = Theme.of(context).colorScheme;
+    final showsBusinessEntry =
+        isLogged && origin != ProfileMenuOrigin.businessPanel;
 
     void select(ProfileMenuAction action) {
       Navigator.of(context).pop(action);
@@ -46,7 +57,7 @@ class ProfileMenuDialogWidget extends ConsumerWidget {
             type: MaterialType.transparency,
             child: OurnegoContentContainer(
               hasBlur: true,
-              borderRadius: OurnegoRadiusTokens.sheet,
+              borderRadius: OurnegoRadiusTokens.window,
               customHorizontalPadding: OurnegoSpacingTokens.xs,
               customVerticalPadding: OurnegoSpacingTokens.md,
               child: SingleChildScrollView(
@@ -68,7 +79,7 @@ class ProfileMenuDialogWidget extends ConsumerWidget {
                         label: 'Iniciar sesión o registrarse',
                         onTap: () => select(ProfileMenuAction.logIn),
                       ),
-                    if (isLogged) ...[
+                    if (showsBusinessEntry) ...[
                       const _SectionLabel('Cuenta'),
                       _MenuItem(
                         key: const ValueKey('profileMenuBusinessButton'),
@@ -121,10 +132,13 @@ class ProfileMenuDialogWidget extends ConsumerWidget {
 
 /// Opens the profile menu and resolves with the chosen entry, or `null`
 /// when the menu is dismissed.
-Future<ProfileMenuAction?> showProfileMenuDialog(BuildContext context) {
+Future<ProfileMenuAction?> showProfileMenuDialog(
+  BuildContext context, {
+  ProfileMenuOrigin origin = ProfileMenuOrigin.map,
+}) {
   return showDialog<ProfileMenuAction>(
     context: context,
-    builder: (_) => const ProfileMenuDialogWidget(),
+    builder: (_) => ProfileMenuDialogWidget(origin: origin),
   );
 }
 

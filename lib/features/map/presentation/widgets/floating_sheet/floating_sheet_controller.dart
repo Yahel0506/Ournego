@@ -23,6 +23,34 @@ class FloatingSheetController extends ChangeNotifier {
   bool get pendingClearActive => _pendingClearActive;
   bool get pendingMinimizeToStack => _pendingMinimizeToStack;
 
+  /// Whether back, Esc or a tap on the scrim would change the sheet.
+  bool get canHandleBack =>
+      isComparisonMode ||
+      (hasActiveBusiness &&
+          !_pendingClearActive &&
+          _state != FloatingSheetState.minimized);
+
+  /// One step back: comparison returns its second card to the stack, an
+  /// expanded sheet collapses and a collapsed one closes. Returns false when
+  /// there is nothing to step back from.
+  bool handleBack() {
+    if (isComparisonMode) {
+      minimizeSecondaryInComparison();
+      return true;
+    }
+
+    if (!canHandleBack) {
+      return false;
+    }
+
+    if (_state == FloatingSheetState.expanded) {
+      transitionTo(FloatingSheetState.collapsed);
+    } else {
+      closeActiveBusiness();
+    }
+    return true;
+  }
+
   void openBusiness(SheetBusinessData business) {
     _comparisonBusiness = null;
 

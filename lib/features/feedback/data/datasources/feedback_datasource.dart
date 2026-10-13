@@ -17,8 +17,8 @@ class FeedbackDatasource {
         .from('feedback_attachments')
         .getPublicUrl(fileName);
 
-    await _supabase.from('feedback').insert(
-      report.toJson(attachmentUrl: attachmentUrl),
-    );
+    await _supabase
+        .from('feedback')
+        .insert(report.toJson(attachmentUrl: attachmentUrl));
   }
 }
