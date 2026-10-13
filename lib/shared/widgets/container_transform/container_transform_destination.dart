@@ -61,8 +61,8 @@ class ContainerTransformScope extends InheritedWidget {
       controller != oldWidget.controller;
 }
 
-/// Marks the visible surface of a window (the glass card, not the empty area
-/// around it) as the destination of the container transform.
+/// Marks the visible surface of a window (the card, not the empty area around
+/// it) as the destination of the container transform.
 ///
 /// The surface is laid out once at its final size. What grows from the trigger
 /// is a clip, so nothing reflows while it opens. Outside a
@@ -89,44 +89,61 @@ class ContainerTransformDestination extends StatelessWidget {
     final controller = ContainerTransformScope.maybeOf(context);
     if (controller == null) return child;
 
-    Widget content = child;
-    if (controller.level == OurnegoMotionLevel.b) {
-      // The level never changes during a route, so this wrapper (and the state
-      // of the child under it) is stable. `enabled` skips the layer at rest.
-      content = AnimatedBuilder(
-        animation: controller.animation,
-        child: child,
-        builder: (context, child) {
-          final preset = controller.preset;
-          // Static blur while the container travels. It clears over the last
-          // stretch, slowly at first and faster toward the end (the spring's
-          // tail is slow, so a linear fade would look sharp well before the
-          // container stops), and is 0 exactly when the animation ends (p = 1).
-          final cleared = seg(
-            controller.animation.value,
-            preset.blurClearStart,
-            1,
-            Curves.easeInQuad,
-          );
-          final sigma = preset.maxItemBlur * (1 - cleared);
-          return ImageFiltered(
-            enabled: sigma > 0.1,
-            imageFilter: ui.ImageFilter.blur(
-              sigmaX: sigma,
-              sigmaY: sigma,
-              tileMode: TileMode.decal,
-            ),
-            child: child,
-          );
-        },
-      );
-    }
-
     return _DestinationRenderWidget(
       controller: controller,
       radius: radius,
       fill: fillColor ?? Theme.of(context).colorScheme.surface,
-      child: content,
+      child: child,
+    );
+  }
+}
+
+/// Blurs the content of a window while it travels, and clears the blur in the
+/// last stretch so it is exactly zero when the container's animation ends.
+///
+/// Put it around what is inside the surface (not around the surface itself), so
+/// the surface's fill and border stay crisp while only its content is blurred.
+/// Outside a container-transform route, or at levels C and R, it is transparent.
+class ContainerTransformBlur extends StatelessWidget {
+  const ContainerTransformBlur({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = ContainerTransformScope.maybeOf(context);
+    if (controller == null || controller.level != OurnegoMotionLevel.b) {
+      return child;
+    }
+
+    // The level never changes during a route, so this wrapper (and the state of
+    // the child under it) is stable. `enabled` skips the layer at rest.
+    return AnimatedBuilder(
+      animation: controller.animation,
+      child: child,
+      builder: (context, child) {
+        final preset = controller.preset;
+        // Static blur while the container travels. It clears over the last
+        // stretch, slowly at first and faster toward the end (the spring's tail
+        // is slow, so a linear fade would look sharp well before the container
+        // stops), and is 0 exactly when the animation ends (p = 1).
+        final cleared = seg(
+          controller.animation.value,
+          preset.blurClearStart,
+          1,
+          Curves.easeInQuad,
+        );
+        final sigma = preset.maxItemBlur * (1 - cleared);
+        return ImageFiltered(
+          enabled: sigma > 0.1,
+          imageFilter: ui.ImageFilter.blur(
+            sigmaX: sigma,
+            sigmaY: sigma,
+            tileMode: TileMode.decal,
+          ),
+          child: child,
+        );
+      },
     );
   }
 }

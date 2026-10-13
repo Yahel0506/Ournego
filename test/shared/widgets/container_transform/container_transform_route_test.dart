@@ -97,21 +97,23 @@ Future<_Harness> _pump(
                             height: 200,
                             child: ColoredBox(
                               color: Colors.white,
-                              child: Center(
-                                child: GestureDetector(
-                                  key: _item,
-                                  behavior: HitTestBehavior.opaque,
-                                  onTap: () {
-                                    harness.itemTapped = true;
-                                    Navigator.of(
-                                      context,
-                                      rootNavigator: true,
-                                    ).pop('chosen');
-                                  },
-                                  child: const SizedBox(
-                                    width: 120,
-                                    height: 48,
-                                    child: Text('Aceptar'),
+                              child: ContainerTransformBlur(
+                                child: Center(
+                                  child: GestureDetector(
+                                    key: _item,
+                                    behavior: HitTestBehavior.opaque,
+                                    onTap: () {
+                                      harness.itemTapped = true;
+                                      Navigator.of(
+                                        context,
+                                        rootNavigator: true,
+                                      ).pop('chosen');
+                                    },
+                                    child: const SizedBox(
+                                      width: 120,
+                                      height: 48,
+                                      child: Text('Aceptar'),
+                                    ),
                                   ),
                                 ),
                               ),

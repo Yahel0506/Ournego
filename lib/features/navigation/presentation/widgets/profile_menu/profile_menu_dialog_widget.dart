@@ -5,10 +5,9 @@ import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/core/theme/tokens/ournego_radius_tokens.dart';
 import 'package:ournego/core/theme/tokens/ournego_spacing_tokens.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
-import 'package:ournego/shared/widgets/container_transform/container_transform_destination.dart';
 import 'package:ournego/shared/widgets/container_transform/container_transform_origin.dart';
 import 'package:ournego/shared/widgets/container_transform/show_ournego_window.dart';
-import 'package:ournego/shared/widgets/ournego_content_container.dart';
+import 'package:ournego/shared/widgets/ournego_dialog_surface.dart';
 
 /// Entries of the profile menu opened from the map's profile button.
 ///
@@ -58,73 +57,69 @@ class ProfileMenuDialogWidget extends ConsumerWidget {
           child: Material(
             key: const ValueKey('profileMenuDialog'),
             type: MaterialType.transparency,
-            child: ContainerTransformDestination(
-              child: OurnegoContentContainer(
-                hasBlur: true,
-                borderRadius: OurnegoRadiusTokens.window,
-                customHorizontalPadding: OurnegoSpacingTokens.xs,
-                customVerticalPadding: OurnegoSpacingTokens.md,
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _ProfileHeader(
-                        isLogged: isLogged,
-                        name: user?.name,
-                        email: user?.email,
-                        imageUrl: user?.profilePicture,
-                      ),
-                      const SizedBox(height: OurnegoSpacingTokens.sm),
-                      if (!isLogged)
-                        _MenuItem(
-                          key: const ValueKey('profileMenuLogInButton'),
-                          icon: Icons.login_rounded,
-                          label: 'Iniciar sesión o registrarse',
-                          onTap: () => select(ProfileMenuAction.logIn),
-                        ),
-                      if (showsBusinessEntry) ...[
-                        const _SectionLabel('Cuenta'),
-                        _MenuItem(
-                          key: const ValueKey('profileMenuBusinessButton'),
-                          icon: Icons.storefront_rounded,
-                          label: 'Mi negocio',
-                          onTap: () => select(ProfileMenuAction.businessPanel),
-                        ),
-                      ],
-                      const _SectionLabel('Configuración'),
+            child: OurnegoDialogSurface(
+              customHorizontalPadding: OurnegoSpacingTokens.xs,
+              customVerticalPadding: OurnegoSpacingTokens.md,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _ProfileHeader(
+                      isLogged: isLogged,
+                      name: user?.name,
+                      email: user?.email,
+                      imageUrl: user?.profilePicture,
+                    ),
+                    const SizedBox(height: OurnegoSpacingTokens.sm),
+                    if (!isLogged)
                       _MenuItem(
-                        key: const ValueKey('profileMenuLocationButton'),
-                        icon: Icons.location_on_outlined,
-                        label: 'Permisos de ubicación',
-                        onTap: () =>
-                            select(ProfileMenuAction.locationPermissions),
+                        key: const ValueKey('profileMenuLogInButton'),
+                        icon: Icons.login_rounded,
+                        label: 'Iniciar sesión o registrarse',
+                        onTap: () => select(ProfileMenuAction.logIn),
                       ),
+                    if (showsBusinessEntry) ...[
+                      const _SectionLabel('Cuenta'),
                       _MenuItem(
-                        key: const ValueKey('profileMenuFeedbackButton'),
-                        icon: Icons.bug_report_outlined,
-                        label: 'Reportar un problema',
-                        onTap: () => select(ProfileMenuAction.reportProblem),
+                        key: const ValueKey('profileMenuBusinessButton'),
+                        icon: Icons.storefront_rounded,
+                        label: 'Mi negocio',
+                        onTap: () => select(ProfileMenuAction.businessPanel),
                       ),
-                      if (kDebugMode)
-                        _MenuItem(
-                          key: const ValueKey('profileMenuDebugButton'),
-                          icon: Icons.developer_mode_rounded,
-                          label: 'Panel de depuración',
-                          onTap: () => select(ProfileMenuAction.debugPanel),
-                        ),
-                      if (isLogged) ...[
-                        const Divider(height: OurnegoSpacingTokens.lg),
-                        _MenuItem(
-                          key: const ValueKey('profileMenuLogoutButton'),
-                          icon: Icons.logout_rounded,
-                          label: 'Cerrar sesión',
-                          color: colorScheme.error,
-                          onTap: () => select(ProfileMenuAction.logOut),
-                        ),
-                      ],
                     ],
-                  ),
+                    const _SectionLabel('Configuración'),
+                    _MenuItem(
+                      key: const ValueKey('profileMenuLocationButton'),
+                      icon: Icons.location_on_outlined,
+                      label: 'Permisos de ubicación',
+                      onTap: () =>
+                          select(ProfileMenuAction.locationPermissions),
+                    ),
+                    _MenuItem(
+                      key: const ValueKey('profileMenuFeedbackButton'),
+                      icon: Icons.bug_report_outlined,
+                      label: 'Reportar un problema',
+                      onTap: () => select(ProfileMenuAction.reportProblem),
+                    ),
+                    if (kDebugMode)
+                      _MenuItem(
+                        key: const ValueKey('profileMenuDebugButton'),
+                        icon: Icons.developer_mode_rounded,
+                        label: 'Panel de depuración',
+                        onTap: () => select(ProfileMenuAction.debugPanel),
+                      ),
+                    if (isLogged) ...[
+                      const Divider(height: OurnegoSpacingTokens.lg),
+                      _MenuItem(
+                        key: const ValueKey('profileMenuLogoutButton'),
+                        icon: Icons.logout_rounded,
+                        label: 'Cerrar sesión',
+                        color: colorScheme.error,
+                        onTap: () => select(ProfileMenuAction.logOut),
+                      ),
+                    ],
+                  ],
                 ),
               ),
             ),

@@ -13,6 +13,8 @@ import 'package:ournego/features/feedback/presentation/providers/feedback_provid
 import 'package:ournego/features/feedback/presentation/widgets/feedback_dialog_widget.dart';
 import 'package:ournego/features/feedback/presentation/widgets/feedback_flow.dart';
 import 'package:ournego/features/navigation/presentation/providers/navigation_provider.dart';
+import 'package:ournego/shared/widgets/container_transform/container_transform_destination.dart';
+import 'package:ournego/shared/widgets/ournego_dialog_surface.dart';
 
 class _FakeFeedbackRepository implements FeedbackRepository {
   @override
@@ -111,6 +113,32 @@ void main() {
     expect(find.byType(FeedbackDialogWidget), findsOneWidget);
     expect(container.read(isFeedbackDialogOpenProvider), isTrue);
   });
+
+  testWidgets(
+    'the feedback dialog is an Ournego window with the same animation',
+    (tester) async {
+      await pump(tester, onOpen: openFeedbackDialog);
+      await tester.tap(find.text('open'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 32));
+
+      // Flat glass surface, not a Material AlertDialog.
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.byType(OurnegoDialogSurface), findsOneWidget);
+      expect(find.text('Algo no funciona'), findsOneWidget);
+      expect(find.text('Tengo una duda'), findsOneWidget);
+
+      // It grows into place like every other dialog.
+      final render = tester.renderObject<RenderContainerTransformDestination>(
+        find.byType(ContainerTransformDestination),
+      );
+      final early = render.lastPaintedRect!;
+      await tester.pumpAndSettle();
+      final end = render.lastPaintedRect!;
+      expect(early.width, lessThan(end.width));
+      expect(early.height, lessThan(end.height));
+    },
+  );
 
   testWidgets('a second request while one is open does not stack a dialog', (
     tester,
