@@ -382,7 +382,7 @@ Resolved by the button family in `lib/shared/widgets/buttons/`. The normative sp
 ### Dialogs and bottom sheets
 
 - `OurnegoDialogSurface`: the flat glass surface every dialog and menu is made of (radius `window`, opaque face, 1 px contour). It also marks itself as the container transform destination.
-- `OurnegoAlertDialog`: wraps a transparent `AlertDialog` in an `OurnegoDialogSurface`, constrained `300 x 400`.
+- `OurnegoAlertDialog`: a title, a body and an action bar inside an `OurnegoDialogSurface`, with the same padding as the options menu (a 20 dp text margin); max `320 x 400`. No Material `AlertDialog` inside.
 - `OurnegoInformationDialog`: transparent `Dialog`, max width default `460`, content as `InformationCardWidget` plus action row.
 - Location errors in `MapScreen` use `showModalBottomSheet` with `InformationCardWidget` and action row.
 - `OurnegoFormDialog`: flat glass shell with a widget body, scrollable content (optional), its own keyboard avoidance and an `isSaving` state. Used by the business panel edit dialogs, the location editor and the map credits.
