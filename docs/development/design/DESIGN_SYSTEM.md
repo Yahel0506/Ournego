@@ -267,7 +267,7 @@ The app is mostly flat. Depth is reserved for floating UI above map or navigatio
 - Background depth comes from animated blurred blobs/particles.
 - Content containers usually stay flat with border, not shadow.
 - Navigation and map controls float with shadow because they sit above map content.
-- Dialogs use transparent `Dialog`/`AlertDialog` plus blurred `OurnegoContentContainer`.
+- Dialogs and menus are flat glass: an opaque face (`OurnegoGlassPalette.navFace`) and a visible 1 px contour (`OurnegoGlassPalette.border`), like the navigation bar and the floating sheet. No blur, no shadow (they sit on their own scrim). All of them are built on `OurnegoDialogSurface`.
 
 ## 8. Layout Patterns
 
@@ -381,11 +381,12 @@ Resolved by the button family in `lib/shared/widgets/buttons/`. The normative sp
 
 ### Dialogs and bottom sheets
 
-- `OurnegoAlertDialog`: wraps transparent `AlertDialog` in blurred `OurnegoContentContainer`, constrained `300 x 400`.
+- `OurnegoDialogSurface`: the flat glass surface every dialog and menu is made of (radius `window`, opaque face, 1 px contour). It also marks itself as the container transform destination.
+- `OurnegoAlertDialog`: a title, a body and an action bar inside an `OurnegoDialogSurface`, with the same padding as the options menu (a 20 dp text margin); max `320 x 400`. No Material `AlertDialog` inside.
 - `OurnegoInformationDialog`: transparent `Dialog`, max width default `460`, content as `InformationCardWidget` plus action row.
 - Location errors in `MapScreen` use `showModalBottomSheet` with `InformationCardWidget` and action row.
-- `OurnegoFormDialog`: glass shell with a widget body, scrollable content (optional), its own keyboard avoidance and an `isSaving` state. Used by the business panel edit dialogs, the location editor and the map credits.
-- Feedback uses an `AlertDialog` with `ListTile`s, rounded with `OurnegoRadiusTokens.window`.
+- `OurnegoFormDialog`: flat glass shell with a widget body, scrollable content (optional), its own keyboard avoidance and an `isSaving` state. Used by the business panel edit dialogs, the location editor and the map credits.
+- Feedback (`FeedbackDialogWidget`) is an `OurnegoDialogSurface` with a title and two `ListTile` options; it opens through `showOurnegoDialog` like the rest.
 - Bottom sheets (`showLocationAccessSheet`, `showZonePickerSheet`) round only the top corners with `OurnegoRadiusTokens.window`.
 
 ### Empty, loading and error states
@@ -587,7 +588,7 @@ Structure: `InformationCardWidget`, usually in `SafeArea` with `SizedBox.expand`
 
 ### Feedback
 
-Structure: Material `AlertDialog` with two `ListTile` options. Visual style is less custom than the rest of the app.
+Structure: an `OurnegoDialogSurface` (flat glass) with a title and two `ListTile` options, opened with `showOurnegoDialog`.
 
 ## 17. Do and Don't
 

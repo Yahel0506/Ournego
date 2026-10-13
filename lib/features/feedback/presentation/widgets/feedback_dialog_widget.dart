@@ -9,7 +9,10 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:ournego/core/theme/tokens/ournego_color_tokens.dart';
+import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/core/theme/tokens/ournego_radius_tokens.dart';
+import 'package:ournego/core/theme/tokens/ournego_spacing_tokens.dart';
+import 'package:ournego/shared/widgets/ournego_dialog_surface.dart';
 import '../../../../features/navigation/presentation/providers/navigation_provider.dart';
 import '../providers/feedback_providers.dart';
 
@@ -22,6 +25,10 @@ class FeedbackDialogWidget extends ConsumerStatefulWidget {
 }
 
 class _FeedbackDialogWidgetState extends ConsumerState<FeedbackDialogWidget> {
+  static final ShapeBorder _tileShape = RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(OurnegoRadiusTokens.actionTile),
+  );
+
   @override
   Widget build(BuildContext context) {
     final sendFeedbackUsecase = ref.read(sendFeedbackUsecaseProvider);
@@ -32,76 +39,102 @@ class _FeedbackDialogWidgetState extends ConsumerState<FeedbackDialogWidget> {
           ref.read(isFeedbackDialogOpenProvider.notifier).setIsClosed();
         }
       },
-      child: AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(OurnegoRadiusTokens.window),
-        ),
-        title: Text("¿Algo salió mal? Cuéntanos"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(
-                Icons.bug_report,
-                color: OurnegoColorTokens.error,
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(OurnegoSpacingTokens.lg),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 360),
+            child: Material(
+              type: MaterialType.transparency,
+              child: OurnegoDialogSurface(
+                customHorizontalPadding: OurnegoSpacingTokens.xs,
+                customVerticalPadding: OurnegoSpacingTokens.md,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        OurnegoSpacingTokens.sm,
+                        OurnegoSpacingTokens.xs,
+                        OurnegoSpacingTokens.sm,
+                        OurnegoSpacingTokens.sm,
+                      ),
+                      child: Text(
+                        '¿Algo salió mal? Cuéntanos',
+                        style: OurnegoTextStyles.title,
+                      ),
+                    ),
+                    ListTile(
+                      shape: _tileShape,
+                      leading: const Icon(
+                        Icons.bug_report,
+                        color: OurnegoColorTokens.error,
+                      ),
+                      title: Text("Algo no funciona"),
+                      onTap: () async {
+                        final feedbackState = BetterFeedback.of(context);
+                        Navigator.pop(context);
+                        WidgetsBinding.instance.addPostFrameCallback((_) async {
+                          final deviceInfo = DeviceInfoPlugin();
+
+                          String model = '';
+                          String osVersion = '';
+
+                          if (Platform.isAndroid) {
+                            final androidInfo = await deviceInfo.androidInfo;
+                            model = androidInfo.model;
+                            osVersion =
+                                'Android ${androidInfo.version.release}';
+                          } else if (Platform.isIOS) {
+                            final iosInfo = await deviceInfo.iosInfo;
+                            model = iosInfo.utsname.machine;
+                            osVersion = 'iOS ${iosInfo.systemVersion}';
+                          }
+
+                          feedbackState.show((feedback) async {
+                            final rawImage = feedback.screenshot;
+                            final uuid = Uuid();
+                            final timestamp =
+                                DateTime.now().millisecondsSinceEpoch;
+
+                            final fileName =
+                                'feedback_${timestamp}_${uuid.v4().replaceAll('-', '')}.png';
+
+                            final tempDir = await getTemporaryDirectory();
+                            File image = await File(
+                              '${tempDir.path}/$fileName',
+                            ).create();
+                            await image.writeAsBytes(rawImage);
+
+                            sendFeedbackUsecase(
+                              message: feedback.text,
+                              model: model,
+                              os: osVersion,
+                              attachment: image,
+                            );
+                          });
+                        });
+                      },
+                    ),
+                    ListTile(
+                      shape: _tileShape,
+                      leading: const Icon(
+                        Icons.message,
+                        color: OurnegoColorTokens.info,
+                      ),
+                      title: Text("Tengo una duda"),
+                      onTap: () async {
+                        await launchUrl(Uri.parse('https://wa.me/3411768237'));
+                        if (!context.mounted) return;
+                        Navigator.pop(context);
+                      },
+                    ),
+                  ],
+                ),
               ),
-              title: Text("Algo no funciona"),
-              onTap: () async {
-                final feedbackState = BetterFeedback.of(context);
-                Navigator.pop(context);
-                WidgetsBinding.instance.addPostFrameCallback((_) async {
-                  final deviceInfo = DeviceInfoPlugin();
-
-                  String model = '';
-                  String osVersion = '';
-
-                  if (Platform.isAndroid) {
-                    final androidInfo = await deviceInfo.androidInfo;
-                    model = androidInfo.model;
-                    osVersion = 'Android ${androidInfo.version.release}';
-                  } else if (Platform.isIOS) {
-                    final iosInfo = await deviceInfo.iosInfo;
-                    model = iosInfo.utsname.machine;
-                    osVersion = 'iOS ${iosInfo.systemVersion}';
-                  }
-
-                  feedbackState.show((feedback) async {
-                    final rawImage = feedback.screenshot;
-                    final uuid = Uuid();
-                    final timestamp = DateTime.now().millisecondsSinceEpoch;
-
-                    final fileName =
-                        'feedback_${timestamp}_${uuid.v4().replaceAll('-', '')}.png';
-
-                    final tempDir = await getTemporaryDirectory();
-                    File image = await File(
-                      '${tempDir.path}/$fileName',
-                    ).create();
-                    await image.writeAsBytes(rawImage);
-
-                    sendFeedbackUsecase(
-                      message: feedback.text,
-                      model: model,
-                      os: osVersion,
-                      attachment: image,
-                    );
-                  });
-                });
-              },
             ),
-            ListTile(
-              leading: const Icon(
-                Icons.message,
-                color: OurnegoColorTokens.info,
-              ),
-              title: Text("Tengo una duda"),
-              onTap: () async {
-                await launchUrl(Uri.parse('https://wa.me/3411768237'));
-                if (!context.mounted) return;
-                Navigator.pop(context);
-              },
-            ),
-          ],
+          ),
         ),
       ),
     );

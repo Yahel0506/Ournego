@@ -73,8 +73,10 @@ A window that has no `ContainerTransformDestination` still fades in and out.
   aside at that point, which reads as the same dissolve.
 - The vertical path is a curve with a small overshoot (the spec has a straight
   path), see Character above.
-- The blur (level B) is applied to the whole content, not to each item, and it
-  is static then clearing at the end, instead of easing out during the travel.
+- The blur (level B) is applied to the whole content of the window, not to each
+  item, and never to the surface itself (`ContainerTransformBlur` sits inside
+  `OurnegoDialogSurface`), so the flat face and the contour stay crisp. It is
+  static then clearing at the end, instead of easing out during the travel.
 - No stagger in the account menu (decision D10).
 - The future of `showOurnegoDialog` completes when the pop starts, like
   `showDialog`'s, so a caller can chain the next window while this one animates
