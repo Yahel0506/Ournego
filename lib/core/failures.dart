@@ -36,6 +36,13 @@ class EmailNotVerifiedFailure extends Failure {}
 // Si no se encontró el perfil del usuario
 class UserProfileNotFound extends Failure {}
 
+// Si la persona cerró o canceló el selector de cuentas de Google
+class GoogleSignInCancelledFailure extends Failure {}
+
+// Si Google Sign-In no puede abrirse o está mal configurado en este build
+// (huella de firma sin registrar, cliente OAuth incorrecto, sin interfaz)
+class GoogleSignInUnavailableFailure extends Failure {}
+
 // |---------------------------------| \\
 // |------- FAILURES DE MAP ---------| \\
 // |---------------------------------| \\

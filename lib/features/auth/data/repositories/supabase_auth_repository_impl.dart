@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
 
+import 'package:google_sign_in/google_sign_in.dart' as gsi;
+
 import 'package:ournego/core/failures.dart';
 import 'package:ournego/core/network/network_error_classifier.dart';
 import 'package:ournego/features/auth/data/datasources/supabase_auth_datasource.dart';
@@ -88,12 +90,9 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       await authDatasource.signInWithGoogle();
       return const Right(null);
-    } on GoogleSignInException catch (e) {
-      debugPrint('GoogleSignInException: ${e.message}');
-      return Left(_failureFor(e));
     } catch (e) {
-      debugPrint('Unknown error in signInWithGoogle: $e');
-      return Left(_failureFor(e));
+      debugPrint('Error in signInWithGoogle: $e');
+      return Left(googleSignInFailureFor(e));
     }
   }
 
@@ -216,4 +215,29 @@ class AuthRepositoryImpl implements AuthRepository {
       return Left(_failureFor(e));
     }
   }
+}
+
+/// Maps an error thrown while signing in with Google to a domain [Failure].
+///
+/// The datasource declares its own `GoogleSignInException`, which shadows the
+/// one from `google_sign_in`; the platform one is matched here through a
+/// prefix import so its [gsi.GoogleSignInExceptionCode] is not lost.
+@visibleForTesting
+Failure googleSignInFailureFor(Object error) {
+  if (error is gsi.GoogleSignInException) {
+    switch (error.code) {
+      case gsi.GoogleSignInExceptionCode.canceled:
+        return GoogleSignInCancelledFailure();
+      case gsi.GoogleSignInExceptionCode.clientConfigurationError:
+      case gsi.GoogleSignInExceptionCode.providerConfigurationError:
+      case gsi.GoogleSignInExceptionCode.uiUnavailable:
+        return GoogleSignInUnavailableFailure();
+      case gsi.GoogleSignInExceptionCode.interrupted:
+      case gsi.GoogleSignInExceptionCode.userMismatch:
+      case gsi.GoogleSignInExceptionCode.unknownError:
+        return ServerFailure();
+    }
+  }
+  if (isNetworkError(error)) return NetworkFailure();
+  return ServerFailure();
 }

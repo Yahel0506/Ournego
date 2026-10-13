@@ -1,6 +1,6 @@
 # OUR-129 — Inicio de sesión con Google en Android: causa raíz y configuración por modo
 
-Estado: corrección aplicada en el build; pendiente validar en dispositivo físico (ver [Pendiente](#pendiente-y-no-verificado)).
+Estado: firma corregida (PR #100) y mensajes de error con reintento implementados; pendiente validar en dispositivo físico (ver [Pendiente](#pendiente-y-no-verificado)).
 
 Issue: [OUR-129](https://linear.app/yaheldev/issue/OUR-129/android-corregir-problema-de-autenticacion-con-google-serverfailure-en).
 Rama: `yahel0506/our-129-android-corregir-problema-de-autenticacion-con-google`.
@@ -37,6 +37,23 @@ Comprobación posterior al cambio (`apksigner`, mismos APK tras recompilar):
 | debug | debug | `3B:51:AF:FA:…:1B:0C` |
 | profile | upload-keystore | `1D:B6:BD:C7:…:58:93` |
 | release | upload-keystore | `1D:B6:BD:C7:…:58:93` |
+
+## Mensajes de error y reintento
+
+Antes, `GoogleLoginButton` mostraba `'Error: ${failure.toString()}'` (por ejemplo `Instance of 'ServerFailure'`). Además, `SupabaseAuthDatasource` declara su propia `GoogleSignInException`, que tapa a la de `google_sign_in`, así que los códigos reales (`canceled`, `clientConfigurationError`…) nunca se distinguían y todo terminaba en `ServerFailure`.
+
+Ahora `googleSignInFailureFor` (repositorio) importa la librería con prefijo y traduce el código a un fallo de dominio, y `LocalErrorMessagesDatasource.getGoogleSignInErrorMessage` lo convierte en texto:
+
+| Origen | Fallo de dominio | Mensaje |
+|---|---|---|
+| `canceled` | `GoogleSignInCancelledFailure` | Cancelaste el inicio de sesión con Google. Puedes volver a intentarlo. |
+| `clientConfigurationError`, `providerConfigurationError`, `uiUnavailable` | `GoogleSignInUnavailableFailure` | No pudimos abrir el inicio de sesión de Google en este dispositivo. Inténtalo de nuevo. |
+| Sin red | `NetworkFailure` | Sin conexión. Revisa tu internet e inténtalo de nuevo. |
+| Cualquier otro (`interrupted`, `userMismatch`, `unknownError`, fallo de Supabase) | `ServerFailure` | No pudimos iniciar sesión con Google. Inténtalo de nuevo. |
+
+El snackbar (`OurnegoSnackbars.error`) acepta `actionLabel`/`onAction` y muestra un botón **Reintentar** dentro del contenedor de cristal; al pulsarlo vuelve a ejecutar el mismo flujo. El motivo técnico queda en `debugPrint`, nunca en pantalla.
+
+Si la huella de firma de un build no está registrada, lo esperable es que se vea el mensaje de "no pudimos abrir el inicio de sesión" o el de cancelación según el código que devuelva Android; hay que contrastarlo en dispositivo.
 
 ## Configuración que exige cada modo
 
@@ -88,6 +105,6 @@ Esta entrega corrige la causa de la firma, pero **no cierra por sí sola los cri
 - [ ] Registrar en Firebase/Cloud Console la huella de debug de cada equipo, y confirmarlo.
 - [ ] Login con Google en debug, profile y release en un **dispositivo físico**. Solo se comprobó la firma de los APK, no el login en un dispositivo.
 - [ ] Cuenta existente inicia sesión y cuenta nueva sigue el flujo de completar perfil.
-- [ ] Mensaje claro al cancelar o fallar, con reintento y sin exponer el error crudo. Hoy cualquier fallo se reduce a `ServerFailure`; no se tocó en este cambio.
+- [x] Mensaje claro al cancelar o fallar, con reintento y sin exponer el error crudo (tests de widget y de mapeo). Falta verlo en un dispositivo y comprobar el aspecto visual del snackbar con el botón.
 
 Fuera de alcance, con su propia issue: AAB de producción (OUR-120) y validación con la firma de Play (OUR-123).
