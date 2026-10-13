@@ -3,7 +3,7 @@ import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/core/theme/tokens/ournego_radius_tokens.dart';
 import 'package:ournego/core/theme/tokens/ournego_spacing_tokens.dart';
 import 'package:ournego/features/business/domain/entities/owned_business_profile.dart';
-import 'package:ournego/features/business/presentation/widgets/business_panel/business_panel_icon_button.dart';
+import 'package:ournego/shared/widgets/buttons/buttons.dart';
 import 'package:ournego/features/business/presentation/widgets/business_panel/business_panel_section_header.dart';
 
 class BusinessPanelInfoGrid extends StatelessWidget {
@@ -112,10 +112,11 @@ class _InfoItem extends StatelessWidget {
               ],
             ),
           ),
-          BusinessPanelIconButton(
-            small: true,
-            onTap: onEdit,
-            child: const Icon(Icons.edit_rounded, size: 14),
+          OurnegoIconButton(
+            size: OurnegoIconButtonSize.s28,
+            icon: Icons.edit_rounded,
+            semanticLabel: 'Editar $title',
+            onPressed: onEdit,
           ),
         ],
       ),

@@ -7,6 +7,7 @@ import 'package:ournego/core/theme/tokens/ournego_radius_tokens.dart';
 import 'package:ournego/core/theme/tokens/ournego_spacing_tokens.dart';
 import 'package:ournego/core/theme/tokens/ournego_color_tokens.dart';
 import 'package:ournego/features/business/presentation/widgets/business_panel/models/location_editor_result.dart';
+import 'package:ournego/shared/widgets/buttons/buttons.dart';
 import 'package:ournego/shared/widgets/ournego_inputs.dart';
 
 class LocationEditorDialog extends StatefulWidget {
@@ -111,11 +112,14 @@ class _LocationEditorDialogState extends State<LocationEditorDialog>
         ),
       ),
       actions: [
-        TextButton(
+        OurnegoButton.text(
+          size: OurnegoButtonSize.compact,
+          label: 'Cancelar',
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancelar'),
         ),
-        FilledButton(
+        OurnegoButton.primary(
+          size: OurnegoButtonSize.compact,
+          label: 'Guardar',
           onPressed: () {
             Navigator.of(context).pop(
               LocationEditorResult(
@@ -125,7 +129,6 @@ class _LocationEditorDialogState extends State<LocationEditorDialog>
               ),
             );
           },
-          child: const Text('Guardar'),
         ),
       ],
     );

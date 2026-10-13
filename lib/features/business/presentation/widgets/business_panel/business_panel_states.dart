@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/core/theme/tokens/ournego_color_tokens.dart';
 import 'package:ournego/core/theme/tokens/ournego_spacing_tokens.dart';
+import 'package:ournego/shared/widgets/buttons/buttons.dart';
 import 'package:ournego/shared/widgets/ournego_content_container.dart';
 
 class BusinessPanelLoadingState extends StatelessWidget {
@@ -51,9 +52,12 @@ class BusinessPanelErrorState extends StatelessWidget {
               style: OurnegoTextStyles.bodyCompact,
             ),
             const SizedBox(height: OurnegoSpacingTokens.sm),
-            FilledButton(
+            OurnegoButton.primary(
+              size: OurnegoButtonSize.compact,
+              label: 'Reintentar',
+              icon: Icons.refresh_rounded,
+              iconMotion: OurnegoIconMotion.wiggle,
               onPressed: onRetry,
-              child: const Text('Reintentar', style: OurnegoTextStyles.button),
             ),
           ],
         ),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
-import 'package:ournego/features/business/presentation/widgets/business_panel/business_panel_icon_button.dart';
+import 'package:ournego/shared/widgets/buttons/buttons.dart';
 
 class BusinessPanelSectionHeader extends StatelessWidget {
   const BusinessPanelSectionHeader({
@@ -19,10 +19,13 @@ class BusinessPanelSectionHeader extends StatelessWidget {
     return Row(
       children: [
         Expanded(child: Text(title, style: OurnegoTextStyles.body)),
-        BusinessPanelIconButton(
-          small: true,
-          onTap: onEdit,
-          child: Icon(actionIcon, size: 16),
+        OurnegoIconButton(
+          size: OurnegoIconButtonSize.s28,
+          icon: actionIcon,
+          semanticLabel: actionIcon == Icons.add_rounded
+              ? 'Agregar en $title'
+              : 'Editar $title',
+          onPressed: onEdit,
         ),
       ],
     );

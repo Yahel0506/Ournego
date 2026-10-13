@@ -17,6 +17,7 @@ import 'package:ournego/features/business/presentation/widgets/business_panel/bu
 import 'package:ournego/features/business/presentation/widgets/business_panel/business_panel_states.dart';
 import 'package:ournego/features/business/presentation/widgets/business_panel/dialogs/location_editor_dialog.dart';
 import 'package:ournego/features/business/presentation/widgets/business_panel/models/location_editor_result.dart';
+import 'package:ournego/shared/widgets/buttons/buttons.dart';
 import 'package:ournego/shared/widgets/ournego_inputs.dart';
 import 'package:ournego/shared/widgets/ournego_snackbars.dart';
 
@@ -100,13 +101,15 @@ class _BusinessPanelDashboardWidgetState
                 ),
               ),
               actions: [
-                TextButton(
+                OurnegoButton.text(
+                  size: OurnegoButtonSize.compact,
+                  label: 'Cancelar',
                   onPressed: () => Navigator.of(dialogContext).pop(false),
-                  child: const Text('Cancelar'),
                 ),
-                FilledButton(
+                OurnegoButton.primary(
+                  size: OurnegoButtonSize.compact,
+                  label: 'Guardar',
                   onPressed: () => Navigator.of(dialogContext).pop(true),
-                  child: const Text('Guardar'),
                 ),
               ],
             );
@@ -193,13 +196,15 @@ class _BusinessPanelDashboardWidgetState
             hintText: '1234 567 8900',
           ),
           actions: [
-            TextButton(
+            OurnegoButton.text(
+              size: OurnegoButtonSize.compact,
+              label: 'Cancelar',
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Cancelar'),
             ),
-            FilledButton(
+            OurnegoButton.primary(
+              size: OurnegoButtonSize.compact,
+              label: 'Guardar',
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Guardar'),
             ),
           ],
         );
@@ -258,13 +263,15 @@ class _BusinessPanelDashboardWidgetState
             ),
           ),
           actions: [
-            TextButton(
+            OurnegoButton.text(
+              size: OurnegoButtonSize.compact,
+              label: 'Cancelar',
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Cancelar'),
             ),
-            FilledButton(
+            OurnegoButton.primary(
+              size: OurnegoButtonSize.compact,
+              label: 'Guardar',
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Guardar'),
             ),
           ],
         );
