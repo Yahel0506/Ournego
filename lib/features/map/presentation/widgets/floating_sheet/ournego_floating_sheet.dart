@@ -4,14 +4,15 @@ import 'package:ournego/core/ournego_motion.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/core/theme/tokens/ournego_radius_tokens.dart';
 import 'package:ournego/core/theme/tokens/ournego_semantic_tokens.dart';
+import 'package:ournego/core/theme/tokens/ournego_spacing_tokens.dart';
 import 'package:ournego/features/map/presentation/providers/map_providers.dart';
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/components/business_hours_compact_card.dart';
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/components/minimized_stack_icon.dart';
-import 'package:ournego/features/map/presentation/widgets/floating_sheet/components/sheet_control_button.dart';
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/components/sheet_header.dart';
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/floating_sheet_controller.dart';
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/floating_sheet_state.dart';
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/models/sheet_business_data.dart';
+import 'package:ournego/shared/widgets/buttons/buttons.dart';
 
 class OurnegoFloatingSheet extends StatefulWidget {
   final FloatingSheetController controller;
@@ -269,62 +270,35 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet> {
                   rating: business.rating,
                 ),
                 const Spacer(),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SheetControlButton(
-                      icon: Icons.share_outlined,
-                      onTap: () => widget.onShare(business),
-                    ),
-                    const SizedBox(width: 8),
-                    SheetControlButton(
-                      icon: business.isFavorite
-                          ? Icons.favorite_rounded
-                          : Icons.favorite_border_rounded,
-                      onTap: _isFavoriteUpdating
-                          ? () {}
-                          : () async {
-                              setState(() {
-                                _isFavoriteUpdating = true;
-                              });
+                _SheetControls(
+                  onShare: () => widget.onShare(business),
+                  isFavorite: business.isFavorite,
+                  onFavoriteToggle: _isFavoriteUpdating
+                      ? null
+                      : () async {
+                          setState(() {
+                            _isFavoriteUpdating = true;
+                          });
 
-                              controller.toggleFavoriteForBusiness(business.id);
-                              final success = await widget.onFavorite(business);
-                              if (!success) {
-                                controller.toggleFavoriteForBusiness(
-                                  business.id,
-                                );
-                              }
+                          controller.toggleFavoriteForBusiness(business.id);
+                          final success = await widget.onFavorite(business);
+                          if (!success) {
+                            controller.toggleFavoriteForBusiness(business.id);
+                          }
 
-                              if (!mounted) return;
-                              setState(() {
-                                _isFavoriteUpdating = false;
-                              });
-                            },
-                      backgroundColor: business.isFavorite
-                          ? Theme.of(
-                              context,
-                            ).colorScheme.primary.withValues(alpha: 0.25)
-                          : null,
-                      iconColor: business.isFavorite
-                          ? Theme.of(context).colorScheme.primary
-                          : null,
-                    ),
-                    const SizedBox(width: 8),
-                    SheetControlButton(
-                      icon: Icons.picture_in_picture_alt_rounded,
-                      onTap: isPrimary
-                          ? controller.minimizePrimaryInComparison
-                          : controller.minimizeSecondaryInComparison,
-                    ),
-                    const SizedBox(width: 8),
-                    SheetControlButton(
-                      icon: Icons.close_rounded,
-                      onTap: isPrimary
-                          ? controller.closePrimaryInComparison
-                          : controller.closeSecondaryInComparison,
-                    ),
-                  ],
+                          if (!mounted) return;
+                          setState(() {
+                            _isFavoriteUpdating = false;
+                          });
+                        },
+                  onMinimize: isPrimary
+                      ? controller.minimizePrimaryInComparison
+                      : controller.minimizeSecondaryInComparison,
+                  lastIcon: Icons.close_rounded,
+                  lastLabel: 'Cerrar',
+                  onLast: isPrimary
+                      ? controller.closePrimaryInComparison
+                      : controller.closeSecondaryInComparison,
                 ),
               ],
             ),
@@ -335,7 +309,7 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet> {
             ),
             const SizedBox(height: 12),
             Expanded(
-              child: _LegacyExpandedContent(
+              child: _ExpandedContent(
                 business: business,
                 onContact: () => widget.onContact(business),
                 onCatalog: () => widget.onCatalog(business),
@@ -457,59 +431,36 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet> {
                               rating: activeBusiness.rating,
                             ),
                             const Spacer(),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                SheetControlButton(
-                                  icon: Icons.share_outlined,
-                                  onTap: () => widget.onShare(activeBusiness),
-                                ),
-                                const SizedBox(width: 8),
-                                SheetControlButton(
-                                  icon: activeBusiness.isFavorite
-                                      ? Icons.favorite_rounded
-                                      : Icons.favorite_border_rounded,
-                                  onTap: _isFavoriteUpdating
-                                      ? () {}
-                                      : () async {
-                                          setState(() {
-                                            _isFavoriteUpdating = true;
-                                          });
+                            _SheetControls(
+                              onShare: () => widget.onShare(activeBusiness),
+                              isFavorite: activeBusiness.isFavorite,
+                              onFavoriteToggle: _isFavoriteUpdating
+                                  ? null
+                                  : () async {
+                                      setState(() {
+                                        _isFavoriteUpdating = true;
+                                      });
 
-                                          controller.toggleFavorite();
-                                          final success = await widget
-                                              .onFavorite(activeBusiness);
+                                      controller.toggleFavorite();
+                                      final success = await widget.onFavorite(
+                                        activeBusiness,
+                                      );
 
-                                          if (!success) {
-                                            controller.toggleFavorite();
-                                          }
+                                      if (!success) {
+                                        controller.toggleFavorite();
+                                      }
 
-                                          if (!mounted) return;
-                                          setState(() {
-                                            _isFavoriteUpdating = false;
-                                          });
-                                        },
-                                  backgroundColor: activeBusiness.isFavorite
-                                      ? Theme.of(context).colorScheme.primary
-                                            .withValues(alpha: 0.25)
-                                      : null,
-                                  iconColor: activeBusiness.isFavorite
-                                      ? Theme.of(context).colorScheme.primary
-                                      : null,
-                                ),
-                                const SizedBox(width: 8),
-                                SheetControlButton(
-                                  icon: Icons.picture_in_picture_alt_rounded,
-                                  onTap: controller.minimizeActiveBusiness,
-                                ),
-                                const SizedBox(width: 8),
-                                SheetControlButton(
-                                  icon: isExpanded
-                                      ? Icons.keyboard_arrow_down_rounded
-                                      : Icons.open_in_full_rounded,
-                                  onTap: controller.toggleExpandedCollapsed,
-                                ),
-                              ],
+                                      if (!mounted) return;
+                                      setState(() {
+                                        _isFavoriteUpdating = false;
+                                      });
+                                    },
+                              onMinimize: controller.minimizeActiveBusiness,
+                              lastIcon: isExpanded
+                                  ? Icons.keyboard_arrow_down_rounded
+                                  : Icons.open_in_full_rounded,
+                              lastLabel: isExpanded ? 'Contraer' : 'Expandir',
+                              onLast: controller.toggleExpandedCollapsed,
                             ),
                           ],
                         ),
@@ -524,7 +475,7 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet> {
                         const SizedBox(height: 12),
                         Expanded(
                           child: isExpanded
-                              ? _LegacyExpandedContent(
+                              ? _ExpandedContent(
                                   business: activeBusiness,
                                   onContact: () =>
                                       widget.onContact(activeBusiness),
@@ -541,7 +492,7 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet> {
                                   // avoids RenderFlex overflow without changing
                                   // the visible layout in normal use.
                                   physics: const NeverScrollableScrollPhysics(),
-                                  child: _LegacyCollapsedActions(
+                                  child: _CollapsedActions(
                                     onContact: () =>
                                         widget.onContact(activeBusiness),
                                     onCatalog: () =>
@@ -682,13 +633,13 @@ class _TypeRatingBadgeRow extends StatelessWidget {
   }
 }
 
-class _LegacyCollapsedActions extends StatelessWidget {
+class _CollapsedActions extends StatelessWidget {
   final VoidCallback onContact;
   final VoidCallback onCatalog;
   final VoidCallback onReviews;
   final VoidCallback onShare;
 
-  const _LegacyCollapsedActions({
+  const _CollapsedActions({
     required this.onContact,
     required this.onCatalog,
     required this.onReviews,
@@ -697,28 +648,105 @@ class _LegacyCollapsedActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const gap = SizedBox(width: OurnegoSpacingTokens.xs);
     return Row(
       children: [
-        const SizedBox(width: 8),
         Expanded(
-          child: _LegacyActionButton(
-            icon: Icons.emoji_emotions,
-            onTap: onReviews,
+          child: OurnegoActionButton(
+            icon: Icons.sentiment_satisfied_rounded,
+            semanticLabel: 'Reseñas',
+            onPressed: onReviews,
           ),
         ),
-        const SizedBox(width: 8),
+        gap,
         Expanded(
-          child: _LegacyActionButton(
+          child: OurnegoActionButton(
             icon: Icons.search_rounded,
-            onTap: onCatalog,
+            semanticLabel: 'Catálogo',
+            onPressed: onCatalog,
           ),
         ),
-        const SizedBox(width: 8),
+        gap,
         Expanded(
-          child: _LegacyActionButton(
+          child: OurnegoActionButton(
             icon: Icons.chat_rounded,
-            onTap: onContact,
+            semanticLabel: 'Mensaje',
+            onPressed: onContact,
           ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SheetControls extends StatelessWidget {
+  const _SheetControls({
+    required this.onShare,
+    required this.isFavorite,
+    required this.onFavoriteToggle,
+    required this.onMinimize,
+    required this.lastIcon,
+    required this.lastLabel,
+    required this.onLast,
+  });
+
+  final VoidCallback onShare;
+  final bool isFavorite;
+
+  /// Null while the favorite update is in flight, which disables the toggle.
+  final VoidCallback? onFavoriteToggle;
+  final VoidCallback onMinimize;
+  final IconData lastIcon;
+  final String lastLabel;
+  final VoidCallback onLast;
+
+  @override
+  Widget build(BuildContext context) {
+    const gap = SizedBox(width: OurnegoSpacingTokens.xs);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        OurnegoIconButton(
+          tone: OurnegoButtonTone.tonal,
+          outlined: true,
+          size: OurnegoIconButtonSize.s32,
+          radius: OurnegoRadiusTokens.lg,
+          icon: Icons.share_rounded,
+          semanticLabel: 'Compartir',
+          onPressed: onShare,
+        ),
+        gap,
+        OurnegoIconButton.toggle(
+          outlined: true,
+          radius: OurnegoRadiusTokens.lg,
+          selected: isFavorite,
+          icon: Icons.favorite_border_rounded,
+          selectedIcon: Icons.favorite_rounded,
+          celebrate: true,
+          semanticLabel: 'Favorito',
+          onChanged: onFavoriteToggle == null
+              ? null
+              : (_) => onFavoriteToggle!(),
+        ),
+        gap,
+        OurnegoIconButton(
+          tone: OurnegoButtonTone.tonal,
+          outlined: true,
+          size: OurnegoIconButtonSize.s32,
+          radius: OurnegoRadiusTokens.lg,
+          icon: Icons.picture_in_picture_alt_rounded,
+          semanticLabel: 'Minimizar',
+          onPressed: onMinimize,
+        ),
+        gap,
+        OurnegoIconButton(
+          tone: OurnegoButtonTone.tonal,
+          outlined: true,
+          size: OurnegoIconButtonSize.s32,
+          radius: OurnegoRadiusTokens.lg,
+          icon: lastIcon,
+          semanticLabel: lastLabel,
+          onPressed: onLast,
         ),
       ],
     );
@@ -730,29 +758,6 @@ BoxDecoration _brandedSheetCardDecoration(ColorScheme colorScheme) {
     color: colorScheme.surface,
     borderRadius: BorderRadius.circular(OurnegoRadiusTokens.xl),
     border: Border.all(color: OurnegoSemanticTokens.borderSubtle(colorScheme)),
-  );
-}
-
-ButtonStyle _brandedSheetButtonStyle({
-  required BuildContext context,
-  required double radius,
-  Size minimumSize = const Size(double.infinity, 58),
-}) {
-  final colorScheme = Theme.of(context).colorScheme;
-  return ElevatedButton.styleFrom(
-    elevation: 0,
-    minimumSize: minimumSize,
-    backgroundColor: colorScheme.surface,
-    foregroundColor: colorScheme.onSurface,
-    textStyle: OurnegoTextStyles.button,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(radius),
-      side: BorderSide(color: OurnegoSemanticTokens.borderSubtle(colorScheme)),
-    ),
-  ).copyWith(
-    overlayColor: WidgetStatePropertyAll(
-      colorScheme.primary.withValues(alpha: 0.08),
-    ),
   );
 }
 
@@ -777,37 +782,14 @@ class _SheetAccentIcon extends StatelessWidget {
   }
 }
 
-class _LegacyActionButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-
-  const _LegacyActionButton({required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 42,
-      child: ElevatedButton(
-        onPressed: onTap,
-        style: _brandedSheetButtonStyle(
-          context: context,
-          radius: OurnegoRadiusTokens.actionTile,
-          minimumSize: const Size(double.infinity, 42),
-        ),
-        child: Icon(icon, size: 18),
-      ),
-    );
-  }
-}
-
-class _LegacyExpandedContent extends ConsumerWidget {
+class _ExpandedContent extends ConsumerWidget {
   final SheetBusinessData business;
   final VoidCallback onContact;
   final VoidCallback onCatalog;
   final VoidCallback onReviews;
   final VoidCallback onShare;
 
-  const _LegacyExpandedContent({
+  const _ExpandedContent({
     required this.business,
     required this.onContact,
     required this.onCatalog,
@@ -879,74 +861,28 @@ class _LegacyExpandedContent extends ConsumerWidget {
           ),
         if (business.images.isNotEmpty) const SizedBox(height: 0),
         const SizedBox(height: 12),
-        _LegacyWideButton(
-          icon: Icons.emoji_emotions_outlined,
-          text: 'Opinión General',
-          onTap: onReviews,
+        OurnegoRowButton(
+          icon: Icons.sentiment_satisfied_rounded,
+          label: 'Opinión general',
+          onPressed: onReviews,
         ),
         const SizedBox(height: 12),
-        _LegacyContactCard(ownerName: ownerName, onContact: onContact),
+        _ContactCard(ownerName: ownerName, onContact: onContact),
         const SizedBox(height: 12),
         BusinessHoursCompactCard(hours: business.hours),
         const SizedBox(height: 12),
-        _LegacyCatalogCard(onCatalog: onCatalog),
+        _CatalogCard(onCatalog: onCatalog),
         const SizedBox(height: 8),
       ],
     );
   }
 }
 
-class _LegacyWideButton extends StatelessWidget {
-  final IconData icon;
-  final String text;
-  final VoidCallback onTap;
-
-  const _LegacyWideButton({
-    required this.icon,
-    required this.text,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 58,
-      child: ElevatedButton(
-        onPressed: onTap,
-        style: _brandedSheetButtonStyle(
-          context: context,
-          radius: OurnegoRadiusTokens.xl,
-        ),
-        child: Row(
-          children: [
-            _SheetAccentIcon(icon: icon),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                text,
-                style: OurnegoTextStyles.body.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-            Icon(
-              Icons.chevron_right_rounded,
-              size: 26,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _LegacyContactCard extends StatelessWidget {
+class _ContactCard extends StatelessWidget {
   final String ownerName;
   final VoidCallback onContact;
 
-  const _LegacyContactCard({required this.ownerName, required this.onContact});
+  const _ContactCard({required this.ownerName, required this.onContact});
 
   @override
   Widget build(BuildContext context) {
@@ -977,16 +913,22 @@ class _LegacyContactCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _CompactAction(
+              OurnegoButton.secondary(
+                size: OurnegoButtonSize.compact,
+                radius: OurnegoRadiusTokens.lg,
+                label: 'Mensaje',
                 icon: Icons.chat_rounded,
-                text: 'Mensaje',
-                onTap: onContact,
+                iconMotion: OurnegoIconMotion.wiggle,
+                onPressed: onContact,
               ),
               const SizedBox(width: 12),
-              _CompactAction(
+              OurnegoButton.secondary(
+                size: OurnegoButtonSize.compact,
+                radius: OurnegoRadiusTokens.lg,
+                label: 'Llamar',
                 icon: Icons.call_rounded,
-                text: 'Llamar',
-                onTap: onContact,
+                iconMotion: OurnegoIconMotion.wiggle,
+                onPressed: onContact,
               ),
             ],
           ),
@@ -996,10 +938,10 @@ class _LegacyContactCard extends StatelessWidget {
   }
 }
 
-class _LegacyCatalogCard extends StatelessWidget {
+class _CatalogCard extends StatelessWidget {
   final VoidCallback onCatalog;
 
-  const _LegacyCatalogCard({required this.onCatalog});
+  const _CatalogCard({required this.onCatalog});
 
   @override
   Widget build(BuildContext context) {
@@ -1035,39 +977,15 @@ class _LegacyCatalogCard extends StatelessWidget {
           const SizedBox(height: 10),
           Align(
             alignment: Alignment.center,
-            child: TextButton.icon(
+            child: OurnegoButton.text(
+              size: OurnegoButtonSize.compact,
+              label: 'Ver catálogo',
+              icon: Icons.inventory_2_rounded,
+              iconMotion: OurnegoIconMotion.wiggle,
               onPressed: onCatalog,
-              icon: const Icon(Icons.inventory_2_rounded, size: 18),
-              label: const Text('Ver catálogo'),
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _CompactAction extends StatelessWidget {
-  final IconData icon;
-  final String text;
-  final VoidCallback onTap;
-
-  const _CompactAction({
-    required this.icon,
-    required this.text,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ElevatedButton.icon(
-      onPressed: onTap,
-      icon: Icon(icon, size: 16),
-      label: Text(text),
-      style: _brandedSheetButtonStyle(
-        context: context,
-        radius: OurnegoRadiusTokens.lg,
-        minimumSize: const Size(0, 42),
       ),
     );
   }

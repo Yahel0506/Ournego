@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'package:ournego/core/theme/tokens/ournego_spacing_tokens.dart';
+import 'package:ournego/shared/widgets/buttons/buttons.dart';
+
 class MapControlsWidget extends StatelessWidget {
   final bool showDebugButton;
   final Future<void> Function() onDebugTap;
@@ -18,78 +21,53 @@ class MapControlsWidget extends StatelessWidget {
     this.hasLocationAccess = true,
   });
 
+  // Map controls are action buttons: they keep the lip even over the map.
+  Widget _control({
+    required IconData icon,
+    required String label,
+    required Future<void> Function() onTap,
+  }) {
+    return OurnegoIconButton(
+      tone: OurnegoButtonTone.glass,
+      size: OurnegoIconButtonSize.s52,
+      radius: 16,
+      icon: icon,
+      semanticLabel: label,
+      onPressed: () {
+        onTap();
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    const gap = SizedBox(height: OurnegoSpacingTokens.xs);
     return Column(
       children: [
         if (showDebugButton) ...[
-          _MapControlButton(icon: Icons.bug_report, onPressed: onDebugTap),
-          const SizedBox(height: 12),
+          _control(
+            icon: Icons.bug_report_rounded,
+            label: 'Depuración',
+            onTap: onDebugTap,
+          ),
+          gap,
         ],
-        _MapControlButton(icon: Icons.add, onPressed: onZoomInTap),
-        const SizedBox(height: 12),
-        _MapControlButton(icon: Icons.remove, onPressed: onZoomOutTap),
-        const SizedBox(height: 12),
-        _MapControlButton(
+        _control(icon: Icons.add_rounded, label: 'Acercar', onTap: onZoomInTap),
+        gap,
+        _control(
+          icon: Icons.remove_rounded,
+          label: 'Alejar',
+          onTap: onZoomOutTap,
+        ),
+        gap,
+        _control(
           icon: hasLocationAccess
               ? Icons.my_location_rounded
               : Icons.location_disabled_rounded,
-          onPressed: onMyLocationTap,
+          label: 'Mi ubicación',
+          onTap: onMyLocationTap,
         ),
       ],
-    );
-  }
-}
-
-class _MapControlButton extends StatefulWidget {
-  final IconData icon;
-  final Future<void> Function() onPressed;
-
-  const _MapControlButton({required this.icon, required this.onPressed});
-
-  @override
-  State<_MapControlButton> createState() => _MapControlButtonState();
-}
-
-class _MapControlButtonState extends State<_MapControlButton> {
-  bool _isPressed = false;
-
-  Future<void> _handleTap() async {
-    if (!mounted) return;
-    setState(() {
-      _isPressed = true;
-    });
-
-    await widget.onPressed();
-
-    if (!mounted) return;
-    setState(() {
-      _isPressed = false;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return AnimatedScale(
-      duration: const Duration(milliseconds: 140),
-      scale: _isPressed ? 0.94 : 1,
-      child: SizedBox(
-        width: 52,
-        height: 52,
-        child: Material(
-          color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(16),
-          elevation: 5,
-          shadowColor: Colors.black.withValues(alpha: 0.2),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(16),
-            onTap: _handleTap,
-            child: Icon(widget.icon, size: 22, color: colorScheme.onSurface),
-          ),
-        ),
-      ),
     );
   }
 }

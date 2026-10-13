@@ -4,6 +4,7 @@ import 'package:ournego/core/location/location_access_status.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/core/theme/tokens/ournego_color_tokens.dart';
 import 'package:ournego/core/theme/tokens/ournego_spacing_tokens.dart';
+import 'package:ournego/shared/widgets/buttons/buttons.dart';
 import 'package:ournego/shared/widgets/ournego_content_container.dart';
 
 /// Whether [status] should be announced with the persistent map banner.
@@ -66,19 +67,11 @@ class MapLocationBanner extends StatelessWidget {
                 ),
               ),
             ),
-            FilledButton(
+            OurnegoButton.primary(
               key: const Key('map-location-banner-action'),
+              size: OurnegoButtonSize.small,
+              label: actionLabel,
               onPressed: onAction,
-              style: FilledButton.styleFrom(
-                minimumSize: const Size(0, 36),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: OurnegoSpacingTokens.md,
-                ),
-                textStyle: OurnegoTextStyles.bodyCompact.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              child: Text(actionLabel),
             ),
           ],
         ),
