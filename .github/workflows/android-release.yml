@@ -68,6 +68,12 @@ jobs:
           LOCATIONIQ_API_KEY: ${{ secrets.LOCATIONIQ_API_KEY }}
         run: |
           umask 077
+          for name in SUPABASE_URL SUPABASE_ANON_KEY MAPBOX_ACCESS_TOKEN MAPBOX_USERNAME MAPBOX_STYLE_ID_DARK MAPBOX_STYLE_ID_LIGHT LOCATIONIQ_API_KEY; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Secret $name is not set; the APK would ship without configuration."
+              exit 1
+            fi
+          done
           {
             echo "SUPABASE_URL=$SUPABASE_URL"
             echo "SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY"
@@ -87,10 +93,12 @@ jobs:
         run: |
           set -euo pipefail
           umask 077
-          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
-            echo "::warning::ANDROID_KEYSTORE_BASE64 is not set; signing with the debug key."
-            exit 0
-          fi
+          for name in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Secret $name is not set; refusing to publish a debug-signed APK."
+              exit 1
+            fi
+          done
           echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/upload-keystore.jks
           cat > android/key.properties <<EOF2
           storeFile=upload-keystore.jks
@@ -101,6 +109,13 @@ jobs:
 
       - name: Build release APK
         run: flutter build apk --release --dart-define-from-file="$RUNNER_TEMP/release.env"
+
+      - name: Verify APK signature
+        run: |
+          set -euo pipefail
+          apksigner="$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -n 1)"
+          "$apksigner" verify --print-certs build/app/outputs/flutter-apk/app-release.apk \
+            | grep -E "certificate (DN|SHA-1)"
 
       - name: Remove secrets from disk
         if: always()
