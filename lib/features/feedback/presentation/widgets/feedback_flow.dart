@@ -6,6 +6,7 @@ import 'package:ournego/features/feedback/presentation/widgets/feedback_dialog_w
 import 'package:ournego/features/navigation/presentation/providers/navigation_provider.dart';
 import 'package:ournego/shared/widgets/buttons/buttons.dart';
 import 'package:ournego/shared/widgets/ournego_information_dialog.dart';
+import 'package:ournego/shared/widgets/container_transform/show_ournego_window.dart';
 
 const String _genericErrorImage = 'assets/images/generic_error.png';
 
@@ -15,7 +16,7 @@ Future<void> openFeedbackDialog(BuildContext context, WidgetRef ref) async {
   if (ref.read(isFeedbackDialogOpenProvider)) return;
 
   ref.read(isFeedbackDialogOpenProvider.notifier).setIsOpen();
-  await showDialog<void>(
+  await showOurnegoDialog<void>(
     context: context,
     builder: (_) => const FeedbackDialogWidget(),
   );
@@ -32,7 +33,7 @@ Future<void> showErrorWithFeedbackDialog(
   required String description,
   String imagePath = _genericErrorImage,
 }) {
-  return showDialog<void>(
+  return showOurnegoDialog<void>(
     context: context,
     builder: (dialogContext) {
       return OurnegoInformationDialog(

@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:ournego/core/ournego_colors.dart';
 import 'package:ournego/core/startup/startup_controller.dart';
 import 'package:ournego/shared/widgets/buttons/buttons.dart';
+import 'package:ournego/shared/widgets/container_transform/show_ournego_window.dart';
 
 typedef StartupAppBuilder = Widget Function(bool startOnMap);
 typedef StartupSupportLauncher = Future<bool> Function(Uri uri);
@@ -345,7 +346,7 @@ class _StartupStatusScreenState extends State<_StartupStatusScreen> {
       null => 'Espera un momento mientras preparamos Ournego.',
     };
 
-    await showDialog<void>(
+    await showOurnegoDialog<void>(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(

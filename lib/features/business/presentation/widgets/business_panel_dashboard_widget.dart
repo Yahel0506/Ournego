@@ -21,6 +21,7 @@ import 'package:ournego/shared/widgets/ournego_alert_dialog.dart';
 import 'package:ournego/shared/widgets/ournego_form_dialog.dart';
 import 'package:ournego/shared/widgets/ournego_inputs.dart';
 import 'package:ournego/shared/widgets/ournego_snackbars.dart';
+import 'package:ournego/shared/widgets/container_transform/show_ournego_window.dart';
 
 class BusinessPanelDashboardWidget extends ConsumerStatefulWidget {
   const BusinessPanelDashboardWidget({super.key});
@@ -65,7 +66,7 @@ class _BusinessPanelDashboardWidgetState
     );
     int category = business.category;
 
-    final didConfirm = await showDialog<bool>(
+    final didConfirm = await showOurnegoDialog<bool>(
       context: context,
       builder: (dialogContext) {
         return StatefulBuilder(
@@ -145,7 +146,7 @@ class _BusinessPanelDashboardWidgetState
   }
 
   Future<void> _editLocation(OwnedBusinessProfile business) async {
-    final result = await showDialog<LocationEditorResult>(
+    final result = await showOurnegoDialog<LocationEditorResult>(
       context: context,
       builder: (dialogContext) {
         return LocationEditorDialog(
@@ -179,7 +180,7 @@ class _BusinessPanelDashboardWidgetState
 
   Future<void> _editPhone(OwnedBusinessProfile business) async {
     final controller = TextEditingController(text: business.phoneNumber ?? '');
-    final didConfirm = await showDialog<bool>(
+    final didConfirm = await showOurnegoDialog<bool>(
       context: context,
       builder: (dialogContext) {
         return OurnegoFormDialog(
@@ -227,7 +228,7 @@ class _BusinessPanelDashboardWidgetState
 
   Future<void> _editHours(OwnedBusinessProfile business) async {
     final draft = buildScheduleMap(business.hours);
-    final didConfirm = await showDialog<bool>(
+    final didConfirm = await showOurnegoDialog<bool>(
       context: context,
       builder: (dialogContext) {
         return OurnegoFormDialog(

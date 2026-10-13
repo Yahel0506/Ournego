@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/features/auth/presentation/providers/session_expiry_providers.dart';
 import 'package:ournego/shared/widgets/ournego_alert_dialog.dart';
+import 'package:ournego/shared/widgets/container_transform/show_ournego_window.dart';
 
 /// Shows a non-blocking dialog when the session is lost without a logout.
 /// Needs [navigatorKey] because it sits above the router's Navigator.
@@ -28,7 +29,7 @@ class SessionExpiredListener extends ConsumerWidget {
       final location = GoRouter.of(navContext).state.uri.toString();
       final notifier = ref.read(sessionExpiryProvider.notifier);
 
-      showDialog<void>(
+      showOurnegoDialog<void>(
         context: navContext,
         barrierDismissible: false,
         builder: (dialogContext) => OurnegoAlertDialog(

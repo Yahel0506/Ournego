@@ -13,6 +13,7 @@ import 'package:ournego/features/map/presentation/models/business_marker_ui_mode
 import 'package:ournego/shared/widgets/buttons/buttons.dart';
 import 'package:ournego/shared/widgets/ournego_alert_dialog.dart';
 import 'package:ournego/shared/widgets/ournego_form_dialog.dart';
+import 'package:ournego/shared/widgets/container_transform/show_ournego_window.dart';
 
 class MapCanvasWidget extends StatelessWidget {
   final AnimatedMapController animatedMapController;
@@ -235,7 +236,7 @@ class MapCanvasWidget extends StatelessWidget {
                   icon: Icons.info_outline_rounded,
                   semanticLabel: 'Créditos del mapa',
                   onPressed: () {
-                    showDialog(
+                    showOurnegoDialog(
                       context: context,
                       builder: (context) => OurnegoFormDialog(
                         title: 'Créditos del Mapa',
