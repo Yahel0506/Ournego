@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:ournego/core/theme/ournego_button_styles.dart';
+import 'package:ournego/core/theme/ournego_button_themes.dart';
 import 'package:ournego/core/theme/ournego_input_styles.dart';
 import 'package:ournego/core/theme/tokens/ournego_color_tokens.dart';
 import 'package:ournego/core/theme/tokens/ournego_radius_tokens.dart';
@@ -12,7 +12,9 @@ class OurnegoTheme {
   static ThemeData get light {
     const scheme = ColorScheme.light(
       primary: OurnegoColorTokens.actionPrimary,
-      onPrimary: Colors.white,
+      // Noche on aqua (9.77:1). `outline` stays undefined on purpose: Flutter
+      // falls back to black, which keeps the 30% contours visible.
+      onPrimary: OurnegoColorTokens.noche,
       primaryContainer: OurnegoColorTokens.cianClaro,
       onPrimaryContainer: OurnegoColorTokens.azulVerde,
       secondary: OurnegoColorTokens.aguamarina,
@@ -30,8 +32,8 @@ class OurnegoTheme {
       scaffoldBackgroundColor: OurnegoColorTokens.blanco,
       colorScheme: scheme,
       inputDecorationTheme: OurnegoInputStyles.inputDecorationTheme(scheme),
-      elevatedButtonTheme: OurnegoButtonStyles.elevatedButtonTheme(scheme),
-      outlinedButtonTheme: OurnegoButtonStyles.outlinedButtonTheme(scheme),
+      elevatedButtonTheme: OurnegoButtonThemes.elevatedButtonTheme(scheme),
+      outlinedButtonTheme: OurnegoButtonThemes.outlinedButtonTheme(scheme),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           minimumSize: const Size(double.infinity, 50),
@@ -75,8 +77,8 @@ class OurnegoTheme {
       scaffoldBackgroundColor: OurnegoColorTokens.noche,
       colorScheme: scheme,
       inputDecorationTheme: OurnegoInputStyles.inputDecorationTheme(scheme),
-      elevatedButtonTheme: OurnegoButtonStyles.elevatedButtonTheme(scheme),
-      outlinedButtonTheme: OurnegoButtonStyles.outlinedButtonTheme(scheme),
+      elevatedButtonTheme: OurnegoButtonThemes.elevatedButtonTheme(scheme),
+      outlinedButtonTheme: OurnegoButtonThemes.outlinedButtonTheme(scheme),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           minimumSize: const Size(double.infinity, 50),
