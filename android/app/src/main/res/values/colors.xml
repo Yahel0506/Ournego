@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#FFFFFF</color>
+    <!-- Matches the app's light scaffold background so the native launch
+         window flows into the Flutter splash animation. -->
+    <color name="splash_background">#FFFFFF</color>
 </resources>
