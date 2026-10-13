@@ -28,6 +28,7 @@ Handles authentication and profile lifecycle: email login/signup, Google login, 
 - Session loss: `sessionExpiryProvider` flags a `signedOut` event that did not come from `SupabaseAuthDatasource.logOut()`; `SessionExpiredListener` then shows a dialog (sign in again / continue as guest) and `pendingReturnLocationProvider` restores the previous route after re-login. Offline refresh failures are retried by the SDK and never trigger it.
 - Offline: repositories map network errors to `NetworkFailure` (via `lib/core/network/network_error_classifier.dart`), the router sends the account check to `accountCheckFailed`, and `OurnegoOfflineBanner` shows a global banner and refreshes remote providers when connectivity returns.
 - Keep datasource-level mapping/errors and repository-level failure translation.
+- Google login on Android depends on the signing key of each build mode being registered as an Android OAuth client; see [OUR-129](../plans/our-129-google-sign-in-android.md) for the per-mode fingerprints and setup.
 
 ## UI Refactor Notes
 - This feature is one of the most migrated to shared UI presets.
