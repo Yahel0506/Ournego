@@ -2,9 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
-import 'package:ournego/core/theme/tokens/ournego_radius_tokens.dart';
 import 'package:ournego/core/theme/tokens/ournego_spacing_tokens.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
+import 'package:ournego/shared/widgets/buttons/ournego_button_tokens.dart';
 import 'package:ournego/shared/widgets/container_transform/container_transform_origin.dart';
 import 'package:ournego/shared/widgets/container_transform/show_ournego_window.dart';
 import 'package:ournego/shared/widgets/ournego_dialog_surface.dart';
@@ -58,7 +58,7 @@ class ProfileMenuDialogWidget extends ConsumerWidget {
             key: const ValueKey('profileMenuDialog'),
             type: MaterialType.transparency,
             child: OurnegoDialogSurface(
-              customHorizontalPadding: OurnegoSpacingTokens.xs,
+              customHorizontalPadding: OurnegoSpacingTokens.sm,
               customVerticalPadding: OurnegoSpacingTokens.md,
               child: SingleChildScrollView(
                 child: Column(
@@ -71,52 +71,70 @@ class ProfileMenuDialogWidget extends ConsumerWidget {
                       email: user?.email,
                       imageUrl: user?.profilePicture,
                     ),
-                    const SizedBox(height: OurnegoSpacingTokens.sm),
-                    if (!isLogged)
-                      _MenuItem(
-                        key: const ValueKey('profileMenuLogInButton'),
-                        icon: Icons.login_rounded,
-                        label: 'Iniciar sesión o registrarse',
-                        onTap: () => select(ProfileMenuAction.logIn),
+                    if (!isLogged) ...[
+                      const SizedBox(height: OurnegoSpacingTokens.sm),
+                      _MenuGroup(
+                        items: [
+                          _MenuItem(
+                            key: const ValueKey('profileMenuLogInButton'),
+                            icon: Icons.login_rounded,
+                            label: 'Iniciar sesión o registrarse',
+                            onTap: () => select(ProfileMenuAction.logIn),
+                          ),
+                        ],
                       ),
+                    ],
                     if (showsBusinessEntry) ...[
                       const _SectionLabel('Cuenta'),
-                      _MenuItem(
-                        key: const ValueKey('profileMenuBusinessButton'),
-                        icon: Icons.storefront_rounded,
-                        label: 'Mi negocio',
-                        onTap: () => select(ProfileMenuAction.businessPanel),
+                      _MenuGroup(
+                        items: [
+                          _MenuItem(
+                            key: const ValueKey('profileMenuBusinessButton'),
+                            icon: Icons.storefront_rounded,
+                            label: 'Mi negocio',
+                            onTap: () =>
+                                select(ProfileMenuAction.businessPanel),
+                          ),
+                        ],
                       ),
                     ],
                     const _SectionLabel('Configuración'),
-                    _MenuItem(
-                      key: const ValueKey('profileMenuLocationButton'),
-                      icon: Icons.location_on_outlined,
-                      label: 'Permisos de ubicación',
-                      onTap: () =>
-                          select(ProfileMenuAction.locationPermissions),
+                    _MenuGroup(
+                      items: [
+                        _MenuItem(
+                          key: const ValueKey('profileMenuLocationButton'),
+                          icon: Icons.location_on_outlined,
+                          label: 'Permisos de ubicación',
+                          onTap: () =>
+                              select(ProfileMenuAction.locationPermissions),
+                        ),
+                        _MenuItem(
+                          key: const ValueKey('profileMenuFeedbackButton'),
+                          icon: Icons.bug_report_outlined,
+                          label: 'Reportar un problema',
+                          onTap: () => select(ProfileMenuAction.reportProblem),
+                        ),
+                        if (kDebugMode)
+                          _MenuItem(
+                            key: const ValueKey('profileMenuDebugButton'),
+                            icon: Icons.developer_mode_rounded,
+                            label: 'Panel de depuración',
+                            onTap: () => select(ProfileMenuAction.debugPanel),
+                          ),
+                      ],
                     ),
-                    _MenuItem(
-                      key: const ValueKey('profileMenuFeedbackButton'),
-                      icon: Icons.bug_report_outlined,
-                      label: 'Reportar un problema',
-                      onTap: () => select(ProfileMenuAction.reportProblem),
-                    ),
-                    if (kDebugMode)
-                      _MenuItem(
-                        key: const ValueKey('profileMenuDebugButton'),
-                        icon: Icons.developer_mode_rounded,
-                        label: 'Panel de depuración',
-                        onTap: () => select(ProfileMenuAction.debugPanel),
-                      ),
                     if (isLogged) ...[
-                      const Divider(height: OurnegoSpacingTokens.lg),
-                      _MenuItem(
-                        key: const ValueKey('profileMenuLogoutButton'),
-                        icon: Icons.logout_rounded,
-                        label: 'Cerrar sesión',
-                        color: colorScheme.error,
-                        onTap: () => select(ProfileMenuAction.logOut),
+                      const SizedBox(height: OurnegoSpacingTokens.sm),
+                      _MenuGroup(
+                        items: [
+                          _MenuItem(
+                            key: const ValueKey('profileMenuLogoutButton'),
+                            icon: Icons.logout_rounded,
+                            label: 'Cerrar sesión',
+                            color: colorScheme.error,
+                            onTap: () => select(ProfileMenuAction.logOut),
+                          ),
+                        ],
                       ),
                     ],
                   ],
@@ -171,7 +189,7 @@ class _ProfileHeader extends StatelessWidget {
         : 'Inicia sesión para gestionar tu cuenta';
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: OurnegoSpacingTokens.sm),
+      padding: const EdgeInsets.symmetric(horizontal: OurnegoSpacingTokens.xs),
       child: Row(
         children: [
           CircleAvatar(
@@ -225,10 +243,10 @@ class _SectionLabel extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-        OurnegoSpacingTokens.sm,
-        OurnegoSpacingTokens.sm,
-        OurnegoSpacingTokens.sm,
-        OurnegoSpacingTokens.xxs,
+        OurnegoSpacingTokens.xs,
+        OurnegoSpacingTokens.md,
+        OurnegoSpacingTokens.xs,
+        OurnegoSpacingTokens.xs,
       ),
       child: Text(
         label.toUpperCase(),
@@ -242,11 +260,58 @@ class _SectionLabel extends StatelessWidget {
   }
 }
 
+/// The options of one section: bricks of a single rounded rectangle, like the
+/// groups in Google's settings. The outer corners are generous, the corners
+/// between bricks are small, and a thin gap separates them.
+class _MenuGroup extends StatelessWidget {
+  const _MenuGroup({required this.items});
+
+  static const double _outerRadius = 18;
+  static const double _innerRadius = 4;
+  static const double _gap = 2;
+
+  final List<_MenuItem> items;
+
+  BorderRadius _radiusFor(int index) {
+    const outer = Radius.circular(_outerRadius);
+    const inner = Radius.circular(_innerRadius);
+    final isFirst = index == 0;
+    final isLast = index == items.length - 1;
+    return BorderRadius.vertical(
+      top: isFirst ? outer : inner,
+      bottom: isLast ? outer : inner,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    // A touch off the dialog's face, so each brick reads as its own piece.
+    final brick = Color.alphaBlend(
+      scheme.onSurface.withValues(alpha: 0.07),
+      OurnegoGlassPalette.navFace(scheme),
+    );
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var i = 0; i < items.length; i++) ...[
+          if (i > 0) const SizedBox(height: _gap),
+          items[i].asBrick(color: brick, radius: _radiusFor(i)),
+        ],
+      ],
+    );
+  }
+}
+
 class _MenuItem extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
   final Color? color;
+  final Color? brickColor;
+  final BorderRadius radius;
 
   const _MenuItem({
     super.key,
@@ -254,23 +319,40 @@ class _MenuItem extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.color,
+    this.brickColor,
+    this.radius = BorderRadius.zero,
   });
+
+  /// The same item, drawn as a brick of a group. Keeps the key.
+  _MenuItem asBrick({required Color color, required BorderRadius radius}) {
+    return _MenuItem(
+      key: key,
+      icon: icon,
+      label: label,
+      onTap: onTap,
+      color: this.color,
+      brickColor: color,
+      radius: radius,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final foreground = color ?? Theme.of(context).colorScheme.onSurface;
 
-    return ListTile(
-      leading: Icon(icon, color: foreground),
-      title: Text(
-        label,
-        style: OurnegoTextStyles.body.copyWith(color: foreground),
+    return Material(
+      color: brickColor ?? Colors.transparent,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(borderRadius: radius),
+      child: ListTile(
+        leading: Icon(icon, color: foreground),
+        title: Text(
+          label,
+          style: OurnegoTextStyles.body.copyWith(color: foreground),
+        ),
+        visualDensity: VisualDensity.compact,
+        onTap: onTap,
       ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(OurnegoRadiusTokens.actionTile),
-      ),
-      visualDensity: VisualDensity.compact,
-      onTap: onTap,
     );
   }
 }
