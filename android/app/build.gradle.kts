@@ -66,9 +66,17 @@ android {
     }
 
     buildTypes {
+        // Profile signs with the release key on purpose: Google Sign-In only
+        // accepts the SHA-1 fingerprints registered as Android OAuth clients,
+        // and the debug key (different on every machine) is not one of them.
+        // Without key.properties both fall back to the debug key.
+        val releaseSigning = signingConfigs.findByName("release")
+            ?: signingConfigs.getByName("debug")
         release {
-            signingConfig = signingConfigs.findByName("release")
-                ?: signingConfigs.getByName("debug")
+            signingConfig = releaseSigning
+        }
+        getByName("profile") {
+            signingConfig = releaseSigning
         }
     }
 }
