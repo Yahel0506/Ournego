@@ -5,8 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
-import 'package:ournego/features/feedback/presentation/widgets/feedback_dialog_widget.dart';
-import 'package:ournego/features/navigation/presentation/providers/navigation_provider.dart';
+import 'package:ournego/features/feedback/presentation/widgets/feedback_flow.dart';
 import 'package:ournego/features/navigation/presentation/widgets/profile_menu/profile_menu_dialog_widget.dart';
 import 'package:ournego/shared/widgets/ournego_alert_dialog.dart';
 
@@ -30,22 +29,12 @@ Future<void> openProfileMenu(
     case ProfileMenuAction.locationPermissions:
       await Geolocator.openAppSettings();
     case ProfileMenuAction.reportProblem:
-      await _openFeedbackDialog(context, ref);
+      await openFeedbackDialog(context, ref);
     case ProfileMenuAction.debugPanel:
       context.go(DebuggingRoutes.debugPanel);
     case ProfileMenuAction.logOut:
       await _confirmLogOut(context, ref);
   }
-}
-
-Future<void> _openFeedbackDialog(BuildContext context, WidgetRef ref) async {
-  if (ref.read(isFeedbackDialogOpenProvider)) return;
-  ref.read(isFeedbackDialogOpenProvider.notifier).setIsOpen();
-  await showDialog<void>(
-    context: context,
-    builder: (_) => const FeedbackDialogWidget(),
-  );
-  ref.read(isFeedbackDialogOpenProvider.notifier).setIsClosed();
 }
 
 Future<void> _confirmLogOut(BuildContext context, WidgetRef ref) {

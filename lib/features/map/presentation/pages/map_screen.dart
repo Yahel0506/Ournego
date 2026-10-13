@@ -12,10 +12,9 @@ import 'package:ournego/core/location/location_access_status.dart';
 import 'package:ournego/core/mapbox_config.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/core/routing/route_names.dart';
-import 'package:ournego/core/theme/tokens/ournego_spacing_tokens.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
 import 'package:ournego/features/business/presentation/providers/business_providers.dart';
-import 'package:ournego/features/feedback/presentation/widgets/feedback_dialog_widget.dart';
+import 'package:ournego/features/feedback/presentation/widgets/feedback_flow.dart';
 import 'package:ournego/features/map/domain/entities/business.dart';
 import 'package:ournego/features/map/domain/entities/business_type.dart';
 import 'package:ournego/features/map/domain/entities/map_location_state.dart';
@@ -38,12 +37,10 @@ import 'package:ournego/features/map/presentation/widgets/map_location_banner_wi
 import 'package:ournego/features/map/presentation/widgets/map_search_overlay_widget.dart';
 import 'package:ournego/features/map/presentation/widgets/top_navigation_bar_widget.dart';
 import 'package:ournego/features/map/presentation/widgets/zone_picker_sheet_widget.dart';
-import 'package:ournego/features/navigation/presentation/providers/navigation_provider.dart';
 import 'package:ournego/shared/widgets/buttons/buttons.dart';
 import 'package:ournego/shared/widgets/nego/nego.dart';
 import 'package:ournego/shared/widgets/ournego_alert_dialog.dart';
 import 'package:ournego/shared/widgets/ournego_content_container.dart';
-import 'package:ournego/shared/widgets/ournego_information_dialog.dart';
 import 'package:ournego/shared/widgets/ournego_snackbars.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -317,54 +314,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
     }
   }
 
-  Future<void> _showSessionErrorDialog() {
-    return showDialog<void>(
-      context: context,
-      builder: (dialogContext) {
-        return OurnegoInformationDialog(
-          title: 'No se pudo verificar tu sesion',
-          description:
-              'Intenta de nuevo en unos segundos. Si el problema continua, envianos feedback.',
-          imagePath: 'assets/images/generic_error.png',
-          actions: Row(
-            children: [
-              Expanded(
-                child: OurnegoButton.secondary(
-                  size: OurnegoButtonSize.compact,
-                  expanded: true,
-                  label: 'Feedback',
-                  onPressed: () async {
-                    Navigator.of(dialogContext).pop();
-                    if (ref.read(isFeedbackDialogOpenProvider)) {
-                      return;
-                    }
-                    ref.read(isFeedbackDialogOpenProvider.notifier).setIsOpen();
-                    await showDialog<void>(
-                      context: context,
-                      builder: (_) => const FeedbackDialogWidget(),
-                    );
-                    ref
-                        .read(isFeedbackDialogOpenProvider.notifier)
-                        .setIsClosed();
-                  },
-                ),
-              ),
-              const SizedBox(width: OurnegoSpacingTokens.sm),
-              Expanded(
-                child: OurnegoButton.primary(
-                  size: OurnegoButtonSize.compact,
-                  expanded: true,
-                  label: 'Entiendo',
-                  onPressed: () => Navigator.of(dialogContext).pop(),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
   Future<void> _onRegisterBusinessTap() async {
     try {
       final isLogged = ref.read(authSessionStatusProvider);
@@ -377,7 +326,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
       }
     } catch (_) {
       if (!context.mounted) return;
-      await _showSessionErrorDialog();
+      await showSessionErrorDialog(context, ref);
     }
   }
 
