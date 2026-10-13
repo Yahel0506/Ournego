@@ -14,6 +14,9 @@ class NegoAvatar extends StatefulWidget {
     this.lookVertical = NegoLookVertical.down,
     this.interactive = true,
     this.onTap,
+    this.eyesClosed = false,
+    this.happyTrigger,
+    this.floating = true,
   });
 
   final double size;
@@ -23,12 +26,22 @@ class NegoAvatar extends StatefulWidget {
   final bool interactive;
   final VoidCallback? onTap;
 
+  /// Holds both eyes closed and pauses blinking while true.
+  final bool eyesClosed;
+
+  /// Each time this value changes to a non-null value, Nego turns happy for
+  /// a moment, even when [interactive] is false.
+  final Object? happyTrigger;
+
+  /// When false the body stays still: no infinite idle animation. Use it
+  /// inside buttons so `pumpAndSettle` can finish in tests.
+  final bool floating;
+
   @override
   State<NegoAvatar> createState() => _NegoAvatarState();
 }
 
-class _NegoAvatarState extends State<NegoAvatar>
-    with TickerProviderStateMixin {
+class _NegoAvatarState extends State<NegoAvatar> with TickerProviderStateMixin {
   late final NegoMotionController _controller;
 
   @override
@@ -40,24 +53,42 @@ class _NegoAvatarState extends State<NegoAvatar>
       lookAngle: widget.lookAngle,
       lookVertical: widget.lookVertical,
       interactive: widget.interactive,
+      eyesClosed: widget.eyesClosed,
+      floating: widget.floating,
+    );
+  }
+
+  // Reduced motion also stops the idle float.
+  bool get _effectiveFloating =>
+      widget.floating &&
+      !(MediaQuery.maybeDisableAnimationsOf(context) ?? false);
+
+  void _syncConfiguration() {
+    _controller.updateConfiguration(
+      mood: widget.mood,
+      lookAngle: widget.lookAngle,
+      lookVertical: widget.lookVertical,
+      interactive: widget.interactive,
+      eyesClosed: widget.eyesClosed,
+      floating: _effectiveFloating,
     );
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _syncConfiguration();
     _controller.setTickerModeEnabled(TickerMode.valuesOf(context).enabled);
   }
 
   @override
   void didUpdateWidget(covariant NegoAvatar oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _controller.updateConfiguration(
-      mood: widget.mood,
-      lookAngle: widget.lookAngle,
-      lookVertical: widget.lookVertical,
-      interactive: widget.interactive,
-    );
+    _syncConfiguration();
+    if (widget.happyTrigger != null &&
+        widget.happyTrigger != oldWidget.happyTrigger) {
+      _controller.triggerHappy(force: true);
+    }
     _controller.setTickerModeEnabled(TickerMode.valuesOf(context).enabled);
   }
 
@@ -79,10 +110,9 @@ class _NegoAvatarState extends State<NegoAvatar>
 
     final double normalizedX = ((localPosition.dx / widget.size) * 2) - 1;
     final double normalizedY = ((localPosition.dy / widget.size) * 2) - 1;
-    _controller.updatePointer(Offset(
-      normalizedX.clamp(-1.0, 1.0),
-      normalizedY.clamp(-1.0, 1.0),
-    ));
+    _controller.updatePointer(
+      Offset(normalizedX.clamp(-1.0, 1.0), normalizedY.clamp(-1.0, 1.0)),
+    );
   }
 
   @override
@@ -132,8 +162,9 @@ class _NegoAvatarState extends State<NegoAvatar>
         },
         child: FocusableActionDetector(
           enabled: widget.interactive,
-          mouseCursor:
-              widget.interactive ? SystemMouseCursors.click : MouseCursor.defer,
+          mouseCursor: widget.interactive
+              ? SystemMouseCursors.click
+              : MouseCursor.defer,
           child: interactiveChild,
         ),
       ),

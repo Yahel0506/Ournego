@@ -20,6 +20,9 @@ NegoAvatar(
   lookVertical: NegoLookVertical.down,
   interactive: true,
   onTap: null,
+  eyesClosed: false,
+  happyTrigger: null,
+  floating: true,
 )
 ```
 
@@ -32,6 +35,9 @@ Parámetros:
   - `true`: habilita pointer tracking (ojos + rotación corporal) y `happy` temporal por tap/click.
   - `false`: render decorativo; no se comporta como botón.
 - `onTap`: callback opcional ejecutado tras el feedback visual de `happy`.
+- `eyesClosed`: mantiene ambos ojos cerrados (`scaleY = NegoTokens.eyesClosedScaleY`, el mismo mecanismo del parpadeo, sin morph de path) y pausa el parpadeo. Lo usan los botones apagados.
+- `happyTrigger`: cada vez que cambia a un valor no nulo, activa el `happy` temporal aunque `interactive` sea `false`. Lo usan los botones al presionarse.
+- `floating`: con `false` el cuerpo queda quieto y no hay animación infinita, así `pumpAndSettle` puede terminar. El Nego mini de los botones siempre usa `floating: false`. Con reduced motion (`MediaQuery.disableAnimationsOf`) tampoco flota.
 
 ## Estados (Moods)
 

@@ -17,47 +17,49 @@ class NegoMotionController extends ChangeNotifier {
     required double lookAngle,
     required NegoLookVertical lookVertical,
     required bool interactive,
-  })  : _vsync = vsync,
-        _mood = mood,
-        _lookAngle = lookAngle,
-        _lookVertical = lookVertical,
-        _interactive = interactive {
+    bool eyesClosed = false,
+    bool floating = true,
+  }) : _vsync = vsync,
+       _mood = mood,
+       _lookAngle = lookAngle,
+       _lookVertical = lookVertical,
+       _interactive = interactive,
+       _eyesClosed = eyesClosed,
+       _floating = floating {
     _fromGeometry = _targetGeometry;
     _toGeometry = _targetGeometry;
 
     _idleController = AnimationController(
       vsync: _vsync,
       duration: _targetGeometry.floatDuration,
-    )..repeat();
+    );
+    if (_floating) _idleController.repeat();
 
     _moodTransitionController = AnimationController(
       vsync: _vsync,
       duration: NegoTokens.motionTransition,
     )..addListener(_handleControllerTick);
 
-    _blinkController = AnimationController(
-      vsync: _vsync,
-      duration: const Duration(milliseconds: 180),
-    )
-      ..addListener(_handleControllerTick)
-      ..addStatusListener(_handleBlinkStatus);
+    _blinkController =
+        AnimationController(
+            vsync: _vsync,
+            duration: const Duration(milliseconds: 180),
+          )
+          ..addListener(_handleControllerTick)
+          ..addStatusListener(_handleBlinkStatus);
 
     _happyController = AnimationController(
       vsync: _vsync,
       duration: NegoTokens.happyPulseDuration,
     )..addListener(_handleControllerTick);
 
-    _pointerXController = AnimationController.unbounded(
-      vsync: _vsync,
-      value: 0,
-    )..addListener(_handleControllerTick);
+    _pointerXController = AnimationController.unbounded(vsync: _vsync, value: 0)
+      ..addListener(_handleControllerTick);
 
-    _pointerYController = AnimationController.unbounded(
-      vsync: _vsync,
-      value: 0,
-    )..addListener(_handleControllerTick);
+    _pointerYController = AnimationController.unbounded(vsync: _vsync, value: 0)
+      ..addListener(_handleControllerTick);
 
-    _scheduleNextBlink();
+    _syncBlinkState();
   }
 
   final TickerProvider _vsync;
@@ -84,49 +86,57 @@ class NegoMotionController extends ChangeNotifier {
   double _lookAngle;
   NegoLookVertical _lookVertical;
   bool _interactive;
+  bool _eyesClosed;
+  bool _floating;
 
-  NegoGeometryState _fromGeometry = NegoGeometryState.forMood(mood: NegoMood.idle);
-  NegoGeometryState _toGeometry = NegoGeometryState.forMood(mood: NegoMood.idle);
+  NegoGeometryState _fromGeometry = NegoGeometryState.forMood(
+    mood: NegoMood.idle,
+  );
+  NegoGeometryState _toGeometry = NegoGeometryState.forMood(
+    mood: NegoMood.idle,
+  );
 
   NegoMood get mood => _mood;
   bool get isHappy => activeMood == NegoMood.happy;
   bool get interactive => _interactive;
+  bool get eyesClosed => _eyesClosed;
+  bool get floating => _floating;
   NegoMood get activeMood => _temporaryMood ?? _mood;
 
   NegoGeometryState get _targetGeometry =>
       NegoGeometryState.forMood(mood: activeMood);
 
   NegoGeometryState get geometry => NegoGeometryState.lerp(
-        _fromGeometry,
-        _toGeometry,
-        _moodTransitionController.value,
-      );
+    _fromGeometry,
+    _toGeometry,
+    _moodTransitionController.value,
+  );
 
   NegoMotionValues get motionValues {
     final NegoGeometryState currentGeometry = geometry;
     final double idlePhase = _idleController.value * math.pi * 2;
     final double bodyTranslationY =
         -currentGeometry.floatAmplitude * (1 - math.cos(idlePhase)) / 2;
-    final double pointerRotation =
-        _interactive ? _pointerXController.value * NegoTokens.bodyRotationRange : 0;
-    final double lookRotationDegrees =
-        activeMood == NegoMood.looking ? _clampedLookAngle() : 0;
-    final double pointerEyeX =
-        _interactive && activeMood != NegoMood.looking
-            ? _pointerXController.value * NegoTokens.eyePointerXRange
-            : 0;
+    final double pointerRotation = _interactive
+        ? _pointerXController.value * NegoTokens.bodyRotationRange
+        : 0;
+    final double lookRotationDegrees = activeMood == NegoMood.looking
+        ? _clampedLookAngle()
+        : 0;
+    final double pointerEyeX = _interactive && activeMood != NegoMood.looking
+        ? _pointerXController.value * NegoTokens.eyePointerXRange
+        : 0;
     final double pointerEyeY = _interactive
         ? _pointerYController.value * NegoTokens.eyePointerYRange
         : 0;
-    final double lookingEyeY =
-        activeMood == NegoMood.looking ? _lookingOffsetY() : 0;
+    final double lookingEyeY = activeMood == NegoMood.looking
+        ? _lookingOffsetY()
+        : 0;
     final double happyT = Curves.easeInOut.transform(_happyController.value);
     final double happyPulseScale = isHappy
         ? 0.9 + (math.sin(math.pi * happyT) * 0.55)
         : 0.9;
-    final double happyPulseOpacity = isHappy
-        ? 0.45 * (1 - happyT)
-        : 0;
+    final double happyPulseOpacity = isHappy ? 0.45 * (1 - happyT) : 0;
     final double happyBodyScale = isHappy
         ? 1 + (math.sin(math.pi * happyT) * 0.08)
         : 1;
@@ -150,6 +160,8 @@ class NegoMotionController extends ChangeNotifier {
     required double lookAngle,
     required NegoLookVertical lookVertical,
     required bool interactive,
+    bool eyesClosed = false,
+    bool floating = true,
   }) {
     final bool moodChanged = mood != _mood;
     final bool lookChanged =
@@ -160,6 +172,7 @@ class NegoMotionController extends ChangeNotifier {
     _lookAngle = lookAngle;
     _lookVertical = lookVertical;
     _interactive = interactive;
+    _eyesClosed = eyesClosed;
 
     _syncBlinkState();
 
@@ -173,7 +186,16 @@ class NegoMotionController extends ChangeNotifier {
     }
 
     final Duration targetDuration = _targetGeometry.floatDuration;
-    if (_idleController.duration != targetDuration) {
+    final bool floatingChanged = floating != _floating;
+    _floating = floating;
+    if (!_floating) {
+      // A still body: no infinite ticker, so pumpAndSettle can finish.
+      if (floatingChanged || _idleController.isAnimating) {
+        _idleController
+          ..stop()
+          ..value = 0;
+      }
+    } else if (floatingChanged || _idleController.duration != targetDuration) {
       _idleController
         ..duration = targetDuration
         ..repeat();
@@ -221,8 +243,10 @@ class NegoMotionController extends ChangeNotifier {
     );
   }
 
-  void triggerHappy() {
-    if (!_interactive) return;
+  /// Shows the temporary happy mood. `force` bypasses [interactive], for
+  /// decorative avatars driven by their parent (e.g. a pressed button).
+  void triggerHappy({bool force = false}) {
+    if (!_interactive && !force) return;
 
     _temporaryMood = NegoMood.happy;
     _happyController.forward(from: 0);
@@ -239,6 +263,15 @@ class NegoMotionController extends ChangeNotifier {
   }
 
   void _syncBlinkState() {
+    // Closed eyes hold the same vertical scale the blink uses, without
+    // scheduling blinks. This is not a path morph.
+    if (_eyesClosed) {
+      _cancelBlink();
+      _isBlinkScaleOverridden = true;
+      _blinkScaleY = NegoTokens.eyesClosedScaleY;
+      return;
+    }
+
     // Blink is additive/overlay and must not stop idle motion, but it is
     // disabled entirely while winking (per spec).
     if (activeMood == NegoMood.winking) {
@@ -252,10 +285,24 @@ class NegoMotionController extends ChangeNotifier {
       return;
     }
 
-    _isBlinkScaleOverridden = false;
-    if (_tickerModeEnabled && _blinkTimer == null && !_blinkController.isAnimating) {
+    if (_isBlinkScaleOverridden) {
+      _isBlinkScaleOverridden = false;
+      _blinkScaleY = 1;
+    }
+    if (_tickerModeEnabled &&
+        _blinkTimer == null &&
+        !_blinkController.isAnimating) {
       _scheduleNextBlink();
     }
+  }
+
+  void _cancelBlink() {
+    _blinkTimer?.cancel();
+    _blinkTimer = null;
+    _blinkHoldTimer?.cancel();
+    _blinkHoldTimer = null;
+    _blinkController.stop();
+    _blinkClosing = false;
   }
 
   void disposeController() {
@@ -284,7 +331,7 @@ class NegoMotionController extends ChangeNotifier {
   }
 
   void _scheduleNextBlink() {
-    if (!_tickerModeEnabled || activeMood == NegoMood.winking) {
+    if (!_tickerModeEnabled || _eyesClosed || activeMood == NegoMood.winking) {
       return;
     }
 
@@ -295,6 +342,7 @@ class NegoMotionController extends ChangeNotifier {
 
     _blinkTimer = Timer(Duration(milliseconds: delayMs), () {
       _blinkTimer = null;
+      if (_eyesClosed) return;
       if (!_tickerModeEnabled || activeMood == NegoMood.winking) {
         _scheduleNextBlink();
         return;
@@ -329,7 +377,9 @@ class NegoMotionController extends ChangeNotifier {
       _blinkScaleY = ui.lerpDouble(_blinkFromScaleY, _blinkToScaleY, t)!;
     }
 
-    if (activeMood == NegoMood.winking) {
+    if (_eyesClosed) {
+      _blinkScaleY = NegoTokens.eyesClosedScaleY;
+    } else if (activeMood == NegoMood.winking) {
       _blinkScaleY = 1;
     }
 
@@ -344,8 +394,9 @@ class NegoMotionController extends ChangeNotifier {
     _blinkClosing = true;
     _blinkFromScaleY = 1;
     _blinkToScaleY = NegoTokens.blinkScaleY;
-    _blinkController.duration =
-        Duration(milliseconds: NegoTokens.blinkClosedDurationMs.round());
+    _blinkController.duration = Duration(
+      milliseconds: NegoTokens.blinkClosedDurationMs.round(),
+    );
     _blinkController.forward(from: 0);
   }
 
@@ -354,14 +405,16 @@ class NegoMotionController extends ChangeNotifier {
 
     _blinkFromScaleY = NegoTokens.blinkScaleY;
     _blinkToScaleY = 1;
-    _blinkController.duration =
-        Duration(milliseconds: NegoTokens.blinkOpenDurationMs.round());
+    _blinkController.duration = Duration(
+      milliseconds: NegoTokens.blinkOpenDurationMs.round(),
+    );
     _blinkController.forward(from: 0);
   }
 
   double _lookingOffsetY() {
-    final double lookDirection =
-        _lookVertical == NegoLookVertical.down ? 1 : -1;
+    final double lookDirection = _lookVertical == NegoLookVertical.down
+        ? 1
+        : -1;
     final double lookIntensity = math.max(
       NegoTokens.lookIntensityMin,
       _clampedLookAngle().abs(),
@@ -370,9 +423,6 @@ class NegoMotionController extends ChangeNotifier {
   }
 
   double _clampedLookAngle() {
-    return _lookAngle.clamp(
-      NegoTokens.lookAngleMin,
-      NegoTokens.lookAngleMax,
-    );
+    return _lookAngle.clamp(NegoTokens.lookAngleMin, NegoTokens.lookAngleMax);
   }
 }
