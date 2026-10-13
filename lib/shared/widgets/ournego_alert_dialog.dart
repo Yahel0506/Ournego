@@ -53,7 +53,7 @@ class OurnegoAlertDialog extends StatelessWidget {
           customVerticalPadding: 0,
           customHorizontalPadding: 0,
           hasBlur: true,
-          borderRadius: OurnegoRadiusTokens.sheet,
+          borderRadius: OurnegoRadiusTokens.window,
           child: AlertDialog(
             backgroundColor: Colors.transparent,
             title: Text(title, style: OurnegoTextStyles.title),

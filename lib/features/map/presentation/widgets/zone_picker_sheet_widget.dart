@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ournego/core/failures.dart';
 import 'package:ournego/core/location/app_position.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
+import 'package:ournego/core/theme/tokens/ournego_radius_tokens.dart';
 import 'package:ournego/core/theme/tokens/ournego_spacing_tokens.dart';
 import 'package:ournego/features/map/domain/entities/manual_zone.dart';
 import 'package:ournego/features/map/domain/entities/reference_location.dart';
@@ -38,6 +39,11 @@ Future<ZonePickerResult?> showZonePickerSheet(
     useRootNavigator: true,
     isScrollControlled: true,
     showDragHandle: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(OurnegoRadiusTokens.window),
+      ),
+    ),
     builder: (_) =>
         ZonePickerSheet(mapCenter: mapCenter, currentZone: currentZone),
   );

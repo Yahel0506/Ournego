@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:ournego/core/location/location_access_status.dart';
 import 'package:ournego/core/theme/tokens/ournego_spacing_tokens.dart';
+import 'package:ournego/core/theme/tokens/ournego_radius_tokens.dart';
 import 'package:ournego/shared/widgets/buttons/buttons.dart';
 import 'package:ournego/shared/widgets/nego/nego.dart';
 
@@ -27,6 +28,11 @@ Future<LocationAccessSheetAction?> showLocationAccessSheet(
     useRootNavigator: true,
     isScrollControlled: true,
     showDragHandle: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(OurnegoRadiusTokens.window),
+      ),
+    ),
     builder: (_) => LocationAccessSheet(status: status),
   );
 }

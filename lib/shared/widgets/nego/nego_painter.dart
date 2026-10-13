@@ -27,15 +27,12 @@ class NegoPainter extends CustomPainter {
     final double faceStrokeWidth = NegoTokens.faceStrokeWidth * scale;
     final double faceRadius =
         (math.min(canvasSize.width, canvasSize.height) / 2) -
-            (faceStrokeWidth / 2);
+        (faceStrokeWidth / 2);
     final double glowRadius = faceRadius * geometry.glowScale;
     final double bodyScale = geometry.bodyScale * motion.happyBodyScale;
 
     canvas.save();
-    canvas.translate(
-      center.dx,
-      center.dy + (motion.bodyTranslationY * scale),
-    );
+    canvas.translate(center.dx, center.dy + (motion.bodyTranslationY * scale));
     canvas.rotate(motion.bodyRotationDegrees * math.pi / 180);
     canvas.scale(bodyScale, bodyScale);
     canvas.translate(-center.dx, -center.dy);
@@ -174,9 +171,7 @@ class NegoPainter extends CustomPainter {
     required bool applyExcitedCutout,
     required bool applyWinkingCutout,
   }) {
-    final double x = left
-        ? center.dx - gap / 2 - width
-        : center.dx + gap / 2;
+    final double x = left ? center.dx - gap / 2 - width : center.dx + gap / 2;
     final double y = center.dy - height / 2;
     final Offset topLeft = Offset(x, y);
 
@@ -233,10 +228,7 @@ class NegoPainter extends CustomPainter {
     canvas.drawPath(path, strokePaint);
   }
 
-  void _drawWinkingCutout({
-    required Canvas canvas,
-    required Color color,
-  }) {
+  void _drawWinkingCutout({required Canvas canvas, required Color color}) {
     canvas.drawPath(
       NegoPaths.winkingCutoutActive(),
       Paint()

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:ournego/core/location/app_position.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
+import 'package:ournego/core/theme/tokens/ournego_radius_tokens.dart';
 import 'package:ournego/features/map/domain/entities/business.dart';
 import 'package:ournego/features/map/domain/entities/business_type.dart';
 import 'package:ournego/features/map/presentation/controllers/search_businesses_usecase.dart';
@@ -241,7 +242,7 @@ class MapSearchOverlayWidget extends StatelessWidget {
         padding: EdgeInsets.fromLTRB(16, topBarHeight + 10, 16, bottomInset),
         child: OurnegoContentContainer(
           backgroundColor: Theme.of(context).colorScheme.surface,
-          borderRadius: 24,
+          borderRadius: OurnegoRadiusTokens.window,
           hasBlur: false,
           customHorizontalPadding: 0,
           customVerticalPadding: 0,

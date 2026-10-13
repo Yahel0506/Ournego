@@ -26,7 +26,7 @@ void main() {
     expect(OurnegoSpacingTokens.navHeight, 72);
     expect(OurnegoRadiusTokens.input, OurnegoRadiusTokens.xl);
     expect(OurnegoRadiusTokens.container, OurnegoRadiusTokens.xl);
-    expect(OurnegoRadiusTokens.sheet, 18);
+    expect(OurnegoRadiusTokens.window, 24);
     expect(OurnegoRadiusTokens.button, 24);
   });
 

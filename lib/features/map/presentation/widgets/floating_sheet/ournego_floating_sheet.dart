@@ -248,7 +248,7 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet> {
           color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
           width: 1,
         ),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(OurnegoRadiusTokens.window),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.35),
@@ -407,7 +407,9 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet> {
                       ).colorScheme.outline.withValues(alpha: 0.3),
                       width: 1,
                     ),
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(
+                      OurnegoRadiusTokens.window,
+                    ),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.35),

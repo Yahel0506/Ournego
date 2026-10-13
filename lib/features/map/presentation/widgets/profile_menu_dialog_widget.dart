@@ -46,7 +46,7 @@ class ProfileMenuDialogWidget extends ConsumerWidget {
             type: MaterialType.transparency,
             child: OurnegoContentContainer(
               hasBlur: true,
-              borderRadius: OurnegoRadiusTokens.sheet,
+              borderRadius: OurnegoRadiusTokens.window,
               customHorizontalPadding: OurnegoSpacingTokens.xs,
               customVerticalPadding: OurnegoSpacingTokens.md,
               child: SingleChildScrollView(
