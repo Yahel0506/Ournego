@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:ournego/core/startup/ournego_splash_animation.dart';
 import 'package:ournego/core/startup/startup_controller.dart';
 import 'package:ournego/core/startup/startup_gate.dart';
 
@@ -213,4 +214,121 @@ void main() {
       }
     },
   );
+
+  group('splash', () {
+    const splashKey = Key('fake-splash');
+    const hold = Duration(milliseconds: 500);
+    const exit = Duration(milliseconds: 900);
+
+    late VoidCallback completeAnimation;
+    Widget fakeSplash(VoidCallback onAnimationCompleted) {
+      completeAnimation = onAnimationCompleted;
+      return const SizedBox(key: splashKey);
+    }
+
+    testWidgets(
+      'app is built under the splash and revealed only after the animation '
+      'and the minimum hold, keeping its state',
+      (tester) async {
+        var appBuilds = 0;
+        await tester.pumpWidget(
+          StartupGate(
+            controller: _controller(),
+            splashBuilder: fakeSplash,
+            appBuilder: (_) {
+              appBuilds++;
+              return const MaterialApp(home: Text('routed feature'));
+            },
+          ),
+        );
+        await tester.pump();
+        // Startup is ready, but the app waits for the animation to finish.
+        expect(appBuilds, 0);
+        expect(find.byKey(splashKey), findsOneWidget);
+
+        completeAnimation();
+        await tester.pump();
+        // Built under the static logo, which still covers it.
+        expect(appBuilds, 1);
+        expect(find.byKey(splashKey), findsOneWidget);
+        await tester.pump(hold - const Duration(milliseconds: 2));
+        expect(find.byKey(splashKey), findsOneWidget);
+
+        await tester.pump(const Duration(milliseconds: 2));
+        await tester.pump(exit ~/ 2);
+        expect(find.byKey(splashKey), findsOneWidget);
+
+        await tester.pumpAndSettle();
+        expect(find.byKey(splashKey), findsNothing);
+        expect(find.text('routed feature'), findsOneWidget);
+        expect(appBuilds, 1);
+      },
+    );
+
+    testWidgets('logo holds until slow startup finishes', (tester) async {
+      final sdk = Completer<void>();
+      await tester.pumpWidget(
+        StartupGate(
+          controller: _controller(initialize: (_) => sdk.future),
+          splashBuilder: fakeSplash,
+          appBuilder: (_) => const MaterialApp(home: Text('routed feature')),
+        ),
+      );
+      completeAnimation();
+      await tester.pump(const Duration(seconds: 3));
+      expect(find.byKey(splashKey), findsOneWidget);
+      // No "starting" status screen behind the splash.
+      expect(find.text('Preparando Ournego'), findsNothing);
+
+      sdk.complete();
+      await tester.pumpAndSettle();
+      expect(find.byKey(splashKey), findsNothing);
+      expect(find.text('routed feature'), findsOneWidget);
+    });
+
+    testWidgets('fast startup still waits for the whole animation', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        StartupGate(
+          controller: _controller(),
+          splashBuilder: fakeSplash,
+          appBuilder: (_) => const MaterialApp(home: Text('routed feature')),
+        ),
+      );
+      await tester.pump(const Duration(seconds: 10));
+      expect(find.byKey(splashKey), findsOneWidget);
+    });
+
+    testWidgets('startup failure is revealed after the splash', (tester) async {
+      await tester.pumpWidget(
+        StartupGate(
+          controller: _controller(
+            prepare: () async => throw StateError('boom'),
+          ),
+          splashBuilder: fakeSplash,
+          appBuilder: (_) => const MaterialApp(home: Text('routed feature')),
+        ),
+      );
+      completeAnimation();
+      await tester.pump(hold);
+      expect(find.byKey(splashKey), findsOneWidget);
+      await tester.pumpAndSettle();
+      expect(find.byKey(splashKey), findsNothing);
+      expect(find.text('No pudimos iniciar Ournego'), findsOneWidget);
+    });
+
+    testWidgets('missing splash asset never blocks startup', (tester) async {
+      var completed = false;
+      await tester.pumpWidget(
+        OurnegoSplashAnimation(
+          asset: 'assets/splash/missing.webp',
+          onAnimationCompleted: () => completed = true,
+        ),
+      );
+      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+      await tester.pump();
+      expect(completed, isTrue);
+    });
+  });
 }

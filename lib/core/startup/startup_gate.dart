@@ -1,4 +1,9 @@
+import 'dart:async';
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:ournego/core/ournego_colors.dart';
@@ -7,17 +12,35 @@ import 'package:ournego/core/startup/startup_controller.dart';
 typedef StartupAppBuilder = Widget Function(bool startOnMap);
 typedef StartupSupportLauncher = Future<bool> Function(Uri uri);
 
+/// Builds the animated splash. It must call `onAnimationCompleted` once the
+/// animation reaches its final (static) logo frame.
+typedef StartupSplashBuilder =
+    Widget Function(VoidCallback onAnimationCompleted);
+
 class StartupGate extends StatefulWidget {
   const StartupGate({
     super.key,
     required this.controller,
     required this.appBuilder,
     this.supportLauncher = _launchSupport,
+    this.splashBuilder,
+    this.splashMinimumHold = const Duration(milliseconds: 500),
+    this.splashExitDuration = const Duration(milliseconds: 900),
   });
 
   final StartupController controller;
   final StartupAppBuilder appBuilder;
   final StartupSupportLauncher supportLauncher;
+
+  /// Animated splash shown over startup; null disables it (web).
+  ///
+  /// The splash always plays to its final logo. The logo then stays static
+  /// for at least [splashMinimumHold] and until startup settles (app ready or
+  /// startup error), while the app is built underneath it. Finally the splash
+  /// blurs and slides away over [splashExitDuration], revealing the app.
+  final StartupSplashBuilder? splashBuilder;
+  final Duration splashMinimumHold;
+  final Duration splashExitDuration;
 
   static Future<bool> _launchSupport(Uri uri) =>
       launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -26,14 +49,60 @@ class StartupGate extends StatefulWidget {
   State<StartupGate> createState() => _StartupGateState();
 }
 
-class _StartupGateState extends State<StartupGate> {
+enum _SplashPhase { playing, holding, exiting, done }
+
+class _StartupGateState extends State<StartupGate>
+    with SingleTickerProviderStateMixin {
+  late _SplashPhase _splashPhase = widget.splashBuilder == null
+      ? _SplashPhase.done
+      : _SplashPhase.playing;
+  bool _splashHoldElapsed = false;
+  Timer? _splashHoldTimer;
+  late final AnimationController _splashExit;
+  // Built once so splash phase changes never rebuild the app subtree.
+  Widget? _app;
+
   void _onControllerChanged() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    setState(() {});
+    // Reveal only after the frame that builds the app (or the error screen)
+    // underneath the splash, so its first heavy build never stalls the exit.
+    if (_splashPhase == _SplashPhase.holding) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _maybeExitSplash());
+    }
+  }
+
+  void _onSplashAnimationCompleted() {
+    if (!mounted || _splashPhase != _SplashPhase.playing) return;
+    // Builds the app (if ready) under the logo while the hold runs.
+    setState(() => _splashPhase = _SplashPhase.holding);
+    _splashHoldTimer = Timer(widget.splashMinimumHold, () {
+      _splashHoldElapsed = true;
+      _maybeExitSplash();
+    });
+  }
+
+  void _maybeExitSplash() {
+    if (!mounted ||
+        _splashPhase != _SplashPhase.holding ||
+        !_splashHoldElapsed ||
+        widget.controller.state.isStarting) {
+      return;
+    }
+    setState(() => _splashPhase = _SplashPhase.exiting);
+    _splashExit.forward();
   }
 
   @override
   void initState() {
     super.initState();
+    _splashExit =
+        AnimationController(vsync: this, duration: widget.splashExitDuration)
+          ..addStatusListener((status) {
+            if (status == AnimationStatus.completed && mounted) {
+              setState(() => _splashPhase = _SplashPhase.done);
+            }
+          });
     widget.controller.addListener(_onControllerChanged);
     widget.controller.start();
   }
@@ -44,6 +113,7 @@ class _StartupGateState extends State<StartupGate> {
     if (oldWidget.controller != widget.controller) {
       oldWidget.controller.removeListener(_onControllerChanged);
       oldWidget.controller.dispose();
+      _app = null;
       widget.controller.addListener(_onControllerChanged);
       widget.controller.start();
     }
@@ -51,15 +121,24 @@ class _StartupGateState extends State<StartupGate> {
 
   @override
   void dispose() {
+    _splashHoldTimer?.cancel();
+    _splashExit.dispose();
     widget.controller.removeListener(_onControllerChanged);
     widget.controller.dispose();
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildContent() {
     final state = widget.controller.state;
-    if (state.isReady) return widget.appBuilder(state.startOnMap);
+    // The app is first built under the static logo, so its heavy first build
+    // never stalls the splash animation.
+    if (state.isReady && _splashPhase != _SplashPhase.playing) {
+      return _app ??= widget.appBuilder(state.startOnMap);
+    }
+    // The splash already tells the user Ournego is starting.
+    if (state.failure == null && _splashPhase != _SplashPhase.done) {
+      return const SizedBox.shrink();
+    }
     return MaterialApp(
       title: 'Ournego',
       theme: OurnegoColors.lightTheme,
@@ -69,6 +148,166 @@ class _StartupGateState extends State<StartupGate> {
         onRetry: widget.controller.retry,
         supportLauncher: widget.supportLauncher,
       ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final content = _buildContent();
+    final splashBuilder = widget.splashBuilder;
+    if (splashBuilder == null) return content;
+
+    final reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    // Keyed so the app keeps its state when the splash layer is removed.
+    return Stack(
+      textDirection: TextDirection.ltr,
+      fit: StackFit.expand,
+      children: [
+        KeyedSubtree(
+          key: const ValueKey('startup-content'),
+          child: _SplashReveal(
+            animation: _splashExit,
+            active: _splashPhase == _SplashPhase.exiting,
+            reduceMotion: reduceMotion,
+            child: content,
+          ),
+        ),
+        if (_splashPhase != _SplashPhase.done)
+          KeyedSubtree(
+            key: const ValueKey('startup-splash'),
+            child: _SplashExit(
+              animation: _splashExit,
+              exiting: _splashPhase == _SplashPhase.exiting,
+              reduceMotion: reduceMotion,
+              child: _SplashBackdrop(
+                child: splashBuilder(_onSplashAnimationCompleted),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// Theme-aware background with the splash centered on it.
+class _SplashBackdrop extends StatelessWidget {
+  const _SplashBackdrop({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = MediaQuery.platformBrightnessOf(context) == Brightness.dark;
+    final theme = isDark ? OurnegoColors.darkTheme : OurnegoColors.lightTheme;
+    final size = (MediaQuery.sizeOf(context).shortestSide * 0.72).clamp(
+      0.0,
+      320.0,
+    );
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+      child: ColoredBox(
+        color: theme.scaffoldBackgroundColor,
+        child: Center(
+          child: SizedBox.square(dimension: size, child: child),
+        ),
+      ),
+    );
+  }
+}
+
+/// Splash layer: drifts up while it blurs and fades out.
+class _SplashExit extends StatelessWidget {
+  const _SplashExit({
+    required this.animation,
+    required this.exiting,
+    required this.reduceMotion,
+    required this.child,
+  });
+
+  static const _slide = Curves.fastOutSlowIn;
+  static const _blur = Interval(0.0, 0.7, curve: Curves.easeOut);
+  static const _fade = Interval(0.1, 0.85, curve: Curves.easeInOut);
+
+  final Animation<double> animation;
+  final bool exiting;
+  final bool reduceMotion;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      ignoring: exiting,
+      // Blocks touches to the app underneath while the splash covers it.
+      child: AbsorbPointer(
+        absorbing: !exiting,
+        child: AnimatedBuilder(
+          animation: animation,
+          child: child,
+          builder: (context, child) {
+            final t = animation.value;
+            final opacity = 1 - _fade.transform(t);
+            if (reduceMotion) return Opacity(opacity: opacity, child: child);
+            final sigma = 20 * _blur.transform(t);
+            return Opacity(
+              opacity: opacity,
+              child: ImageFiltered(
+                enabled: sigma > 0.01,
+                imageFilter: ui.ImageFilter.blur(
+                  sigmaX: sigma,
+                  sigmaY: sigma,
+                  tileMode: TileMode.decal,
+                ),
+                child: FractionalTranslation(
+                  translation: Offset(0, -0.22 * _slide.transform(t)),
+                  child: child,
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+/// Content layer: settles in from slightly below while it comes into focus.
+///
+/// It always builds the same widget tree (filter disabled, zero offset when
+/// idle) so the app never loses state when the splash starts or ends.
+class _SplashReveal extends StatelessWidget {
+  const _SplashReveal({
+    required this.animation,
+    required this.active,
+    required this.reduceMotion,
+    required this.child,
+  });
+
+  static const _settle = Interval(0.15, 1.0, curve: Curves.easeOutCubic);
+
+  final Animation<double> animation;
+  final bool active;
+  final bool reduceMotion;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: animation,
+      child: child,
+      builder: (context, child) {
+        final remaining = reduceMotion || !active
+            ? 0.0
+            : 1 - _settle.transform(animation.value);
+        final sigma = 12 * remaining;
+        return ImageFiltered(
+          enabled: sigma > 0.01,
+          imageFilter: ui.ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
+          child: FractionalTranslation(
+            translation: Offset(0, 0.04 * remaining),
+            child: child,
+          ),
+        );
+      },
     );
   }
 }
