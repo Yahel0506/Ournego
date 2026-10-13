@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:ournego/core/failures.dart';
 import 'package:ournego/core/network/network_error_classifier.dart';
 import 'package:ournego/core/location/app_position.dart';
-import 'package:ournego/features/business/data/datasources/business_geocoding_datasource.dart';
+import 'package:ournego/core/geocoding/locationiq_geocoding_datasource.dart';
 import 'package:ournego/features/business/data/datasources/business_supabase_datasource.dart';
 import 'package:ournego/features/business/data/errors/business_registration_exceptions.dart';
 import 'package:ournego/features/business/domain/entities/app_schedule.dart';
@@ -14,7 +14,7 @@ import 'package:ournego/features/business/domain/repositories/business_repositor
 
 class BusinessRepositoryImpl implements BusinessRepository {
   final BusinessSupabaseDatasource businessDatasource;
-  final BusinessGeocodingDatasource geocodingDatasource;
+  final LocationIqGeocodingDatasource geocodingDatasource;
 
   BusinessRepositoryImpl({
     required this.businessDatasource,

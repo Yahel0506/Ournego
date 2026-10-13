@@ -15,10 +15,13 @@ import 'package:ournego/features/auth/domain/repositories/auth_repository.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
 import 'package:ournego/features/business/domain/repositories/business_repository.dart';
 import 'package:ournego/features/business/presentation/providers/business_providers.dart';
+import 'package:ournego/features/map/domain/repositories/manual_zone_repository.dart';
 import 'package:ournego/features/map/domain/repositories/map_repository.dart';
 import 'package:ournego/features/map/presentation/providers/map_providers.dart';
 import 'package:ournego/features/onboarding/domain/repositories/onboarding_repository.dart';
 import 'package:ournego/features/onboarding/presentation/providers/onboarding_providers.dart';
+
+import '../fakes/fake_manual_zone_repository.dart';
 
 Widget buildTestApp(
   List<Override> overrides, {
@@ -125,9 +128,13 @@ List<Override> businessOverrides(BusinessRepository repository) {
 List<Override> mapOverrides(
   MapRepository repository, {
   bool mapTilesEnabled = false,
+  ManualZoneRepository? zoneRepository,
 }) {
   return [
     mapRepositoryProvider.overrideWith((ref) => repository),
+    manualZoneRepositoryProvider.overrideWith(
+      (ref) => zoneRepository ?? FakeManualZoneRepository(),
+    ),
     mapTilesEnabledProvider.overrideWith((ref) => mapTilesEnabled),
   ];
 }

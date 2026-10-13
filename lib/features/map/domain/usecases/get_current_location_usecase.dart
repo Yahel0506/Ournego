@@ -10,9 +10,11 @@ class GetCurrentLocationUsecase {
 
   Future<Either<Failure, AppPosition>> call({
     bool requestPermissionIfNeeded = true,
+    bool resolveServiceIfDisabled = false,
   }) async {
     return repository.getCurrentLocation(
       requestPermissionIfNeeded: requestPermissionIfNeeded,
+      resolveServiceIfDisabled: resolveServiceIfDisabled,
     );
   }
 }

@@ -67,6 +67,13 @@ patrol test integration_test/auth_test.dart
 - Tap en negocio abre detalle y muestra nombre (TODO: distancia aún no renderizada).
 - Actualización de nombre de negocio por stream se refleja sin reload manual.
 
+### Mapa sin ubicación (OUR-133, `test/`)
+
+- `test/core/location/geolocator_location_datasource_test.dart`: estado de permiso/GPS sin pedir nada, diálogo nativo en Android, timeout que solo cuenta en primer plano. Usa un `GeolocatorPlatform` falso (`MockPlatformInterfaceMixin`).
+- `test/features/map/presentation/providers/map_notifier_test.dart`: cada estado (concedido, denegado, denegado permanente, GPS apagado, no disponible), recuperación al volver a la app, diálogo de GPS rechazado y zona manual. Nunca queda en error ni en carga infinita.
+- `test/features/map/presentation/map_location_access_test.dart` y `map_zone_test.dart`: sheet de Nego, banner, selector de zona, chip y búsqueda con distancias.
+- `test/core/geocoding` y `test/features/map/data/manual_zone_test.dart`: LocationIQ con `MockClient`, guardado de la zona y errores de red.
+
 ## Control de calidad Android en CI
 
 El workflow `.github/workflows/android-ci.yml` ejecuta este gate en pull requests,
@@ -150,3 +157,14 @@ Ejecutar en Android (emulador o dispositivo), con una cuenta completa:
 5. Como dueño de negocio, sin red, abrir el panel: error con "Reintentar", nunca "Registrar negocio".
 6. Cerrar sesión manualmente: no aparece el diálogo de sesión vencida.
 
+## Checklist manual: mapa sin ubicación (OUR-133)
+
+Ejecutar en Android (emulador o dispositivo con Google Play Services). En un
+emulador nuevo el diálogo nativo puede pedir además "Location Accuracy".
+
+1. Revocar el permiso (`adb shell pm revoke com.ournego.app android.permission.ACCESS_FINE_LOCATION`, y COARSE) y abrir la app: aparece el sheet de Nego sin que salga antes el diálogo del sistema. "Continuar sin ubicación" deja el banner "Ournego no puede ver tu ubicación" y el chip "Zona: Ciudad Guzmán".
+2. "Permitir" abre el diálogo del sistema. Rechazarlo dos veces abre el sheet "Elegir mi zona / Abrir ajustes".
+3. "Elegir mi zona": buscar una colonia o usar el centro del mapa. El chip y las distancias de la búsqueda cambian y la zona sigue al reiniciar la app.
+4. "Abrir ajustes", conceder el permiso y volver: el banner y el chip desaparecen y aparece el marcador.
+5. Con la app abierta, apagar la ubicación del dispositivo: aparece el diálogo nativo. Aceptar recupera la posición; rechazar deja el banner "Tu GPS está apagado" con "Activar" y el diálogo no se repite al volver a la app.
+6. En ningún caso hay pantalla en blanco, carga infinita ni navegación rota. Revisar también en modo oscuro.

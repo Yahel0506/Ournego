@@ -6,3 +6,4 @@ export 'nego_motion_values.dart';
 export 'nego_painter.dart';
 export 'nego_paths.dart';
 export 'nego_tokens.dart';
+export 'nego_speech_bubble.dart';

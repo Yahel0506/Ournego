@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:ournego/features/business/data/datasources/business_geocoding_datasource.dart';
+import 'package:ournego/core/geocoding/geocoding_providers.dart';
 import 'package:ournego/features/business/data/datasources/business_supabase_datasource.dart';
 import 'package:ournego/features/business/data/repositories/business_repository_impl.dart';
 import 'package:ournego/features/business/domain/entities/owned_business_profile.dart';
@@ -29,18 +29,13 @@ final businessSupabaseDatasourceProvider = Provider<BusinessSupabaseDatasource>(
   (ref) => BusinessSupabaseDatasource(),
 );
 
-final businessGeocodingDatasourceProvider =
-    Provider<BusinessGeocodingDatasource>(
-      (ref) => BusinessGeocodingDatasource(),
-    );
-
 // |---------------------------------| \\
 // |------- LAYER 2: REPOSITORIES --| \\
 // |---------------------------------| \\
 
 final businessRepositoryProvider = Provider<BusinessRepository>((ref) {
   final businessDatasource = ref.watch(businessSupabaseDatasourceProvider);
-  final geocodingDatasource = ref.watch(businessGeocodingDatasourceProvider);
+  final geocodingDatasource = ref.watch(locationIqGeocodingDatasourceProvider);
   return BusinessRepositoryImpl(
     businessDatasource: businessDatasource,
     geocodingDatasource: geocodingDatasource,

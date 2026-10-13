@@ -4,6 +4,7 @@ import 'package:dartz/dartz.dart';
 
 import 'package:ournego/core/failures.dart';
 import 'package:ournego/core/location/app_position.dart';
+import 'package:ournego/core/location/location_access_status.dart';
 import 'package:ournego/features/map/domain/entities/business.dart';
 import 'package:ournego/features/map/domain/repositories/map_repository.dart';
 
@@ -43,10 +44,47 @@ class FakeMapRepository implements MapRepository {
     _businessById[business.id] = business;
   }
 
+  LocationAccessStatus _accessStatus = LocationAccessStatus.granted;
+  LocationAccessStatus? _statusAfterPermissionRequest;
+  final StreamController<bool> _serviceController =
+      StreamController<bool>.broadcast();
+  int permissionRequestCount = 0;
+  bool? lastResolveServiceIfDisabled;
+  int locationRequestCount = 0;
+
+  void setAccessStatus(
+    LocationAccessStatus status, {
+    LocationAccessStatus? afterPermissionRequest,
+  }) {
+    _accessStatus = status;
+    _statusAfterPermissionRequest = afterPermissionRequest;
+  }
+
+  void emitServiceStatus({required bool enabled}) {
+    _serviceController.add(enabled);
+  }
+
+  @override
+  Future<LocationAccessStatus> checkLocationAccessStatus() async =>
+      _accessStatus;
+
+  @override
+  Future<LocationAccessStatus> requestLocationPermission() async {
+    permissionRequestCount++;
+    _accessStatus = _statusAfterPermissionRequest ?? _accessStatus;
+    return _accessStatus;
+  }
+
+  @override
+  Stream<bool> watchLocationService() => _serviceController.stream;
+
   @override
   Future<Either<Failure, AppPosition>> getCurrentLocation({
     bool requestPermissionIfNeeded = true,
+    bool resolveServiceIfDisabled = false,
   }) async {
+    locationRequestCount++;
+    lastResolveServiceIfDisabled = resolveServiceIfDisabled;
     return _locationResult;
   }
 
