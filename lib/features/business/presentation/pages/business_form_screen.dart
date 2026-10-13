@@ -26,6 +26,7 @@ import 'package:ournego/shared/widgets/information_card_widget.dart';
 import 'package:ournego/shared/widgets/ournego_alert_dialog.dart';
 import 'package:ournego/shared/widgets/ournego_inputs.dart';
 import 'package:ournego/shared/widgets/ournego_snackbars.dart';
+import 'package:ournego/shared/widgets/container_transform/show_ournego_window.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../domain/entities/app_schedule.dart';
 import '../providers/business_providers.dart';
@@ -661,7 +662,7 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
                               'Por favor completa todos los campos requeridos.';
                         }
 
-                        showDialog(
+                        showOurnegoDialog(
                           context: context,
                           builder: (buildContext) {
                             return OurnegoAlertDialog(

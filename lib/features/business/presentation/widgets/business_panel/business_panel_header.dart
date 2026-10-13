@@ -6,6 +6,7 @@ import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/features/navigation/presentation/widgets/profile_menu/profile_menu_actions.dart';
 import 'package:ournego/features/navigation/presentation/widgets/profile_menu/profile_menu_dialog_widget.dart';
 import 'package:ournego/shared/widgets/buttons/buttons.dart';
+import 'package:ournego/shared/widgets/container_transform/container_transform_origin.dart';
 
 class BusinessPanelHeader extends ConsumerWidget {
   const BusinessPanelHeader({
@@ -29,30 +30,36 @@ class BusinessPanelHeader extends ConsumerWidget {
               child: Text('Panel de negocio', style: OurnegoTextStyles.header),
             ),
           ),
-          OurnegoIconButton(
-            size: OurnegoIconButtonSize.s44,
-            icon: isLogged ? Icons.account_circle_rounded : Icons.login_rounded,
-            semanticLabel: isLogged ? 'Perfil' : 'Iniciar sesión',
-            onPressed: () {
-              if (isLogged) {
-                openProfileMenu(
-                  context,
-                  ref,
-                  origin: ProfileMenuOrigin.businessPanel,
-                );
-                return;
-              }
-              context.push(AuthRoutes.authSelection);
-            },
-            child: profileImageUrl.isNotEmpty
-                ? Image.network(
-                    profileImageUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Icon(Icons.account_circle_rounded);
-                    },
-                  )
-                : null,
+          ContainerTransformTrigger(
+            radius: 22,
+            builder: (context, trigger) => OurnegoIconButton(
+              size: OurnegoIconButtonSize.s44,
+              icon: isLogged
+                  ? Icons.account_circle_rounded
+                  : Icons.login_rounded,
+              semanticLabel: isLogged ? 'Perfil' : 'Iniciar sesión',
+              onPressed: () {
+                if (isLogged) {
+                  openProfileMenu(
+                    context,
+                    ref,
+                    origin: ProfileMenuOrigin.businessPanel,
+                    trigger: trigger,
+                  );
+                  return;
+                }
+                context.push(AuthRoutes.authSelection);
+              },
+              child: profileImageUrl.isNotEmpty
+                  ? Image.network(
+                      profileImageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Icon(Icons.account_circle_rounded);
+                      },
+                    )
+                  : null,
+            ),
           ),
         ],
       ),

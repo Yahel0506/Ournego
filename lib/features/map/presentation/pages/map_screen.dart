@@ -42,6 +42,7 @@ import 'package:ournego/shared/widgets/nego/nego.dart';
 import 'package:ournego/shared/widgets/ournego_alert_dialog.dart';
 import 'package:ournego/shared/widgets/ournego_content_container.dart';
 import 'package:ournego/shared/widgets/ournego_snackbars.dart';
+import 'package:ournego/shared/widgets/container_transform/show_ournego_window.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -837,7 +838,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
   Future<void> _onContact(SheetBusinessData business) async {
     if (business.phoneNumber == null) {
       if (!context.mounted) return;
-      showDialog<void>(
+      showOurnegoDialog<void>(
         context: context,
         builder: (dialogContext) {
           return OurnegoAlertDialog(

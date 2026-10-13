@@ -4,6 +4,7 @@ import 'package:ournego/core/theme/tokens/ournego_spacing_tokens.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
 import 'package:ournego/features/navigation/presentation/widgets/profile_menu/profile_menu_actions.dart';
 import 'package:ournego/shared/widgets/buttons/buttons.dart';
+import 'package:ournego/shared/widgets/container_transform/container_transform_origin.dart';
 
 final GlobalKey topNavigationBarKey = GlobalKey(debugLabel: 'topNavigationBar');
 
@@ -74,26 +75,31 @@ class TopNavigationBarWidget extends ConsumerWidget {
             ),
           ),
           const SizedBox(width: OurnegoSpacingTokens.controlGap),
-          OurnegoGlassIconButton(
-            key: const ValueKey('mapProfileButton'),
-            icon: isLogged ? Icons.account_circle_rounded : Icons.login_rounded,
-            semanticLabel: 'Abrir menú de perfil',
-            onPressed: () => openProfileMenu(context, ref),
-            child: imageUrl.isNotEmpty
-                ? Image(
-                    image: NetworkImage(imageUrl),
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Icon(
-                        isLogged
-                            ? Icons.account_circle_rounded
-                            : Icons.login_rounded,
-                        size: 40,
-                        color: colorScheme.onSurface.withValues(alpha: 0.6),
-                      );
-                    },
-                  )
-                : null,
+          ContainerTransformTrigger(
+            radius: OurnegoComponentMetrics.glassIconSide / 2,
+            builder: (context, trigger) => OurnegoGlassIconButton(
+              key: const ValueKey('mapProfileButton'),
+              icon: isLogged
+                  ? Icons.account_circle_rounded
+                  : Icons.login_rounded,
+              semanticLabel: 'Abrir menú de perfil',
+              onPressed: () => openProfileMenu(context, ref, trigger: trigger),
+              child: imageUrl.isNotEmpty
+                  ? Image(
+                      image: NetworkImage(imageUrl),
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Icon(
+                          isLogged
+                              ? Icons.account_circle_rounded
+                              : Icons.login_rounded,
+                          size: 40,
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
+                        );
+                      },
+                    )
+                  : null,
+            ),
           ),
         ],
       ),

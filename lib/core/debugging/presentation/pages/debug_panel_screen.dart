@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:ournego/core/debugging/presentation/pages/button_gallery_screen.dart';
+import 'package:ournego/core/motion/ournego_motion_level.dart';
 
 class DebugPanel extends StatelessWidget {
   const DebugPanel({super.key});
@@ -46,6 +47,20 @@ class DebugPanel extends StatelessWidget {
                 MaterialPageRoute<void>(
                   builder: (_) => const ButtonGalleryScreen(),
                 ),
+              ),
+            ),
+            ValueListenableBuilder<bool>(
+              valueListenable: OurnegoMotion.containerTransformEnabled,
+              builder: (context, enabled, _) => SwitchListTile(
+                key: const ValueKey('debugContainerTransformSwitch'),
+                secondary: const Icon(Icons.open_in_full_rounded),
+                title: const Text('Container transform'),
+                subtitle: const Text(
+                  'Apagado: las ventanas solo hacen un fundido corto',
+                ),
+                value: enabled,
+                onChanged: (value) =>
+                    OurnegoMotion.containerTransformEnabled.value = value,
               ),
             ),
           ],

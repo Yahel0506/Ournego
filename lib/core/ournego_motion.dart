@@ -40,7 +40,10 @@ const Duration kNavIndicatorDuration = Duration(milliseconds: 380);
 /// Spring and window parameters of one container-transform preset.
 ///
 /// All springs have mass 1. [contentStart] and [contentEnd] are the window of
-/// the progress clock `p` in which the destination content fades in.
+/// the progress clock `p` in which the destination content fades in. With a
+/// blur ([maxItemBlur] > 0) the content arrives fully blurred and stays so
+/// while the container travels; the blur clears over [blurClearStart] to 1 and
+/// is gone exactly when the container's animation ends.
 @immutable
 class OurnegoSpringPreset {
   const OurnegoSpringPreset({
@@ -53,6 +56,8 @@ class OurnegoSpringPreset {
     this.stagger = 0,
     this.scrimAlpha = 0,
     this.maxItemBlur = 0,
+    this.blurClearStart = 0.65,
+    this.verticalPath,
   });
 
   final double openStiffness;
@@ -70,8 +75,20 @@ class OurnegoSpringPreset {
   final double stagger;
   final double scrimAlpha;
 
-  /// Per-item blur sigma in dp at `p = contentStart`. 0 means no blur (level C).
+  /// Blur sigma in dp of the content while it travels. 0 means no blur (level C).
+  /// It is constant (static) until [blurClearStart].
   final double maxItemBlur;
+
+  /// Where in `p` the blur starts to clear, linearly, reaching 0 at `p = 1`.
+  /// Items also start to respond to touches here.
+  final double blurClearStart;
+
+  /// Shapes the container's vertical travel over the whole path, so the window
+  /// leans into its destination, passes it slightly and settles back, while the
+  /// horizontal position and the size follow the plain route. Null is a straight
+  /// path. The same curve is used to open and to close, so reversing mid-way
+  /// never jumps.
+  final Curve? verticalPath;
 
   SpringDescription get open => SpringDescription.withDampingRatio(
     mass: 1,
@@ -85,7 +102,11 @@ class OurnegoSpringPreset {
     ratio: closeDamping,
   );
 
-  OurnegoSpringPreset copyWith({double? scrimAlpha, double? maxItemBlur}) {
+  OurnegoSpringPreset copyWith({
+    double? scrimAlpha,
+    double? maxItemBlur,
+    Curve? verticalPath,
+  }) {
     return OurnegoSpringPreset(
       openStiffness: openStiffness,
       openDamping: openDamping,
@@ -96,6 +117,8 @@ class OurnegoSpringPreset {
       stagger: stagger,
       scrimAlpha: scrimAlpha ?? this.scrimAlpha,
       maxItemBlur: maxItemBlur ?? this.maxItemBlur,
+      blurClearStart: blurClearStart,
+      verticalPath: verticalPath ?? this.verticalPath,
     );
   }
 }
@@ -107,17 +130,24 @@ const Tolerance kOurnegoSpringTolerance = Tolerance(
   velocity: 0.01,
 );
 
+/// The vertical path of a window: it leads the horizontal one by up to ~20 % of
+/// the travel, passes its destination by about 3.5 % at 90 % of the way and
+/// settles back with a gentle slope. One smooth curve, no localized kick.
+const Curve kWindowVerticalPath = Cubic(0.5, 0.2, 0.7, 1.25);
+
 /// Menu and dialog centered on the screen. Scrim 0.30 is for the account menu;
 /// regular dialogs use [kDialogScrimAlpha].
 const OurnegoSpringPreset kDialogSpring = OurnegoSpringPreset(
-  openStiffness: 350,
-  openDamping: 0.88,
-  closeStiffness: 450,
+  openStiffness: 170,
+  openDamping: 0.9,
+  closeStiffness: 185,
   closeDamping: 1,
-  contentStart: 0.30,
-  contentEnd: 0.70,
+  contentStart: 0.05,
+  contentEnd: 0.30,
   scrimAlpha: 0.30,
-  maxItemBlur: 8,
+  maxItemBlur: 12,
+  blurClearStart: 0.62,
+  verticalPath: kWindowVerticalPath,
 );
 const double kDialogScrimAlpha = 0.50;
 

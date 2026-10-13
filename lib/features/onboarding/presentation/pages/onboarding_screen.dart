@@ -16,6 +16,7 @@ import 'package:ournego/shared/widgets/animated_background.dart';
 import 'package:ournego/shared/widgets/buttons/buttons.dart';
 import 'package:ournego/shared/widgets/nego/nego.dart';
 import 'package:ournego/shared/widgets/ournego_information_dialog.dart';
+import 'package:ournego/shared/widgets/container_transform/show_ournego_window.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
@@ -44,7 +45,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     }
 
     _isShowingLocationDialog = true;
-    await showDialog<void>(
+    await showOurnegoDialog<void>(
       context: context,
       barrierDismissible: true,
       builder: (context) {
