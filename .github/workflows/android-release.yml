@@ -126,13 +126,16 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          apk="build/app/outputs/flutter-apk/app-release.apk"
+          # The file name is what users download; "path#label" only sets a
+          # display label, so rename the file itself before uploading.
+          apk="$RUNNER_TEMP/ournego-beta.apk"
+          cp build/app/outputs/flutter-apk/app-release.apk "$apk"
           short_sha="${GITHUB_SHA::7}"
 
           # Drop the previous release and its tag (no-op on the first run).
           gh release delete "$RELEASE_TAG" --cleanup-tag --yes || true
 
-          gh release create "$RELEASE_TAG" "$apk#ournego-beta.apk" \
+          gh release create "$RELEASE_TAG" "$apk" \
             --target "$GITHUB_SHA" \
             --title "Ournego (latest)" \
             --notes "Android APK built from commit ${short_sha} (${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA})." \
