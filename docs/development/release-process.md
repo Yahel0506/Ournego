@@ -56,10 +56,13 @@ never create a release on their own; they ship with the next `feat`/`fix`.
    the `vX.Y.Z` tag and the GitHub release with the changelog as notes.
 4. The same workflow builds the signed APK from that tag
    (`--build-name X.Y.Z`, `--build-number` = workflow run number) and attaches
-   it to the release as `ournego-beta.apk`.
+   it to the release as `ournego-beta-X.Y.Z.apk` (for example
+   `ournego-beta-0.2.0.apk`), so the downloaded file already carries its version.
 
 Each version keeps its own release, so older APKs stay downloadable. The
-`releases/latest/download/ournego-beta.apk` link always points to the newest one.
+`https://github.com/Yahel0506/Ournego/releases/latest` page always shows the
+newest one. The release notes are the changelog entry for that version, written
+by release-please.
 
 ## Configuration
 

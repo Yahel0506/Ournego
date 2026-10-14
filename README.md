@@ -7,7 +7,7 @@
 **Descubre y apoya los negocios de tu comunidad.**
 Un mapa vivo de los negocios locales, hecho por y para la gente de tu ciudad.
 
-[![Descargar APK](https://img.shields.io/badge/Descargar-APK%20Android-055F46?style=for-the-badge&logo=android&logoColor=white)](https://github.com/Yahel0506/Ournego/releases/latest/download/ournego-beta.apk)
+[![Descargar APK](https://img.shields.io/badge/Descargar-APK%20Android-055F46?style=for-the-badge&logo=android&logoColor=white)](https://github.com/Yahel0506/Ournego/releases/latest)
 [![Sitio web](https://img.shields.io/badge/Sitio-ournego.com-055F46?style=for-the-badge&logo=googlechrome&logoColor=white)](https://ournego.com)
 
 ![Flutter](https://img.shields.io/badge/Flutter-3.41.4-02569B?logo=flutter&logoColor=white)
@@ -42,12 +42,12 @@ Los mejores negocios de una ciudad no siempre están en Google ni en redes socia
 
 ### Android (APK)
 
-1. Descarga el APK más reciente: **[ournego-beta.apk](https://github.com/Yahel0506/Ournego/releases/latest/download/ournego-beta.apk)**.
+1. Abre la [última release](https://github.com/Yahel0506/Ournego/releases/latest) y descarga el APK (`ournego-beta-<versión>.apk`) desde la sección *Assets*.
 2. Ábrelo desde la carpeta de descargas de tu teléfono.
 3. Si Android lo pide, permite **"Instalar apps desconocidas"** para tu navegador o gestor de archivos.
 4. Abre Ournego y listo.
 
-> Cada versión publicada (`vX.Y.Z`) incluye su APK, y el enlace de arriba siempre apunta a la última. Mira todas las versiones y sus cambios en [Releases](https://github.com/Yahel0506/Ournego/releases) y en el [CHANGELOG](CHANGELOG.md).
+> Cada versión publicada (`vX.Y.Z`) incluye su APK, y el botón de arriba lleva siempre a la última. Mira todas las versiones y sus cambios en [Releases](https://github.com/Yahel0506/Ournego/releases) y en el [CHANGELOG](CHANGELOG.md).
 > Si tenías instalada una compilación anterior firmada con otra clave, desinstálala primero.
 
 ### Web
@@ -211,7 +211,7 @@ El flujo de dependencias es `Presentation → Domain ← Data`.
 ### Despliegue continuo
 
 - **Versionado:** [SemVer](https://semver.org) con [Conventional Commits](https://www.conventionalcommits.org). Cada commit en `main` se escribe como `feat(...)`, `fix(...)`, etc., y [release-please](https://github.com/googleapis/release-please) mantiene un pull request de release con la nueva versión y el `CHANGELOG.md`.
-- **Android:** al mergear ese pull request se crea la release `vX.Y.Z` y se adjunta el APK firmado `ournego-beta.apk` (`.github/workflows/release.yml`). Las versiones anteriores siguen disponibles.
+- **Android:** al mergear ese pull request se crea la release `vX.Y.Z` y se adjunta el APK firmado `ournego-beta-X.Y.Z.apk` (`.github/workflows/release.yml`). Las versiones anteriores siguen disponibles.
 - **Web:** se despliega automáticamente en Firebase Hosting.
 - **Calidad:** el análisis, las pruebas y la compilación de Android corren en cada pull request.
 
