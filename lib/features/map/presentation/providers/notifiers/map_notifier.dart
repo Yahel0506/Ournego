@@ -18,10 +18,7 @@ class MapNotifier extends AsyncNotifier<MapLocationState> {
 
   @override
   Future<MapLocationState> build() async {
-    final subscription = ref
-        .read(watchLocationServiceUsecaseProvider)()
-        .listen(_onServiceChanged, onError: (Object _) {});
-    ref.onDispose(subscription.cancel);
+    _watchLocationService();
 
     _pendingOperations++;
     final List<Object?> results;
@@ -35,6 +32,18 @@ class MapNotifier extends AsyncNotifier<MapLocationState> {
       manualZone: results[1] as ManualZone?,
     );
     return _apply(initial, results[0] as _Outcome);
+  }
+
+  void _watchLocationService() {
+    try {
+      final subscription = ref
+          .read(watchLocationServiceUsecaseProvider)()
+          .listen(_onServiceChanged, onError: (Object _) {});
+      ref.onDispose(subscription.cancel);
+    } catch (_) {
+      // Without service updates the map still works; it just rechecks on
+      // resume and on user actions.
+    }
   }
 
   /// Re-reads permission and service state (never prompts) and refreshes the

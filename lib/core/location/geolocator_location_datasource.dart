@@ -59,9 +59,14 @@ class GeolocatorLocationDatasource implements LocationDatasource {
 
   @override
   Stream<bool> serviceStatusStream() {
-    return geolocator.Geolocator.getServiceStatusStream().map(
-      (status) => status == geolocator.ServiceStatus.enabled,
-    );
+    try {
+      return geolocator.Geolocator.getServiceStatusStream().map(
+        (status) => status == geolocator.ServiceStatus.enabled,
+      );
+    } catch (_) {
+      // Not every platform can report it (the web throws UnsupportedError).
+      return const Stream<bool>.empty();
+    }
   }
 
   @override

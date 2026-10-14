@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 import 'package:ournego/core/location/location_access_status.dart';
@@ -86,7 +87,9 @@ class LocationAccessSheet extends StatelessWidget {
             OurnegoButton.secondary(
               key: const Key('location-access-secondary'),
               expanded: true,
-              label: _isPermanent ? 'Abrir ajustes' : 'Continuar sin ubicación',
+              label: _isPermanent
+                  ? (kIsWeb ? 'Cómo activarla' : 'Abrir ajustes')
+                  : 'Continuar sin ubicación',
               onPressed: () => Navigator.of(context).pop(
                 _isPermanent
                     ? LocationAccessSheetAction.openSettings
