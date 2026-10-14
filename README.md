@@ -7,7 +7,7 @@
 **Descubre y apoya los negocios de tu comunidad.**
 Un mapa vivo de los negocios locales, hecho por y para la gente de tu ciudad.
 
-[![Descargar APK](https://img.shields.io/badge/Descargar-APK%20Android-055F46?style=for-the-badge&logo=android&logoColor=white)](https://github.com/Yahel0506/Ournego/releases/latest/download/ournego-beta.apk)
+[![Descargar APK](https://img.shields.io/badge/Descargar-APK%20Android-055F46?style=for-the-badge&logo=android&logoColor=white)](https://github.com/Yahel0506/Ournego/releases/latest)
 [![Sitio web](https://img.shields.io/badge/Sitio-ournego.com-055F46?style=for-the-badge&logo=googlechrome&logoColor=white)](https://ournego.com)
 
 ![Flutter](https://img.shields.io/badge/Flutter-3.41.4-02569B?logo=flutter&logoColor=white)
@@ -42,12 +42,12 @@ Los mejores negocios de una ciudad no siempre están en Google ni en redes socia
 
 ### Android (APK)
 
-1. Descarga el APK más reciente: **[ournego-beta.apk](https://github.com/Yahel0506/Ournego/releases/latest/download/ournego-beta.apk)**.
+1. Abre la [última release](https://github.com/Yahel0506/Ournego/releases/latest) y descarga el APK (`ournego-beta-<versión>.apk`) desde la sección *Assets*.
 2. Ábrelo desde la carpeta de descargas de tu teléfono.
 3. Si Android lo pide, permite **"Instalar apps desconocidas"** para tu navegador o gestor de archivos.
 4. Abre Ournego y listo.
 
-> Cada cambio aprobado en el proyecto publica automáticamente un APK nuevo que **reemplaza al anterior**, así que el enlace de arriba siempre apunta a la última versión.
+> Cada versión publicada (`vX.Y.Z`) incluye su APK, y el botón de arriba lleva siempre a la última. Mira todas las versiones y sus cambios en [Releases](https://github.com/Yahel0506/Ournego/releases) y en el [CHANGELOG](CHANGELOG.md).
 > Si tenías instalada una compilación anterior firmada con otra clave, desinstálala primero.
 
 ### Web
@@ -210,7 +210,8 @@ El flujo de dependencias es `Presentation → Domain ← Data`.
 
 ### Despliegue continuo
 
-- **Android:** cada cambio en `main` compila un APK firmado y lo publica como la release `latest`, reemplazando la anterior (`.github/workflows/android-release.yml`).
+- **Versionado:** [SemVer](https://semver.org) con [Conventional Commits](https://www.conventionalcommits.org). Cada commit en `main` se escribe como `feat(...)`, `fix(...)`, etc., y [release-please](https://github.com/googleapis/release-please) mantiene un pull request de release con la nueva versión y el `CHANGELOG.md`.
+- **Android:** al mergear ese pull request se crea la release `vX.Y.Z` y se adjunta el APK firmado `ournego-beta-X.Y.Z.apk` (`.github/workflows/release.yml`). Las versiones anteriores siguen disponibles.
 - **Web:** se despliega automáticamente en Firebase Hosting.
 - **Calidad:** el análisis, las pruebas y la compilación de Android corren en cada pull request.
 
@@ -221,6 +222,7 @@ El flujo de dependencias es `Presentation → Domain ← Data`.
 | [`AGENTS.md`](AGENTS.md) | Convenciones de código y flujo de trabajo |
 | [`docs/development/architecture/ARCHITECTURE.md`](docs/development/architecture/ARCHITECTURE.md) | Arquitectura y reglas de dependencias |
 | [`docs/development/architecture/CONTEXT-MAP.md`](docs/development/architecture/CONTEXT-MAP.md) | Mapa del dominio |
+| [`docs/development/release-process.md`](docs/development/release-process.md) | Versionado, Conventional Commits y releases automáticas |
 | [`docs/development/design/DESIGN_SYSTEM.md`](docs/development/design/DESIGN_SYSTEM.md) | Sistema de diseño |
 | [`docs/development/testing/README.md`](docs/development/testing/README.md) | Guía de pruebas |
 | [`docs/development/features/`](docs/development/features) | Una ficha por funcionalidad |
@@ -234,7 +236,8 @@ El flujo de dependencias es `Presentation → Domain ← Data`.
 - [ ] Revisión y aprobación de negocios, y reporte de datos incorrectos
 - [x] Distribución de APK de Android
 - [ ] Comunidad: funciones sociales entre usuarios y negocios
-- [ ] Versionado de la app y publicación en tiendas
+- [x] Versionado SemVer y releases automáticas
+- [ ] Publicación en tiendas
 - [ ] Más ciudades
 
 ## 🤝 Participa
