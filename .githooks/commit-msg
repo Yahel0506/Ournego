@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Rejects commits whose subject is not a Conventional Commit.
+# Enable once per clone: git config core.hooksPath .githooks
+head -n 1 "$1" | "$(git rev-parse --show-toplevel)/tool/check_commit_subjects.sh"

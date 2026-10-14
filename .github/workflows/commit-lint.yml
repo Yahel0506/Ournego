@@ -1,0 +1,32 @@
+name: Commit Lint
+
+# Every commit of a pull request must follow Conventional Commits, because
+# release-please derives versions and changelogs from them.
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  conventional-commits:
+    name: Conventional Commits
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate commit subjects
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          set -euo pipefail
+          # The PR title becomes the commit subject when squash-merging.
+          printf '%s\n' "$PR_TITLE" | tool/check_commit_subjects.sh
+          git log --no-merges --format=%s "$BASE_SHA..$HEAD_SHA" | tool/check_commit_subjects.sh

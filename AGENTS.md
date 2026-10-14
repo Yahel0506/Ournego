@@ -317,7 +317,11 @@ Configured in `analysis_options.yaml`:
 ## Git Workflow
 
 - Keep commits focused and atomic
-- Write clear commit messages in English
+- Write commit messages in English following Conventional Commits
+  (`feat(map): add zone search`, `fix(auth): handle expired sessions`);
+  versions and changelogs are generated from them. Enable the local check with
+  `git config core.hooksPath .githooks`. See
+  `docs/development/release-process.md`.
 - Don't commit `.env` files or secrets
 
 ## Opening dialogs and menus
