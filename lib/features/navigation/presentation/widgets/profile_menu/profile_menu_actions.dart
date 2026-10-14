@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:ournego/core/location/open_app_location_settings.dart';
 import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
 import 'package:ournego/features/feedback/presentation/widgets/feedback_flow.dart';
 import 'package:ournego/features/navigation/presentation/widgets/profile_menu/profile_menu_dialog_widget.dart';
 import 'package:ournego/shared/widgets/container_transform/container_transform_origin.dart';
 import 'package:ournego/shared/widgets/ournego_alert_dialog.dart';
+import 'package:ournego/shared/widgets/ournego_snackbars.dart';
 import 'package:ournego/shared/widgets/container_transform/show_ournego_window.dart';
 
 /// Opens the profile menu from [context] and performs the chosen entry.
@@ -34,7 +35,12 @@ Future<void> openProfileMenu(
     case ProfileMenuAction.businessPanel:
       context.go(BusinessRoutes.panel);
     case ProfileMenuAction.locationPermissions:
-      await Geolocator.openAppSettings();
+      final opened = await openAppLocationSettings();
+      if (!opened && context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(OurnegoSnackbars.info(webLocationPermissionHelp));
+      }
     case ProfileMenuAction.reportProblem:
       await openFeedbackDialog(context, ref);
     case ProfileMenuAction.debugPanel:

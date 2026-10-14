@@ -314,4 +314,27 @@ void main() {
       expect(current().serviceDialogOffered, isFalse);
     });
   });
+
+  test(
+    'a platform that cannot watch the GPS service still loads the map',
+    () async {
+      repository = _NoServiceUpdatesRepository();
+      container = createContainer();
+      final state = await container.read(mapProvider.future);
+
+      expect(container.read(mapProvider).hasError, isFalse);
+      expect(state.status, LocationAccessStatus.granted);
+      expect(state.gpsPosition, _gps);
+    },
+  );
+}
+
+/// Mimics the web, where watching the location service throws.
+class _NoServiceUpdatesRepository extends FakeMapRepository {
+  _NoServiceUpdatesRepository() : super(locationResult: const Right(_gps));
+
+  @override
+  Stream<bool> watchLocationService() {
+    throw UnsupportedError('getServiceStatusStream is not supported');
+  }
 }

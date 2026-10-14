@@ -23,6 +23,7 @@ class _FakeGeolocator extends GeolocatorPlatform
   int positionCalls = 0;
   Duration? positionDelay;
   bool neverCompletes = false;
+  bool serviceStreamUnsupported = false;
   final serviceController = StreamController<ServiceStatus>.broadcast();
 
   @override
@@ -39,7 +40,13 @@ class _FakeGeolocator extends GeolocatorPlatform
   Future<bool> isLocationServiceEnabled() async => serviceEnabled;
 
   @override
-  Stream<ServiceStatus> getServiceStatusStream() => serviceController.stream;
+  Stream<ServiceStatus> getServiceStatusStream() {
+    if (serviceStreamUnsupported) {
+      // What geolocator_web does.
+      throw UnsupportedError('getServiceStatusStream is not supported');
+    }
+    return serviceController.stream;
+  }
 
   @override
   Future<Position> getCurrentPosition({
@@ -289,4 +296,12 @@ void main() {
     await sub.cancel();
     expect(events, [false, true]);
   });
+
+  test(
+    'platforms without a service status stream (web) get an empty one',
+    () async {
+      fake.serviceStreamUnsupported = true;
+      expect(await datasource.serviceStatusStream().toList(), isEmpty);
+    },
+  );
 }

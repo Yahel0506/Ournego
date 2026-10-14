@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:ournego/core/failures.dart';
 import 'package:ournego/core/location/app_position.dart';
 import 'package:ournego/core/location/location_access_status.dart';
+import 'package:ournego/core/location/open_app_location_settings.dart';
 import 'package:ournego/core/mapbox_config.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/core/routing/route_names.dart';
@@ -238,7 +238,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
       case LocationAccessSheetAction.chooseZone:
         await _openZonePicker();
       case LocationAccessSheetAction.openSettings:
-        await Geolocator.openAppSettings();
+        await _openLocationSettings();
       case LocationAccessSheetAction.continueWithoutLocation || null:
         break;
     }
@@ -299,13 +299,22 @@ class _MapScreenState extends ConsumerState<MapScreen>
     }
   }
 
+  Future<void> _openLocationSettings() async {
+    final opened = await openAppLocationSettings();
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(OurnegoSnackbars.info(webLocationPermissionHelp));
+    }
+  }
+
   Future<void> _onLocationBannerAction() async {
     final status = ref.read(mapProvider).asData?.value.status;
     switch (status) {
       case LocationAccessStatus.permissionDenied:
         await ref.read(mapProvider.notifier).requestPermission();
       case LocationAccessStatus.permissionDeniedForever:
-        await Geolocator.openAppSettings();
+        await _openLocationSettings();
       case LocationAccessStatus.serviceDisabled:
         await ref.read(mapProvider.notifier).enableLocationService();
       case LocationAccessStatus.granted ||

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'package:ournego/core/location/location_access_status.dart';
@@ -37,7 +38,7 @@ class MapLocationBanner extends StatelessWidget {
         : 'Ournego no puede ver tu ubicación';
     final actionLabel = isService
         ? 'Activar'
-        : (isPermanent ? 'Ajustes' : 'Permitir');
+        : (isPermanent ? (kIsWeb ? 'Cómo' : 'Ajustes') : 'Permitir');
 
     return Semantics(
       container: true,
