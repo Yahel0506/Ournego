@@ -132,7 +132,7 @@ jobs:
           # Drop the previous release and its tag (no-op on the first run).
           gh release delete "$RELEASE_TAG" --cleanup-tag --yes || true
 
-          gh release create "$RELEASE_TAG" "$apk#ournego.apk" \
+          gh release create "$RELEASE_TAG" "$apk#ournego-beta.apk" \
             --target "$GITHUB_SHA" \
             --title "Ournego (latest)" \
             --notes "Android APK built from commit ${short_sha} (${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA})." \

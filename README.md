@@ -7,7 +7,7 @@
 **Descubre y apoya los negocios de tu comunidad.**
 Un mapa vivo de los negocios locales, hecho por y para la gente de tu ciudad.
 
-[![Descargar APK](https://img.shields.io/badge/Descargar-APK%20Android-055F46?style=for-the-badge&logo=android&logoColor=white)](https://github.com/Yahel0506/Ournego/releases/latest/download/ournego.apk)
+[![Descargar APK](https://img.shields.io/badge/Descargar-APK%20Android-055F46?style=for-the-badge&logo=android&logoColor=white)](https://github.com/Yahel0506/Ournego/releases/latest/download/ournego-beta.apk)
 [![Sitio web](https://img.shields.io/badge/Sitio-ournego.com-055F46?style=for-the-badge&logo=googlechrome&logoColor=white)](https://ournego.com)
 
 ![Flutter](https://img.shields.io/badge/Flutter-3.41.4-02569B?logo=flutter&logoColor=white)
@@ -42,7 +42,7 @@ Los mejores negocios de una ciudad no siempre están en Google ni en redes socia
 
 ### Android (APK)
 
-1. Descarga el APK más reciente: **[ournego.apk](https://github.com/Yahel0506/Ournego/releases/latest/download/ournego.apk)**.
+1. Descarga el APK más reciente: **[ournego-beta.apk](https://github.com/Yahel0506/Ournego/releases/latest/download/ournego-beta.apk)**.
 2. Ábrelo desde la carpeta de descargas de tu teléfono.
 3. Si Android lo pide, permite **"Instalar apps desconocidas"** para tu navegador o gestor de archivos.
 4. Abre Ournego y listo.
