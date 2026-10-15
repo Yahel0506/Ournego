@@ -10,7 +10,8 @@ import 'package:flutter_web_plugins/url_strategy.dart';
 // Conditional import for web-specific environment configuration
 import 'package:ournego/core/debugging/simulation/debug_restart_scope.dart';
 import 'package:ournego/core/debugging/simulation/debug_simulation_controller.dart';
-import 'package:ournego/core/debugging/simulation/debug_simulation_providers.dart';
+import 'package:ournego/core/debugging/simulation/debug_overrides.dart';
+import 'package:ournego/core/debugging/simulation/simulated_http_client.dart';
 import 'package:ournego/core/debugging/simulation/simulated_startup_failure_banner.dart';
 import 'package:ournego/core/debugging/simulation/startup_fault_interceptors.dart';
 import 'package:ournego/core/env_config_stub.dart'
@@ -32,14 +33,17 @@ Future<void> main() async {
   final simulation = kDebugMode
       ? await DebugSimulationController.bootstrap()
       : null;
+  final simulatedHttpClient = simulation == null
+      ? null
+      : SimulatedHttpClient(mode: () => simulation.value.networkMode);
 
   runApp(
     BetterFeedback(
       child: DebugRestartScope(
         builder: (context) => ProviderScope(
           overrides: [
-            if (simulation != null)
-              debugSimulationControllerProvider.overrideWithValue(simulation),
+            if (simulation != null && simulatedHttpClient != null)
+              ...debugSimulationOverrides(simulation, simulatedHttpClient),
           ],
           child: StartupGate(
             controller: StartupController.production(
@@ -48,7 +52,10 @@ Future<void> main() async {
               readOnboarding: LocalOnboardingDatasource().hasSeenOnboarding,
               interceptors: simulation == null
                   ? null
-                  : startupInterceptorsFor(simulation.value.startupFault),
+                  : startupInterceptorsFor(
+                      simulation.value.startupFault,
+                      httpClient: simulatedHttpClient,
+                    ),
             ),
             simulatedFailureBannerBuilder: simulation == null
                 ? null

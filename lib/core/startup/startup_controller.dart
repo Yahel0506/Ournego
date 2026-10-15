@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -65,6 +66,7 @@ class StartupInterceptors {
     this.initializeSdk,
     this.wasSimulated,
     this.timeout,
+    this.httpClient,
   });
 
   final StartupConfigResolver Function(StartupConfigResolver real)?
@@ -76,6 +78,9 @@ class StartupInterceptors {
   /// Reports whether a fault was actually injected in this attempt.
   final bool Function()? wasSimulated;
   final Duration? timeout;
+
+  /// Client the Supabase SDK uses for every request.
+  final http.Client? httpClient;
 }
 
 Future<SupabaseStartupConfig> resolveStartupConfig({
@@ -146,6 +151,7 @@ class StartupController {
       await Supabase.initialize(
         url: config.url,
         anonKey: config.anonKey,
+        httpClient: interceptors?.httpClient,
         debug: false,
       );
     };
