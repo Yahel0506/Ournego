@@ -146,6 +146,10 @@ La validación nativa usa un inicializador simulado: no prueba una caída real,
 la recuperación de sesión ni la conexión de producción a Supabase. Tampoco
 equivale a ejecutar la suite Patrol pendiente indicada arriba.
 
+## Validación en Android real (OUR-140)
+
+La matriz de los seis escenarios de OUR-110 (arranque, sesión, red, ubicación y Google), con resultado esperado frente a obtenido, evidencia y dispositivo, está en `docs/development/testing/our-140-android-validation.md`. Punto de partida de OUR-102.
+
 ## Checklist manual: sesión vencida y fallos de red (OUR-132)
 
 Ejecutar en Android (emulador o dispositivo), con una cuenta completa:
