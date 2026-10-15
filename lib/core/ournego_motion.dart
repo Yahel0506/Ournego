@@ -153,12 +153,12 @@ const double kDialogScrimAlpha = 0.50;
 
 /// Small anchored popover: chips, map credits, contact notice. No scrim.
 const OurnegoSpringPreset kPopoverSpring = OurnegoSpringPreset(
-  openStiffness: 500,
+  openStiffness: 320,
   openDamping: 0.90,
-  closeStiffness: 600,
+  closeStiffness: 380,
   closeDamping: 1,
-  contentStart: 0.30,
-  contentEnd: 0.65,
+  contentStart: 0.10,
+  contentEnd: 0.45,
 );
 
 /// Bottom sheets (location access, zone picker).
