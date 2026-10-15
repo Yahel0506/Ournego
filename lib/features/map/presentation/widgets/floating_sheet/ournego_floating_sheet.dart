@@ -13,6 +13,7 @@ import 'package:ournego/features/map/presentation/widgets/floating_sheet/floatin
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/floating_sheet_state.dart';
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/models/sheet_business_data.dart';
 import 'package:ournego/shared/widgets/buttons/buttons.dart';
+import 'package:ournego/shared/widgets/container_transform/container_transform_origin.dart';
 
 class OurnegoFloatingSheet extends StatefulWidget {
   final FloatingSheetController controller;
@@ -22,7 +23,13 @@ class OurnegoFloatingSheet extends StatefulWidget {
   final double sideStackTop;
   final double maxWidth;
   final Future<bool> Function(SheetBusinessData business) onFavorite;
-  final Future<void> Function(SheetBusinessData business) onContact;
+
+  /// [origin] is the button that was tapped, so the notice can grow out of it.
+  final Future<void> Function(
+    SheetBusinessData business,
+    ContainerTransformOriginController origin,
+  )
+  onContact;
   final void Function(SheetBusinessData business) onCatalog;
   final void Function(SheetBusinessData business) onReviews;
   final Future<void> Function(SheetBusinessData business) onShare;
@@ -316,7 +323,7 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet> {
             Expanded(
               child: _ExpandedContent(
                 business: business,
-                onContact: () => widget.onContact(business),
+                onContact: (origin) => widget.onContact(business, origin),
                 onCatalog: () => widget.onCatalog(business),
                 onReviews: () => widget.onReviews(business),
                 onShare: () => widget.onShare(business),
@@ -484,8 +491,8 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet> {
                           child: isExpanded
                               ? _ExpandedContent(
                                   business: activeBusiness,
-                                  onContact: () =>
-                                      widget.onContact(activeBusiness),
+                                  onContact: (origin) =>
+                                      widget.onContact(activeBusiness, origin),
                                   onCatalog: () =>
                                       widget.onCatalog(activeBusiness),
                                   onReviews: () =>
@@ -500,8 +507,10 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet> {
                                   // the visible layout in normal use.
                                   physics: const NeverScrollableScrollPhysics(),
                                   child: _CollapsedActions(
-                                    onContact: () =>
-                                        widget.onContact(activeBusiness),
+                                    onContact: (origin) => widget.onContact(
+                                      activeBusiness,
+                                      origin,
+                                    ),
                                     onCatalog: () =>
                                         widget.onCatalog(activeBusiness),
                                     onReviews: () =>
@@ -641,7 +650,7 @@ class _TypeRatingBadgeRow extends StatelessWidget {
 }
 
 class _CollapsedActions extends StatelessWidget {
-  final VoidCallback onContact;
+  final ValueChanged<ContainerTransformOriginController> onContact;
   final VoidCallback onCatalog;
   final VoidCallback onReviews;
   final VoidCallback onShare;
@@ -675,10 +684,13 @@ class _CollapsedActions extends StatelessWidget {
         ),
         gap,
         Expanded(
-          child: OurnegoActionButton(
-            icon: Icons.chat_rounded,
-            semanticLabel: 'Mensaje',
-            onPressed: onContact,
+          child: ContainerTransformTrigger(
+            radius: OurnegoRadiusTokens.lg,
+            builder: (context, origin) => OurnegoActionButton(
+              icon: Icons.chat_rounded,
+              semanticLabel: 'Mensaje',
+              onPressed: () => onContact(origin),
+            ),
           ),
         ),
       ],
@@ -791,7 +803,7 @@ class _SheetAccentIcon extends StatelessWidget {
 
 class _ExpandedContent extends ConsumerWidget {
   final SheetBusinessData business;
-  final VoidCallback onContact;
+  final ValueChanged<ContainerTransformOriginController> onContact;
   final VoidCallback onCatalog;
   final VoidCallback onReviews;
   final VoidCallback onShare;
@@ -887,7 +899,7 @@ class _ExpandedContent extends ConsumerWidget {
 
 class _ContactCard extends StatelessWidget {
   final String ownerName;
-  final VoidCallback onContact;
+  final ValueChanged<ContainerTransformOriginController> onContact;
 
   const _ContactCard({required this.ownerName, required this.onContact});
 
@@ -920,22 +932,28 @@ class _ContactCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              OurnegoButton.secondary(
-                size: OurnegoButtonSize.compact,
+              ContainerTransformTrigger(
                 radius: OurnegoRadiusTokens.lg,
-                label: 'Mensaje',
-                icon: Icons.chat_rounded,
-                iconMotion: OurnegoIconMotion.wiggle,
-                onPressed: onContact,
+                builder: (context, origin) => OurnegoButton.secondary(
+                  size: OurnegoButtonSize.compact,
+                  radius: OurnegoRadiusTokens.lg,
+                  label: 'Mensaje',
+                  icon: Icons.chat_rounded,
+                  iconMotion: OurnegoIconMotion.wiggle,
+                  onPressed: () => onContact(origin),
+                ),
               ),
               const SizedBox(width: 12),
-              OurnegoButton.secondary(
-                size: OurnegoButtonSize.compact,
+              ContainerTransformTrigger(
                 radius: OurnegoRadiusTokens.lg,
-                label: 'Llamar',
-                icon: Icons.call_rounded,
-                iconMotion: OurnegoIconMotion.wiggle,
-                onPressed: onContact,
+                builder: (context, origin) => OurnegoButton.secondary(
+                  size: OurnegoButtonSize.compact,
+                  radius: OurnegoRadiusTokens.lg,
+                  label: 'Llamar',
+                  icon: Icons.call_rounded,
+                  iconMotion: OurnegoIconMotion.wiggle,
+                  onPressed: () => onContact(origin),
+                ),
               ),
             ],
           ),

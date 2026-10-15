@@ -39,9 +39,11 @@ import 'package:ournego/features/map/presentation/widgets/top_navigation_bar_wid
 import 'package:ournego/features/map/presentation/widgets/zone_picker_sheet_widget.dart';
 import 'package:ournego/shared/widgets/buttons/buttons.dart';
 import 'package:ournego/shared/widgets/nego/nego.dart';
-import 'package:ournego/shared/widgets/ournego_alert_dialog.dart';
 import 'package:ournego/shared/widgets/ournego_content_container.dart';
 import 'package:ournego/shared/widgets/ournego_snackbars.dart';
+import 'package:ournego/shared/widgets/container_transform/container_transform_anchored_position.dart';
+import 'package:ournego/shared/widgets/container_transform/container_transform_origin.dart';
+import 'package:ournego/shared/widgets/ournego_popover_surface.dart';
 import 'package:ournego/shared/widgets/container_transform/show_ournego_window.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -844,22 +846,17 @@ class _MapScreenState extends ConsumerState<MapScreen>
     );
   }
 
-  Future<void> _onContact(SheetBusinessData business) async {
+  Future<void> _onContact(
+    SheetBusinessData business,
+    ContainerTransformOriginController origin,
+  ) async {
     if (business.phoneNumber == null) {
       if (!context.mounted) return;
-      showOurnegoDialog<void>(
+      // A small notice that grows out of the tapped button.
+      await showOurnegoPopover<void>(
         context: context,
-        builder: (dialogContext) {
-          return OurnegoAlertDialog(
-            title: 'Sin teléfono disponible',
-            content:
-                'Lamentablemente, este negocio no cuenta con número de teléfono :(',
-            primaryAction: OurnegoDialogAction(
-              label: 'Entiendo',
-              onPressed: () => Navigator.of(dialogContext).pop(),
-            ),
-          );
-        },
+        anchor: origin,
+        builder: (_) => const _NoPhonePopover(),
       );
       return;
     }
@@ -1024,5 +1021,43 @@ class _MapScreenState extends ConsumerState<MapScreen>
       _searchQuery = transcript;
     });
     _revealSearchPanel();
+  }
+}
+
+/// The notice shown when a business has no phone number to contact.
+class _NoPhonePopover extends StatelessWidget {
+  const _NoPhonePopover();
+
+  @override
+  Widget build(BuildContext context) {
+    return ContainerTransformAnchoredPosition(
+      child: Material(
+        key: const ValueKey('noPhonePopover'),
+        type: MaterialType.transparency,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 260),
+          child: OurnegoPopoverSurface(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Sin teléfono disponible',
+                  style: OurnegoTextStyles.body.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Lamentablemente, este negocio no cuenta con número de teléfono :(',
+                  style: OurnegoTextStyles.bodyCompact,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

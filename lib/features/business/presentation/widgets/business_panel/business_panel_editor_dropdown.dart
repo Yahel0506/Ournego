@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ournego/shared/widgets/container_transform/container_transform_origin.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/core/theme/tokens/ournego_radius_tokens.dart';
 import 'package:ournego/core/theme/tokens/ournego_spacing_tokens.dart';
@@ -23,12 +24,12 @@ class BusinessPanelEditorDropdown extends StatelessWidget {
   final bool isExpanded;
   final ValueChanged<bool> onChanged;
   final OwnedBusinessProfile ownedBusiness;
-  final VoidCallback onEditIdentity;
+  final ValueChanged<ContainerTransformOriginController> onEditIdentity;
   final VoidCallback onAddGalleryImage;
   final ValueChanged<String> onDeleteGalleryImage;
   final VoidCallback onEditLocation;
-  final VoidCallback onEditPhone;
-  final VoidCallback onEditHours;
+  final ValueChanged<ContainerTransformOriginController> onEditPhone;
+  final ValueChanged<ContainerTransformOriginController> onEditHours;
 
   @override
   Widget build(BuildContext context) {

@@ -34,10 +34,32 @@ mid-way never jumps. `OurnegoSpringPreset.verticalPath` sets it, or removes it
 | Trigger | `shared/widgets/container_transform/container_transform_origin.dart` | `ContainerTransformTrigger` measures the element, steps aside while its window exists and ignores touches meanwhile |
 | Destination | `.../container_transform_destination.dart` | Marks the visible surface of a window; lays it out once at final size and grows a clip from the trigger |
 | Route | `.../container_transform_route.dart` | `PopupRoute` whose clock is a `SpringSimulation` |
-| API | `.../show_ournego_window.dart` | `showOurnegoDialog`, `showOurnegoMenu` |
+| API | `.../show_ournego_window.dart` | `showOurnegoDialog`, `showOurnegoMenu`, `showOurnegoPopover` |
+| Handoff | `.../container_transform_origin.dart` | `ContainerTransformHandoff`: carries the rect of a tapped element (a menu item) to the window that follows |
+| Popover | `.../container_transform_anchored_position.dart`, `shared/widgets/ournego_popover_surface.dart` | Places a small window below its anchor (flips above, never leaves the screen, start/end aware) and draws it on the flat glass with the small radius |
 
 Open dialogs only with `showOurnegoDialog` / `showOurnegoMenu`;
 `test/architecture/no_raw_dialogs_test.dart` rejects `showDialog`.
+
+## Windows that start somewhere else
+
+- **Static origin and return** (`showOurnegoDialog(staticOrigin:, returnOrigin:)`).
+  A window can grow out of a rect that has no trigger behind it (an item of a
+  menu that already closed) and, when it closes, go back to a different trigger
+  (the button that opened the menu). While it closes, the return trigger steps
+  aside as any trigger does; it is not hidden while the window opens.
+- **Handoff.** The profile menu's items measure themselves when tapped
+  (`ContainerTransformHandoff.capture`: rect, largest corner, brick color) and
+  `openProfileMenu` passes the result to the next window. Feedback and the
+  log-out confirmation grow out of the tapped brick and return to the profile
+  button.
+- **Popover** (`showOurnegoPopover`). Anchored-grow for chips, notices and other
+  small windows: no scrim, the anchor steps aside, a tap outside closes it. The
+  content goes in a `ContainerTransformAnchoredPosition` on an
+  `OurnegoPopoverSurface` (flat glass, radius `lg` = 14, no blur: level C by
+  design). The anchor is read once when it opens, so it does not jump while it
+  closes. `kPopoverSpring` follows the same criteria as the dialog (open k 320,
+  close k 380, content `[0.10, 0.45]`) without blur or vertical path.
 
 ## How a window opens
 
