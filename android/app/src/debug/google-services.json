@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "544311850300",
+    "project_id": "ournego",
+    "storage_bucket": "ournego.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:544311850300:android:99d39f78f4d885c0d19a39",
+        "android_client_info": {
+          "package_name": "com.ournego.app.debug"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "544311850300-lpgdvnvb6l2p070a6nnqkj5odk4k1qkt.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBBCkJz8auSNv9pCJTsaEo_hW-aIYB2Ly4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "544311850300-ajutqk3e1djlccqiqs0o7a1qsuck5arl.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "544311850300-n7b48q35lsl89mlk0gpo24pema3mkumn.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.ournego.app"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
