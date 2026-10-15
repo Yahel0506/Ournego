@@ -170,7 +170,7 @@ Ejecutar en Android (emulador o dispositivo), con una cuenta completa:
 Ejecutar en Android (emulador o dispositivo con Google Play Services). En un
 emulador nuevo el diálogo nativo puede pedir además "Location Accuracy".
 
-1. Revocar el permiso (`adb shell pm revoke com.ournego.app android.permission.ACCESS_FINE_LOCATION`, y COARSE) y abrir la app: aparece el sheet de Nego sin que salga antes el diálogo del sistema. "Continuar sin ubicación" deja el banner "Ournego no puede ver tu ubicación" y el chip "Zona: Ciudad Guzmán".
+1. Revocar el permiso (`adb shell pm revoke com.ournego.app.debug android.permission.ACCESS_FINE_LOCATION`, y COARSE; la build release usa `com.ournego.app`) y abrir la app: aparece el sheet de Nego sin que salga antes el diálogo del sistema. "Continuar sin ubicación" deja el banner "Ournego no puede ver tu ubicación" y el chip "Zona: Ciudad Guzmán".
 2. "Permitir" abre el diálogo del sistema. Rechazarlo dos veces abre el sheet "Elegir mi zona / Abrir ajustes".
 3. "Elegir mi zona": buscar una colonia o usar el centro del mapa. El chip y las distancias de la búsqueda cambian y la zona sigue al reiniciar la app.
 4. "Abrir ajustes", conceder el permiso y volver: el banner y el chip desaparecen y aparece el marcador.

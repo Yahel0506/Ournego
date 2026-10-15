@@ -100,3 +100,21 @@ replaces the attached file.
 When the beta ends, merge a commit with a `Release-As: 1.0.0` footer (or edit
 the release PR) and remove `bump-minor-pre-major` from the config so breaking
 changes bump the major version.
+
+## Debug and release side by side
+
+Debug builds install as `com.ournego.app.debug` and show up as **Ournego Debug**;
+release (and profile) builds keep `com.ournego.app` and **Ournego**. They are
+different apps for Android, so a debug run never replaces or wipes the release
+install, and they can be installed at the same time.
+
+- `android/app/src/debug/google-services.json` is the Firebase config used by
+  debug builds only (same project, package `com.ournego.app.debug`); the
+  `google-services` plugin fails the build without a client for the package.
+  Register the debug app in Firebase and replace the file if you need its own
+  analytics data.
+- **Google Sign-In** needs an Android OAuth client in Google Cloud for
+  `com.ournego.app.debug` with the SHA-1 of the debug key (`./gradlew
+  signingReport`), alongside the existing `com.ournego.app` clients. Without it
+  the Google login fails on debug builds only.
+- Use `com.ournego.app.debug` in `adb` commands for debug builds.

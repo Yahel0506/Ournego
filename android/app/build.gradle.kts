@@ -39,6 +39,7 @@ android {
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.ournego.app"
+        manifestPlaceholders["appName"] = "Ournego"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -72,6 +73,14 @@ android {
         // Without key.properties both fall back to the debug key.
         val releaseSigning = signingConfigs.findByName("release")
             ?: signingConfigs.getByName("debug")
+        // Debug builds install next to the release app (their own id and
+        // launcher name) so a debug run never replaces or wipes the release
+        // install. Google Sign-In needs an Android OAuth client for
+        // com.ournego.app.debug with the debug key's SHA-1.
+        getByName("debug") {
+            applicationIdSuffix = ".debug"
+            manifestPlaceholders["appName"] = "Ournego Debug"
+        }
         release {
             signingConfig = releaseSigning
         }
