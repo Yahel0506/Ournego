@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:ournego/core/debugging/presentation/pages/button_gallery_screen.dart';
+import 'package:ournego/core/debugging/simulation/google_simulation_section.dart';
+import 'package:ournego/core/debugging/simulation/location_simulation_section.dart';
 import 'package:ournego/core/debugging/simulation/network_simulation_section.dart';
 import 'package:ournego/core/debugging/simulation/session_simulation_section.dart';
 import 'package:ournego/core/debugging/simulation/startup_simulation_section.dart';
@@ -70,6 +72,8 @@ class DebugPanel extends StatelessWidget {
               const StartupSimulationSection(),
               const NetworkSimulationSection(),
               SessionSimulationSection(),
+              const LocationSimulationSection(),
+              const GoogleSimulationSection(),
             ],
           ),
         ),

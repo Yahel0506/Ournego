@@ -1,6 +1,6 @@
 # OUR-110 — Simulador de escenarios en el panel de debug
 
-Estado: entregas A (infraestructura + arranque) y B (red + sesión) implementadas; C y D pendientes.
+Estado: entregas A (arranque), B (red + sesión) y C (ubicación + Google) implementadas; D pendiente.
 
 Issue: OUR-110. Validación en dispositivo real: OUR-140 (matriz de 6 escenarios).
 
@@ -37,7 +37,7 @@ La simulación no sustituye la evidencia de OUR-140, que exige un Android físic
 |---|---|---|
 | A | Infraestructura + arranque + franja en la pantalla de error | Hecha |
 | B | Red (sin conexión, servidor inalcanzable, lenta) + sesión vencida real vía `refreshSession` con un refresh token desconocido | Hecha |
-| C | Ubicación (decorador de `LocationDatasource`, diálogos simulados) + Google (resultados vía `SupabaseAuthDatasource` simulado) | Pendiente |
+| C | Ubicación (`LocationDatasource` simulado, sin diálogos reales) + Google (resultados vía `SupabaseAuthDatasource` simulado) | Hecha |
 | D | Presets alineados con OUR-140, tarjeta de señales reales, badge global, docs | Pendiente |
 
 ## Piezas (entrega B)
@@ -53,6 +53,16 @@ La simulación no sustituye la evidencia de OUR-140, que exige un Android físic
 
 Cambios mínimos en producción: `StartupInterceptors.httpClient` y la extracción de `deviceConnectivityStream` (sin cambio de comportamiento).
 
+## Piezas (entrega C)
+
+| Pieza | Función |
+|---|---|
+| `LocationMode` | `real`, `granted`, `denied`, `allowOnPrompt`, `deniedForever`, `serviceDisabled`, `enableOnPrompt`, `unavailable`. |
+| `SimulatedLocationDatasource` | Implementa `LocationDatasource` (provider `geolocationDatasourceProvider`). Los diálogos del sistema no se dibujan: la respuesta del usuario va dentro del modo. Con `denied` y `serviceDisabled` el usuario rechaza; con `allowOnPrompt` y `enableOnPrompt` acepta cuando la app lo pide y el modo pasa a `granted`. `serviceStatusStream` sigue los cambios de modo. |
+| `GoogleOutcome` | `real`, `canceled`, `unavailable`, `network`, `serverError`. |
+| `SimulatedAuthDatasource` | Lanza las excepciones reales del flujo de Google (`GoogleSignInException`, `ClientException`, `AuthException`), así que corre `googleSignInFailureFor` y las pantallas de producción. |
+| Secciones del panel | `LocationSimulationSection` y `GoogleSimulationSection`. |
+
 ## Riesgos y límites
 
 - `initialization` falla antes de entrar en `Supabase.initialize`: no reproduce el singleton parcial del SDK, pero la pantalla que ve el usuario es idéntica.
@@ -60,7 +70,10 @@ Cambios mínimos en producción: `StartupInterceptors.httpClient` y la extracci�
 - Red (B): los `.stream()` de Supabase usan websocket y no `httpClient`; al pasar a `offline` o `serverUnreachable` se desconecta realtime. No se reconecta a mano (`connect()` es interno del SDK): se reconecta cuando un canal vuelve a suscribirse, lo que dispara el refresco tras un periodo `offline`. Al salir de `serverUnreachable` no hay transición de conectividad, así que conviene reabrir la pantalla.
 - Sesión (B): "Vencer sesión ahora" es destructiva (hay que volver a iniciar sesión) y necesita red real.
 
-## Verificación de las entregas A y B
+- Ubicación (C): no se muestran los diálogos nativos de permiso ni de "Location Accuracy"; el flujo visual del diálogo sigue exigiendo emulador o dispositivo. El formulario de negocio usa un provider de ubicación privado y no pasa por el simulador.
+- Google (C): el éxito no se puede simular (necesita un token real); el flujo nativo del selector de cuentas solo se valida en dispositivo.
 
-- Pruebas: `test/core/debugging/simulation/startup_simulation_test.dart` (interceptores contra el `StartupController` real, store, un solo uso, franja con y sin simulación, panel) y `network_session_simulation_test.dart` (cliente HTTP, conectividad combinada, simulador de sesión, secciones del panel).
+## Verificación de las entregas A, B y C
+
+- Pruebas: `test/core/debugging/simulation/startup_simulation_test.dart` (interceptores contra el `StartupController` real, store, un solo uso, franja con y sin simulación, panel) y `network_session_simulation_test.dart` (cliente HTTP, conectividad combinada, simulador de sesión, secciones del panel) y `location_google_simulation_test.dart` (cada modo de ubicación, prompts que conceden, stream del GPS, mapeo de Google a los fallos de producción).
 - `flutter analyze` y `flutter test` limpios.
