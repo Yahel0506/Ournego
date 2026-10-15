@@ -8,15 +8,19 @@ final connectivityProvider = Provider<Connectivity>((ref) => Connectivity());
 bool _hasConnection(List<ConnectivityResult> results) =>
     results.any((result) => result != ConnectivityResult.none);
 
-/// Emits `true` while the device reports any network interface.
-final connectivityStatusProvider = StreamProvider<bool>((ref) async* {
-  final connectivity = ref.watch(connectivityProvider);
+/// Emits `true` while [connectivity] reports any network interface.
+Stream<bool> deviceConnectivityStream(Connectivity connectivity) async* {
   try {
     yield _hasConnection(await connectivity.checkConnectivity());
   } catch (_) {
     yield true;
   }
   yield* connectivity.onConnectivityChanged.map(_hasConnection).distinct();
+}
+
+/// Emits `true` while the device reports any network interface.
+final connectivityStatusProvider = StreamProvider<bool>((ref) {
+  return deviceConnectivityStream(ref.watch(connectivityProvider));
 });
 
 /// Optimistic synchronous view: assumes online until proven otherwise.

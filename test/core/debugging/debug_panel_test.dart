@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:ournego/core/debugging/presentation/pages/debug_panel_screen.dart';
@@ -10,7 +11,9 @@ void main() {
   testWidgets('the switch turns the container transform off and on', (
     tester,
   ) async {
-    await tester.pumpWidget(const MaterialApp(home: DebugPanel()));
+    await tester.pumpWidget(
+      const ProviderScope(child: MaterialApp(home: DebugPanel())),
+    );
     final tile = find.byKey(const ValueKey('debugContainerTransformSwitch'));
     expect(tester.widget<SwitchListTile>(tile).value, isTrue);
 

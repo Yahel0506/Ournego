@@ -2,16 +2,25 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 enum StartupErrorKind { configuration, preparation, initialization, timeout }
 
 class StartupFailure {
-  const StartupFailure({required this.kind, required this.canRetry});
+  const StartupFailure({
+    required this.kind,
+    required this.canRetry,
+    this.simulated = false,
+  });
 
   final StartupErrorKind kind;
   final bool canRetry;
+
+  /// True when the failure was injected by the debug simulator, never in
+  /// release builds.
+  final bool simulated;
 }
 
 class StartupState {
@@ -47,6 +56,32 @@ typedef StartupSdkInitializer =
 typedef StartupOnboardingReader = Future<bool> Function();
 
 class StartupConfigurationException implements Exception {}
+
+/// Debug-only seam: wraps the production startup steps so a fault can be
+/// injected without changing how the controller reacts to it.
+class StartupInterceptors {
+  const StartupInterceptors({
+    this.resolveConfig,
+    this.prepare,
+    this.initializeSdk,
+    this.wasSimulated,
+    this.timeout,
+    this.httpClient,
+  });
+
+  final StartupConfigResolver Function(StartupConfigResolver real)?
+  resolveConfig;
+  final StartupPreparation Function(StartupPreparation real)? prepare;
+  final StartupSdkInitializer Function(StartupSdkInitializer real)?
+  initializeSdk;
+
+  /// Reports whether a fault was actually injected in this attempt.
+  final bool Function()? wasSimulated;
+  final Duration? timeout;
+
+  /// Client the Supabase SDK uses for every request.
+  final http.Client? httpClient;
+}
 
 Future<SupabaseStartupConfig> resolveStartupConfig({
   required bool isWeb,
@@ -90,7 +125,9 @@ class StartupController {
     required StartupSdkInitializer initializeSdk,
     required StartupOnboardingReader readOnboarding,
     this.timeout = const Duration(seconds: 20),
-  }) : _resolveConfig = resolveConfig,
+    bool Function()? wasSimulated,
+  }) : _wasSimulated = wasSimulated,
+       _resolveConfig = resolveConfig,
        _prepare = prepare,
        _initializeSdk = initializeSdk,
        _readOnboarding = readOnboarding;
@@ -99,25 +136,39 @@ class StartupController {
     required bool isWeb,
     required String Function(String key) webValue,
     required StartupOnboardingReader readOnboarding,
+    StartupInterceptors? interceptors,
   }) {
+    StartupConfigResolver resolveConfig = () => resolveStartupConfig(
+      isWeb: isWeb,
+      urlDefine: const String.fromEnvironment('SUPABASE_URL'),
+      anonKeyDefine: const String.fromEnvironment('SUPABASE_ANON_KEY'),
+      webValue: webValue,
+    );
+    StartupPreparation prepare = () async {
+      await SharedPreferences.getInstance();
+    };
+    StartupSdkInitializer initializeSdk = (config) async {
+      await Supabase.initialize(
+        url: config.url,
+        anonKey: config.anonKey,
+        httpClient: interceptors?.httpClient,
+        debug: false,
+      );
+    };
+    if (interceptors != null) {
+      resolveConfig =
+          interceptors.resolveConfig?.call(resolveConfig) ?? resolveConfig;
+      prepare = interceptors.prepare?.call(prepare) ?? prepare;
+      initializeSdk =
+          interceptors.initializeSdk?.call(initializeSdk) ?? initializeSdk;
+    }
     return StartupController(
-      resolveConfig: () => resolveStartupConfig(
-        isWeb: isWeb,
-        urlDefine: const String.fromEnvironment('SUPABASE_URL'),
-        anonKeyDefine: const String.fromEnvironment('SUPABASE_ANON_KEY'),
-        webValue: webValue,
-      ),
-      prepare: () async {
-        await SharedPreferences.getInstance();
-      },
-      initializeSdk: (config) async {
-        await Supabase.initialize(
-          url: config.url,
-          anonKey: config.anonKey,
-          debug: false,
-        );
-      },
+      resolveConfig: resolveConfig,
+      prepare: prepare,
+      initializeSdk: initializeSdk,
       readOnboarding: readOnboarding,
+      timeout: interceptors?.timeout ?? const Duration(seconds: 20),
+      wasSimulated: interceptors?.wasSimulated,
     );
   }
 
@@ -126,6 +177,7 @@ class StartupController {
   final StartupSdkInitializer _initializeSdk;
   final StartupOnboardingReader _readOnboarding;
   final Duration timeout;
+  final bool Function()? _wasSimulated;
 
   final List<void Function()> _listeners = [];
   StartupState _state = const StartupState.starting();
@@ -172,8 +224,12 @@ class StartupController {
       _attemptActive = false;
       _attemptId++;
       _setState(
-        const StartupState.error(
-          StartupFailure(kind: StartupErrorKind.timeout, canRetry: false),
+        StartupState.error(
+          StartupFailure(
+            kind: StartupErrorKind.timeout,
+            canRetry: false,
+            simulated: _wasSimulated?.call() ?? false,
+          ),
         ),
       );
     });
@@ -260,7 +316,15 @@ class StartupController {
     _timeoutTimer = null;
     _attemptActive = false;
     _attemptId++;
-    _setState(StartupState.error(failure));
+    _setState(
+      StartupState.error(
+        StartupFailure(
+          kind: failure.kind,
+          canRetry: failure.canRetry,
+          simulated: _wasSimulated?.call() ?? false,
+        ),
+      ),
+    );
   }
 
   void _setState(StartupState state) {
