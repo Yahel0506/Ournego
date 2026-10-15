@@ -7,6 +7,7 @@ import 'package:ournego/features/business/presentation/widgets/business_panel/bu
 import 'package:ournego/features/business/presentation/widgets/business_panel/business_panel_info_grid.dart';
 import 'package:ournego/features/business/presentation/widgets/business_panel/business_panel_map_preview.dart';
 import 'package:ournego/features/business/presentation/widgets/business_panel/business_panel_section_header.dart';
+import 'package:ournego/shared/widgets/container_transform/container_transform_origin.dart';
 import 'package:ournego/shared/widgets/ournego_content_container.dart';
 
 class BusinessPanelPreviewCard extends StatelessWidget {
@@ -22,12 +23,12 @@ class BusinessPanelPreviewCard extends StatelessWidget {
   });
 
   final OwnedBusinessProfile ownedBusiness;
-  final VoidCallback onEditIdentity;
+  final ValueChanged<ContainerTransformOriginController> onEditIdentity;
   final VoidCallback onAddGalleryImage;
   final ValueChanged<String> onDeleteGalleryImage;
   final VoidCallback onEditLocation;
-  final VoidCallback onEditPhone;
-  final VoidCallback onEditHours;
+  final ValueChanged<ContainerTransformOriginController> onEditPhone;
+  final ValueChanged<ContainerTransformOriginController> onEditHours;
 
   @override
   Widget build(BuildContext context) {
@@ -38,12 +39,21 @@ class BusinessPanelPreviewCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          BusinessPanelSectionHeader(
-            title: 'Informacion principal',
-            onEdit: onEditIdentity,
+          // The identity editor grows out of this block.
+          ContainerTransformTrigger(
+            radius: OurnegoRadiusTokens.md,
+            builder: (context, origin) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                BusinessPanelSectionHeader(
+                  title: 'Informacion principal',
+                  onEdit: () => onEditIdentity(origin),
+                ),
+                const SizedBox(height: OurnegoSpacingTokens.sm),
+                BusinessPanelIdentityCard(ownedBusiness: ownedBusiness),
+              ],
+            ),
           ),
-          const SizedBox(height: OurnegoSpacingTokens.sm),
-          BusinessPanelIdentityCard(ownedBusiness: ownedBusiness),
           const SizedBox(height: OurnegoSpacingTokens.md),
           BusinessPanelSectionHeader(
             title: 'Galeria',

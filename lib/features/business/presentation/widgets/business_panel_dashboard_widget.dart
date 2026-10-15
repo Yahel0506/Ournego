@@ -21,6 +21,7 @@ import 'package:ournego/shared/widgets/ournego_alert_dialog.dart';
 import 'package:ournego/shared/widgets/ournego_form_dialog.dart';
 import 'package:ournego/shared/widgets/ournego_inputs.dart';
 import 'package:ournego/shared/widgets/ournego_snackbars.dart';
+import 'package:ournego/shared/widgets/container_transform/container_transform_origin.dart';
 import 'package:ournego/shared/widgets/container_transform/show_ournego_window.dart';
 
 class BusinessPanelDashboardWidget extends ConsumerStatefulWidget {
@@ -59,7 +60,10 @@ class _BusinessPanelDashboardWidgetState
     }
   }
 
-  Future<void> _editIdentity(OwnedBusinessProfile business) async {
+  Future<void> _editIdentity(
+    OwnedBusinessProfile business,
+    ContainerTransformOriginController origin,
+  ) async {
     final nameController = TextEditingController(text: business.name);
     final descriptionController = TextEditingController(
       text: business.description,
@@ -68,6 +72,7 @@ class _BusinessPanelDashboardWidgetState
 
     final didConfirm = await showOurnegoDialog<bool>(
       context: context,
+      origin: origin,
       builder: (dialogContext) {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
@@ -178,10 +183,14 @@ class _BusinessPanelDashboardWidgetState
     });
   }
 
-  Future<void> _editPhone(OwnedBusinessProfile business) async {
+  Future<void> _editPhone(
+    OwnedBusinessProfile business,
+    ContainerTransformOriginController origin,
+  ) async {
     final controller = TextEditingController(text: business.phoneNumber ?? '');
     final didConfirm = await showOurnegoDialog<bool>(
       context: context,
+      origin: origin,
       builder: (dialogContext) {
         return OurnegoFormDialog(
           title: 'Editar telefono',
@@ -226,10 +235,14 @@ class _BusinessPanelDashboardWidgetState
     });
   }
 
-  Future<void> _editHours(OwnedBusinessProfile business) async {
+  Future<void> _editHours(
+    OwnedBusinessProfile business,
+    ContainerTransformOriginController origin,
+  ) async {
     final draft = buildScheduleMap(business.hours);
     final didConfirm = await showOurnegoDialog<bool>(
       context: context,
+      origin: origin,
       builder: (dialogContext) {
         return OurnegoFormDialog(
           title: 'Editar horarios',
@@ -365,8 +378,8 @@ class _BusinessPanelDashboardWidgetState
                                 });
                               },
                               ownedBusiness: ownedBusiness,
-                              onEditIdentity: () =>
-                                  _editIdentity(ownedBusiness),
+                              onEditIdentity: (origin) =>
+                                  _editIdentity(ownedBusiness, origin),
                               onAddGalleryImage: () =>
                                   _addGalleryImage(ownedBusiness),
                               onDeleteGalleryImage: (imageUrl) =>
@@ -376,8 +389,10 @@ class _BusinessPanelDashboardWidgetState
                                   ),
                               onEditLocation: () =>
                                   _editLocation(ownedBusiness),
-                              onEditPhone: () => _editPhone(ownedBusiness),
-                              onEditHours: () => _editHours(ownedBusiness),
+                              onEditPhone: (origin) =>
+                                  _editPhone(ownedBusiness, origin),
+                              onEditHours: (origin) =>
+                                  _editHours(ownedBusiness, origin),
                             ),
                             const SizedBox(height: OurnegoSpacingTokens.md),
                             BusinessPanelLockedCenterCard(

@@ -13,6 +13,9 @@ import 'package:ournego/features/map/presentation/models/business_marker_ui_mode
 import 'package:ournego/shared/widgets/buttons/buttons.dart';
 import 'package:ournego/shared/widgets/ournego_alert_dialog.dart';
 import 'package:ournego/shared/widgets/ournego_form_dialog.dart';
+import 'package:ournego/shared/widgets/buttons/ournego_pressable.dart'
+    show ournegoToneColors;
+import 'package:ournego/shared/widgets/container_transform/container_transform_origin.dart';
 import 'package:ournego/shared/widgets/container_transform/show_ournego_window.dart';
 
 class MapCanvasWidget extends StatelessWidget {
@@ -230,46 +233,55 @@ class MapCanvasWidget extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 90, left: 10),
             child: Row(
               children: [
-                OurnegoIconButton(
-                  tone: OurnegoButtonTone.glass,
-                  size: OurnegoIconButtonSize.s40,
-                  icon: Icons.info_outline_rounded,
-                  semanticLabel: 'Créditos del mapa',
-                  onPressed: () {
-                    showOurnegoDialog(
-                      context: context,
-                      builder: (context) => OurnegoFormDialog(
-                        title: 'Créditos del Mapa',
-                        primaryAction: OurnegoDialogAction(
-                          label: 'Cerrar',
-                          onPressed: () => Navigator.of(context).pop(),
+                // The credits grow out of the "i" button and go back to it.
+                ContainerTransformTrigger(
+                  radius: 20,
+                  color: ournegoToneColors(
+                    context,
+                    OurnegoButtonTone.glass,
+                  ).face,
+                  builder: (context, origin) => OurnegoIconButton(
+                    tone: OurnegoButtonTone.glass,
+                    size: OurnegoIconButtonSize.s40,
+                    icon: Icons.info_outline_rounded,
+                    semanticLabel: 'Créditos del mapa',
+                    onPressed: () {
+                      showOurnegoDialog(
+                        context: context,
+                        origin: origin,
+                        builder: (context) => OurnegoFormDialog(
+                          title: 'Créditos del Mapa',
+                          primaryAction: OurnegoDialogAction(
+                            label: 'Cerrar',
+                            onPressed: () => Navigator.of(context).pop(),
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildLink(
+                                context,
+                                '© Mapbox',
+                                'https://www.mapbox.com/about/maps/',
+                              ),
+                              const SizedBox(height: 10),
+                              _buildLink(
+                                context,
+                                '© OpenStreetMap',
+                                'https://www.openstreetmap.org/copyright',
+                              ),
+                              const SizedBox(height: 10),
+                              _buildLink(
+                                context,
+                                'Mejorar este mapa',
+                                'https://www.mapbox.com/map-feedback/',
+                              ),
+                            ],
+                          ),
                         ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildLink(
-                              context,
-                              '© Mapbox',
-                              'https://www.mapbox.com/about/maps/',
-                            ),
-                            const SizedBox(height: 10),
-                            _buildLink(
-                              context,
-                              '© OpenStreetMap',
-                              'https://www.openstreetmap.org/copyright',
-                            ),
-                            const SizedBox(height: 10),
-                            _buildLink(
-                              context,
-                              'Mejorar este mapa',
-                              'https://www.mapbox.com/map-feedback/',
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
                 if (!hasMapboxConfig)
                   Padding(

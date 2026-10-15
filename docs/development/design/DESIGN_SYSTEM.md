@@ -468,7 +468,8 @@ Rules:
 - Business hours picker: `AnimatedCrossFade` `200ms`.
 - Address focus scroll: `300ms`, `Curves.linear`.
 - Map animateTo curves include `Curves.easeIn`; the business form uses `kEaseOutCubic` (no `bounceInOut` anywhere).
-- Dialogs and menus (`showOurnegoDialog`, `showOurnegoMenu`) grow out of the element that opened them with a spring-driven route: see [`motion/README.md`](motion/README.md). Presets live in `lib/core/ournego_motion.dart` (`kDialogSpring`, `kPopoverSpring`, `kBottomSheetSpring`, `kFloatingSheetSpring`, `kSheetExpandSpring`, `kMinimizeSpring`, `kSearchInPlaceSpring`, `kFullBleedSpring`); only `kDialogSpring` has consumers so far.
+- Dialogs and menus (`showOurnegoDialog`, `showOurnegoMenu`) grow out of the element that opened them with a spring-driven route: see [`motion/README.md`](motion/README.md). Presets live in `lib/core/ournego_motion.dart` (`kDialogSpring`, `kPopoverSpring`, `kBottomSheetSpring`, `kFloatingSheetSpring`, `kSheetExpandSpring`, `kMinimizeSpring`, `kSearchInPlaceSpring`, `kFullBleedSpring`); `kDialogSpring` and `kPopoverSpring` have consumers so far.
+- Small anchored windows (`showOurnegoPopover`: chip options, the no-phone notice) use `OurnegoPopoverSurface`: the same flat glass with radius `lg` (14).
 - Rule: opening springs use zeta 0.85 to 0.90 and closing springs zeta 1, bounded to `P_MAX = 1`. The strong rebound (`kOurnegoSpring`) belongs to the lip buttons only.
 
 ### Nego motion

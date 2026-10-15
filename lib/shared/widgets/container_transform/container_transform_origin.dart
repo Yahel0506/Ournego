@@ -18,6 +18,33 @@ class ContainerTransformOriginData {
   final Color color;
 }
 
+/// Carries the origin of a window from one place to the next one.
+///
+/// The caller creates it, passes it to the window that is about to close (for
+/// example the profile menu, whose items [capture] their own rect when tapped)
+/// and then hands [data] to the window that follows as its static origin.
+class ContainerTransformHandoff {
+  /// What the last [capture] measured, or null when nothing was captured.
+  ContainerTransformOriginData? data;
+
+  /// Measures the element behind [context] and stores it. Measured where the
+  /// element is painted at this moment, so a window that is still travelling
+  /// hands over the position the user actually touched.
+  void capture(
+    BuildContext context, {
+    required double radius,
+    required Color color,
+  }) {
+    final box = context.findRenderObject();
+    if (box is! RenderBox || !box.attached || !box.hasSize) return;
+    data = ContainerTransformOriginData(
+      rect: box.localToGlobal(Offset.zero) & box.size,
+      radius: radius,
+      color: color,
+    );
+  }
+}
+
 /// Connects a trigger to the window it opens.
 ///
 /// The route asks it to [measure] the trigger once when it opens and again when

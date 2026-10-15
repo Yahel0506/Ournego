@@ -6,18 +6,30 @@ import 'package:ournego/features/feedback/presentation/widgets/feedback_dialog_w
 import 'package:ournego/features/navigation/presentation/providers/navigation_provider.dart';
 import 'package:ournego/shared/widgets/buttons/buttons.dart';
 import 'package:ournego/shared/widgets/ournego_information_dialog.dart';
+import 'package:ournego/shared/widgets/container_transform/container_transform_origin.dart';
 import 'package:ournego/shared/widgets/container_transform/show_ournego_window.dart';
 
 const String _genericErrorImage = 'assets/images/generic_error.png';
 
 /// Opens the feedback dialog unless one is already open, so a shake, the
 /// profile menu and an error dialog can never stack two of them.
-Future<void> openFeedbackDialog(BuildContext context, WidgetRef ref) async {
+///
+/// [from] makes it grow out of a rect with no trigger behind it (the item of the
+/// profile menu that was tapped) and [returnTo] is the trigger it goes back to
+/// when it closes.
+Future<void> openFeedbackDialog(
+  BuildContext context,
+  WidgetRef ref, {
+  ContainerTransformOriginData? from,
+  ContainerTransformOriginController? returnTo,
+}) async {
   if (ref.read(isFeedbackDialogOpenProvider)) return;
 
   ref.read(isFeedbackDialogOpenProvider.notifier).setIsOpen();
   await showOurnegoDialog<void>(
     context: context,
+    staticOrigin: from,
+    returnOrigin: returnTo,
     builder: (_) => const FeedbackDialogWidget(),
   );
   if (!context.mounted) return;

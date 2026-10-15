@@ -23,6 +23,9 @@ class ContainerTransformRoute<T> extends PopupRoute<T> {
     required this.preset,
     required this.scrimAlpha,
     this.origin,
+    this.staticOrigin,
+    this.returnOrigin,
+    this.useSafeArea = true,
     this.dismissible = true,
     this.label,
     super.settings,
@@ -34,6 +37,12 @@ class ContainerTransformRoute<T> extends PopupRoute<T> {
   final OurnegoSpringPreset preset;
   final double scrimAlpha;
   final ContainerTransformOriginController? origin;
+  final ContainerTransformOriginData? staticOrigin;
+  final ContainerTransformOriginController? returnOrigin;
+
+  /// Whether the page is inset by the system's safe area. Popovers place
+  /// themselves in screen coordinates, so they turn it off.
+  final bool useSafeArea;
   final bool dismissible;
   final String? label;
 
@@ -47,6 +56,8 @@ class ContainerTransformRoute<T> extends PopupRoute<T> {
       preset: preset,
       level: motionLevel,
       originSource: origin,
+      staticOrigin: staticOrigin,
+      returnSource: returnOrigin,
     );
     animation!.addListener(_syncTrigger);
     origin?.setHasWindow(true);
@@ -56,12 +67,20 @@ class ContainerTransformRoute<T> extends PopupRoute<T> {
   /// again when the container is back on top of it.
   void _syncTrigger() {
     if (motionLevel == OurnegoMotionLevel.r) return;
-    origin?.setCovered(animation!.value >= kTriggerCoveredAt);
+    final covered = animation!.value >= kTriggerCoveredAt;
+    origin?.setCovered(covered);
+    // The return target is only covered on the way back: while the window opens
+    // it grows out of something else.
+    if (_closing) returnOrigin?.setCovered(covered);
   }
+
+  bool _closing = false;
 
   @override
   bool didPop(T? result) {
+    _closing = true;
     _transform?.remeasureOrigin();
+    returnOrigin?.setHasWindow(true);
     return super.didPop(result);
   }
 
@@ -70,6 +89,8 @@ class ContainerTransformRoute<T> extends PopupRoute<T> {
     animation?.removeListener(_syncTrigger);
     origin?.setCovered(false);
     origin?.setHasWindow(false);
+    returnOrigin?.setCovered(false);
+    returnOrigin?.setHasWindow(false);
     super.dispose();
   }
 
@@ -113,7 +134,9 @@ class ContainerTransformRoute<T> extends PopupRoute<T> {
       child: Semantics(
         scopesRoute: true,
         explicitChildNodes: true,
-        child: SafeArea(child: capturedThemes.wrap(Builder(builder: builder))),
+        child: useSafeArea
+            ? SafeArea(child: capturedThemes.wrap(Builder(builder: builder)))
+            : capturedThemes.wrap(Builder(builder: builder)),
       ),
     );
   }

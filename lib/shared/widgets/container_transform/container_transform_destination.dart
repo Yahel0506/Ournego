@@ -19,13 +19,24 @@ class ContainerTransformController {
     required this.preset,
     required this.level,
     this.originSource,
-  }) : origin = originSource?.measure();
+    this.staticOrigin,
+    this.returnSource,
+  }) : origin = originSource?.measure() ?? staticOrigin;
 
   /// The route's clock `p`, bounded to [0, 1] and driven by a spring.
   final Animation<double> animation;
   final OurnegoSpringPreset preset;
   final OurnegoMotionLevel level;
   final ContainerTransformOriginController? originSource;
+
+  /// An origin with no trigger behind it (for example the item of a menu that
+  /// has already closed): where the window starts from.
+  final ContainerTransformOriginData? staticOrigin;
+
+  /// Where the window goes back to when it closes, when that is not where it
+  /// came from (a window that grew out of a menu item returns to the button
+  /// that opened the menu).
+  final ContainerTransformOriginController? returnSource;
 
   /// Null when there is no trigger (or it is gone): the window then just grows
   /// a little around its own center.
@@ -38,8 +49,8 @@ class ContainerTransformController {
   /// Measures the trigger again; called when the window starts to close, since
   /// it may have moved or disappeared meanwhile.
   void remeasureOrigin() {
-    final source = originSource;
-    if (source != null) origin = source.measure();
+    final back = returnSource ?? originSource;
+    if (back != null) origin = back.measure();
   }
 }
 

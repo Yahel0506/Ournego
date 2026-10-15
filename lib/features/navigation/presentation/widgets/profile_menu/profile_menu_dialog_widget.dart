@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -29,16 +31,31 @@ enum ProfileMenuOrigin { map, businessPanel }
 /// Centered menu with access to the account and the app's settings modules.
 ///
 /// Use [showProfileMenuDialog] to open it.
-class ProfileMenuDialogWidget extends ConsumerWidget {
+class ProfileMenuDialogWidget extends ConsumerStatefulWidget {
   const ProfileMenuDialogWidget({
     super.key,
     this.origin = ProfileMenuOrigin.map,
+    this.handoff,
   });
 
   final ProfileMenuOrigin origin;
 
+  /// Receives the rect of the item the user taps, so the window that follows
+  /// can grow out of it.
+  final ContainerTransformHandoff? handoff;
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProfileMenuDialogWidget> createState() =>
+      _ProfileMenuDialogWidgetState();
+}
+
+class _ProfileMenuDialogWidgetState
+    extends ConsumerState<ProfileMenuDialogWidget> {
+  bool _selected = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final origin = widget.origin;
     final isLogged = ref.watch(authSessionStatusProvider);
     final user = isLogged ? ref.watch(profileStreamProvider).value : null;
     final colorScheme = Theme.of(context).colorScheme;
@@ -46,6 +63,10 @@ class ProfileMenuDialogWidget extends ConsumerWidget {
         isLogged && origin != ProfileMenuOrigin.businessPanel;
 
     void select(ProfileMenuAction action) {
+      // While the menu closes it still receives touches; a second one must not
+      // pop another route.
+      if (_selected) return;
+      _selected = true;
       Navigator.of(context).pop(action);
     }
 
@@ -74,6 +95,7 @@ class ProfileMenuDialogWidget extends ConsumerWidget {
                     if (!isLogged) ...[
                       const SizedBox(height: OurnegoSpacingTokens.sm),
                       _MenuGroup(
+                        handoff: widget.handoff,
                         items: [
                           _MenuItem(
                             key: const ValueKey('profileMenuLogInButton'),
@@ -87,6 +109,7 @@ class ProfileMenuDialogWidget extends ConsumerWidget {
                     if (showsBusinessEntry) ...[
                       const _SectionLabel('Cuenta'),
                       _MenuGroup(
+                        handoff: widget.handoff,
                         items: [
                           _MenuItem(
                             key: const ValueKey('profileMenuBusinessButton'),
@@ -100,6 +123,7 @@ class ProfileMenuDialogWidget extends ConsumerWidget {
                     ],
                     const _SectionLabel('Configuración'),
                     _MenuGroup(
+                      handoff: widget.handoff,
                       items: [
                         _MenuItem(
                           key: const ValueKey('profileMenuLocationButton'),
@@ -126,6 +150,7 @@ class ProfileMenuDialogWidget extends ConsumerWidget {
                     if (isLogged) ...[
                       const SizedBox(height: OurnegoSpacingTokens.sm),
                       _MenuGroup(
+                        handoff: widget.handoff,
                         items: [
                           _MenuItem(
                             key: const ValueKey('profileMenuLogoutButton'),
@@ -151,16 +176,19 @@ class ProfileMenuDialogWidget extends ConsumerWidget {
 /// Opens the profile menu and resolves with the chosen entry, or `null`
 /// when the menu is dismissed.
 ///
-/// Pass the profile button's [trigger] so the menu grows out of it.
+/// Pass the profile button's [trigger] so the menu grows out of it. Pass a
+/// [handoff] to learn which item was tapped (its rect), so the next window can
+/// grow out of that item.
 Future<ProfileMenuAction?> showProfileMenuDialog(
   BuildContext context, {
   ProfileMenuOrigin origin = ProfileMenuOrigin.map,
   ContainerTransformOriginController? trigger,
+  ContainerTransformHandoff? handoff,
 }) {
   return showOurnegoMenu<ProfileMenuAction>(
     context: context,
     origin: trigger,
-    builder: (_) => ProfileMenuDialogWidget(origin: origin),
+    builder: (_) => ProfileMenuDialogWidget(origin: origin, handoff: handoff),
   );
 }
 
@@ -264,13 +292,14 @@ class _SectionLabel extends StatelessWidget {
 /// groups in Google's settings. The outer corners are generous, the corners
 /// between bricks are small, and a thin gap separates them.
 class _MenuGroup extends StatelessWidget {
-  const _MenuGroup({required this.items});
+  const _MenuGroup({required this.items, this.handoff});
 
   static const double _outerRadius = 18;
   static const double _innerRadius = 4;
   static const double _gap = 2;
 
   final List<_MenuItem> items;
+  final ContainerTransformHandoff? handoff;
 
   BorderRadius _radiusFor(int index) {
     const outer = Radius.circular(_outerRadius);
@@ -298,7 +327,11 @@ class _MenuGroup extends StatelessWidget {
       children: [
         for (var i = 0; i < items.length; i++) ...[
           if (i > 0) const SizedBox(height: _gap),
-          items[i].asBrick(color: brick, radius: _radiusFor(i)),
+          items[i].asBrick(
+            color: brick,
+            radius: _radiusFor(i),
+            handoff: handoff,
+          ),
         ],
       ],
     );
@@ -312,6 +345,7 @@ class _MenuItem extends StatelessWidget {
   final Color? color;
   final Color? brickColor;
   final BorderRadius radius;
+  final ContainerTransformHandoff? handoff;
 
   const _MenuItem({
     super.key,
@@ -321,10 +355,15 @@ class _MenuItem extends StatelessWidget {
     this.color,
     this.brickColor,
     this.radius = BorderRadius.zero,
+    this.handoff,
   });
 
   /// The same item, drawn as a brick of a group. Keeps the key.
-  _MenuItem asBrick({required Color color, required BorderRadius radius}) {
+  _MenuItem asBrick({
+    required Color color,
+    required BorderRadius radius,
+    ContainerTransformHandoff? handoff,
+  }) {
     return _MenuItem(
       key: key,
       icon: icon,
@@ -333,6 +372,7 @@ class _MenuItem extends StatelessWidget {
       color: this.color,
       brickColor: color,
       radius: radius,
+      handoff: handoff,
     );
   }
 
@@ -351,7 +391,21 @@ class _MenuItem extends StatelessWidget {
           style: OurnegoTextStyles.body.copyWith(color: foreground),
         ),
         visualDensity: VisualDensity.compact,
-        onTap: onTap,
+        onTap: () {
+          // The window that follows grows out of this brick: its rect, its
+          // largest corner and its color (the menu's block color).
+          handoff?.capture(
+            context,
+            radius: [
+              radius.topLeft.x,
+              radius.topRight.x,
+              radius.bottomLeft.x,
+              radius.bottomRight.x,
+            ].reduce(math.max),
+            color: brickColor ?? Theme.of(context).colorScheme.surface,
+          );
+          onTap();
+        },
       ),
     );
   }

@@ -22,10 +22,12 @@ Future<void> openProfileMenu(
   ProfileMenuOrigin origin = ProfileMenuOrigin.map,
   ContainerTransformOriginController? trigger,
 }) async {
+  final handoff = ContainerTransformHandoff();
   final action = await showProfileMenuDialog(
     context,
     origin: origin,
     trigger: trigger,
+    handoff: handoff,
   );
   if (action == null || !context.mounted) return;
 
@@ -42,19 +44,33 @@ Future<void> openProfileMenu(
         ).showSnackBar(OurnegoSnackbars.info(webLocationPermissionHelp));
       }
     case ProfileMenuAction.reportProblem:
-      await openFeedbackDialog(context, ref);
+      // Grows out of the tapped item and, once the item is gone, goes back to
+      // the profile button.
+      await openFeedbackDialog(
+        context,
+        ref,
+        from: handoff.data,
+        returnTo: trigger,
+      );
     case ProfileMenuAction.debugPanel:
       context.go(DebuggingRoutes.debugPanel);
     case ProfileMenuAction.logOut:
-      await _confirmLogOut(context, ref);
+      await _confirmLogOut(context, ref, from: handoff.data, returnTo: trigger);
   }
 }
 
-Future<void> _confirmLogOut(BuildContext context, WidgetRef ref) {
+Future<void> _confirmLogOut(
+  BuildContext context,
+  WidgetRef ref, {
+  ContainerTransformOriginData? from,
+  ContainerTransformOriginController? returnTo,
+}) {
   final logOutUsecase = ref.read(logOutUsecaseProvider);
 
   return showOurnegoDialog<void>(
     context: context,
+    staticOrigin: from,
+    returnOrigin: returnTo,
     builder: (dialogContext) {
       return OurnegoAlertDialog(
         title: 'Cerrar sesión',

@@ -4,6 +4,7 @@ import 'package:ournego/core/theme/tokens/ournego_radius_tokens.dart';
 import 'package:ournego/core/theme/tokens/ournego_spacing_tokens.dart';
 import 'package:ournego/features/business/domain/entities/owned_business_profile.dart';
 import 'package:ournego/shared/widgets/buttons/buttons.dart';
+import 'package:ournego/shared/widgets/container_transform/container_transform_origin.dart';
 import 'package:ournego/features/business/presentation/widgets/business_panel/business_panel_section_header.dart';
 
 class BusinessPanelInfoGrid extends StatelessWidget {
@@ -17,8 +18,8 @@ class BusinessPanelInfoGrid extends StatelessWidget {
 
   final OwnedBusinessProfile ownedBusiness;
   final VoidCallback onEditLocation;
-  final VoidCallback onEditPhone;
-  final VoidCallback onEditHours;
+  final ValueChanged<ContainerTransformOriginController> onEditPhone;
+  final ValueChanged<ContainerTransformOriginController> onEditHours;
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +30,7 @@ class BusinessPanelInfoGrid extends StatelessWidget {
           icon: Icons.location_on_outlined,
           title: 'Direccion',
           value: ownedBusiness.address,
-          onEdit: onEditLocation,
+          onEdit: (_) => onEditLocation(),
         ),
         const SizedBox(height: OurnegoSpacingTokens.xs),
         _InfoItem(
@@ -48,20 +49,28 @@ class BusinessPanelInfoGrid extends StatelessWidget {
 class _HoursItem extends StatelessWidget {
   const _HoursItem({required this.onEdit});
 
-  final VoidCallback onEdit;
+  final ValueChanged<ContainerTransformOriginController> onEdit;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(OurnegoSpacingTokens.sm),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.3)),
-        borderRadius: BorderRadius.circular(OurnegoRadiusTokens.md),
+    // The hours editor grows out of this tile.
+    return ContainerTransformTrigger(
+      radius: OurnegoRadiusTokens.md,
+      color: colorScheme.surface,
+      builder: (context, origin) => Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(OurnegoSpacingTokens.sm),
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          border: Border.all(color: colorScheme.outline.withValues(alpha: 0.3)),
+          borderRadius: BorderRadius.circular(OurnegoRadiusTokens.md),
+        ),
+        child: BusinessPanelSectionHeader(
+          title: 'Horarios',
+          onEdit: () => onEdit(origin),
+        ),
       ),
-      child: BusinessPanelSectionHeader(title: 'Horarios', onEdit: onEdit),
     );
   }
 }
@@ -77,48 +86,53 @@ class _InfoItem extends StatelessWidget {
   final IconData icon;
   final String title;
   final String value;
-  final VoidCallback onEdit;
+  final ValueChanged<ContainerTransformOriginController> onEdit;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(OurnegoSpacingTokens.sm),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.3)),
-        borderRadius: BorderRadius.circular(OurnegoRadiusTokens.md),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 18),
-          const SizedBox(width: OurnegoSpacingTokens.xs),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: OurnegoTextStyles.body.copyWith(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
+    // The editor of this tile grows out of it.
+    return ContainerTransformTrigger(
+      radius: OurnegoRadiusTokens.md,
+      color: colorScheme.surface,
+      builder: (context, origin) => Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(OurnegoSpacingTokens.sm),
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          border: Border.all(color: colorScheme.outline.withValues(alpha: 0.3)),
+          borderRadius: BorderRadius.circular(OurnegoRadiusTokens.md),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 18),
+            const SizedBox(width: OurnegoSpacingTokens.xs),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: OurnegoTextStyles.body.copyWith(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                Text(
-                  value,
-                  style: OurnegoTextStyles.body.copyWith(fontSize: 13),
-                ),
-              ],
+                  Text(
+                    value,
+                    style: OurnegoTextStyles.body.copyWith(fontSize: 13),
+                  ),
+                ],
+              ),
             ),
-          ),
-          OurnegoIconButton(
-            size: OurnegoIconButtonSize.s28,
-            icon: Icons.edit_rounded,
-            semanticLabel: 'Editar $title',
-            onPressed: onEdit,
-          ),
-        ],
+            OurnegoIconButton(
+              size: OurnegoIconButtonSize.s28,
+              icon: Icons.edit_rounded,
+              semanticLabel: 'Editar $title',
+              onPressed: () => onEdit(origin),
+            ),
+          ],
+        ),
       ),
     );
   }
