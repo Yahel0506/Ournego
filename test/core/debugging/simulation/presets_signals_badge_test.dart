@@ -227,7 +227,18 @@ void main() {
             debugSimulationControllerProvider.overrideWithValue(controller),
           ],
           child: MaterialApp(
-            home: DebugSimulationBadge(onTap: onTap, child: const Text('app')),
+            home: DebugSimulationBadge(
+              child: Scaffold(
+                body: Align(
+                  alignment: Alignment.topRight,
+                  child: TextButton(
+                    key: const ValueKey('underBadge'),
+                    onPressed: onTap,
+                    child: const Text('app'),
+                  ),
+                ),
+              ),
+            ),
           ),
         );
 
@@ -251,13 +262,17 @@ void main() {
       expect(find.byKey(badge), findsNothing);
     });
 
-    testWidgets('tapping it opens the panel', (tester) async {
+    testWidgets('never blocks the controls underneath', (tester) async {
       var taps = 0;
       final controller = DebugSimulationController(
         initial: const DebugSimulation(locationMode: LocationMode.denied),
       );
       await tester.pumpWidget(app(controller, () => taps++));
-      await tester.tap(find.byKey(const ValueKey('debugSimulationBadge')));
+      expect(
+        find.byKey(const ValueKey('debugSimulationBadge')),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(const ValueKey('underBadge')));
       expect(taps, 1);
     });
   });

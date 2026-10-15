@@ -19,7 +19,6 @@ import 'package:ournego/core/env_config_stub.dart'
     if (dart.library.js_interop) 'package:ournego/core/env_config_web.dart';
 import 'package:ournego/core/ournego_colors.dart';
 import 'package:ournego/core/routing/app_router.dart';
-import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/core/startup/ournego_splash_animation.dart';
 import 'package:ournego/core/startup/startup_controller.dart';
 import 'package:ournego/core/startup/startup_gate.dart';
@@ -109,10 +108,7 @@ class _MyAppState extends State<MyApp> {
           ),
         );
         if (!kDebugMode) return content;
-        return DebugSimulationBadge(
-          onTap: () => _router.go(DebuggingRoutes.debugPanel),
-          child: content,
-        );
+        return DebugSimulationBadge(child: content);
       },
       scrollBehavior: MyCustomScrollBehavior(),
       title: 'Ournego',

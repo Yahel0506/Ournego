@@ -193,7 +193,7 @@ void main() {
       expect(find.byKey(banner), findsOneWidget);
       expect(find.text('Ournego no puede iniciar'), findsOneWidget);
 
-      await tester.tap(find.text('Desactivar simulación y reiniciar'));
+      await tester.tap(find.text('Desactivar y reiniciar'));
       await tester.pump();
       await tester.pump();
       expect(controller.value.isActive, isFalse);

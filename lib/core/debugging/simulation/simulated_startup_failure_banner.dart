@@ -53,7 +53,7 @@ class SimulatedStartupFailureBanner extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           OurnegoButton.secondary(
-            label: 'Desactivar simulación y reiniciar',
+            label: 'Desactivar y reiniciar',
             icon: Icons.restart_alt_rounded,
             onPressed: () {
               controller.update(

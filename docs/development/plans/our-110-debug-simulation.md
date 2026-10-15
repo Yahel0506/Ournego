@@ -70,7 +70,7 @@ Cambios mínimos en producción: `StartupInterceptors.httpClient` y la extracci�
 | `simulationPresets` | Los 6 escenarios de OUR-140 con el resultado esperado de los checklists. Cada preset parte de un estado limpio; los que empiezan al abrir (configuración, sin red al abrir) reinician el arranque; "Sesión vencida" ejecuta la acción. |
 | `SimulationPresetsSection` | Un toque por escenario y "Restablecer todo". |
 | `RealSignalsCard` | Muestra lo que el dispositivo y el backend reportan de verdad (Supabase, sesión, red, permiso) y marca con "≠ simulado" lo que la simulación sobrescribe. Botón "Actualizar". |
-| `DebugSimulationBadge` | Pastilla "SIMULACIÓN" sobre todas las pantallas mientras algo esté activo; al tocarla abre el panel. Solo en debug (envuelve el contenido en `MyApp.builder`). |
+| `DebugSimulationBadge` | Pestaña "SIMULACIÓN" en el borde izquierdo sobre todas las pantallas mientras algo esté activo; no recibe toques para no tapar los botones superiores (el panel se abre desde el menú de perfil). Solo en debug (envuelve el contenido en `MyApp.builder`). |
 | `lib/core/debugging/simulation/README.md` | Guía para añadir una variable simulada. |
 
 ## Riesgos y límites
@@ -90,6 +90,5 @@ Cambios mínimos en producción: `StartupInterceptors.httpClient` y la extracci�
 
 ## Pendiente tras la entrega D
 
-- Ninguna de las cuatro entregas se ha probado todavía en un emulador o dispositivo (sin dispositivo disponible al implementarlas). Primera tarea: recorrer los 6 presets en Android y anotar diferencias con el comportamiento real.
-- La posición del badge (arriba a la derecha bajo la barra de estado) puede solaparse con controles del mapa; ajustar tras verlo.
+- Validado en un Samsung S24 (ver `docs/development/testing/our-140-android-validation.md`): el badge pasó a una pestaña en el borde izquierdo que no recibe toques, el panel tiene margen inferior para no quedar tras la barra de navegación y la franja de arranque usa una etiqueta más corta.
 - Con el simulador validado, abordar los criterios de OUR-110 que faltan (sesión, red y ubicación) y dejar la evidencia física para OUR-140.

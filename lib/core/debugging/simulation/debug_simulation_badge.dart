@@ -3,16 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:ournego/core/debugging/simulation/debug_simulation_providers.dart';
 
-/// Small pill on top of every screen while any simulation is active, so a
-/// simulated case is never mistaken for a real one. Tap opens the panel.
+/// Small tab on top of every screen while any simulation is active, so a
+/// simulated case is never mistaken for a real one. It sits on the left edge
+/// and never takes touches, so no button or banner is ever covered.
 class DebugSimulationBadge extends ConsumerWidget {
-  const DebugSimulationBadge({
-    super.key,
-    required this.onTap,
-    required this.child,
-  });
+  const DebugSimulationBadge({super.key, required this.child});
 
-  final VoidCallback onTap;
   final Widget child;
 
   @override
@@ -27,36 +23,42 @@ class DebugSimulationBadge extends ConsumerWidget {
           listenable: controller,
           builder: (context, _) {
             if (!controller.value.isActive) return const SizedBox.shrink();
-            return Positioned(
-              top: MediaQuery.paddingOf(context).top + 4,
-              right: 8,
-              child: Material(
-                key: const ValueKey('debugSimulationBadge'),
-                color: theme.colorScheme.tertiaryContainer,
-                shape: const StadiumBorder(),
-                elevation: 2,
-                child: InkWell(
-                  customBorder: const StadiumBorder(),
-                  onTap: onTap,
-                  child: Padding(
+            return Positioned.fill(
+              child: IgnorePointer(
+                child: Align(
+                  alignment: const Alignment(-1, 0.1),
+                  child: Container(
+                    key: const ValueKey('debugSimulationBadge'),
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: ShapeDecoration(
+                      color: theme.colorScheme.tertiaryContainer.withValues(
+                        alpha: 0.9,
+                      ),
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.horizontal(
+                          right: Radius.circular(12),
+                        ),
+                      ),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
                           Icons.bug_report_rounded,
-                          size: 14,
+                          size: 12,
                           color: theme.colorScheme.onTertiaryContainer,
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: 3),
                         Text(
                           'SIMULACIÓN',
                           style: theme.textTheme.labelSmall?.copyWith(
                             color: theme.colorScheme.onTertiaryContainer,
+                            fontSize: 10,
                             fontWeight: FontWeight.w700,
+                            decoration: TextDecoration.none,
                           ),
                         ),
                       ],
