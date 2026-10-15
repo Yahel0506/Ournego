@@ -1,6 +1,6 @@
 # OUR-110 — Simulador de escenarios en el panel de debug
 
-Estado: entregas A (arranque), B (red + sesión) y C (ubicación + Google) implementadas; D pendiente.
+Estado: entregas A, B, C y D implementadas. Falta validar el simulador en un dispositivo y empezar los escenarios de OUR-110 con él.
 
 Issue: OUR-110. Validación en dispositivo real: OUR-140 (matriz de 6 escenarios).
 
@@ -38,7 +38,7 @@ La simulación no sustituye la evidencia de OUR-140, que exige un Android físic
 | A | Infraestructura + arranque + franja en la pantalla de error | Hecha |
 | B | Red (sin conexión, servidor inalcanzable, lenta) + sesión vencida real vía `refreshSession` con un refresh token desconocido | Hecha |
 | C | Ubicación (`LocationDatasource` simulado, sin diálogos reales) + Google (resultados vía `SupabaseAuthDatasource` simulado) | Hecha |
-| D | Presets alineados con OUR-140, tarjeta de señales reales, badge global, docs | Pendiente |
+| D | Presets alineados con OUR-140, tarjeta de señales reales, badge global, docs | Hecha |
 
 ## Piezas (entrega B)
 
@@ -63,6 +63,16 @@ Cambios mínimos en producción: `StartupInterceptors.httpClient` y la extracci�
 | `SimulatedAuthDatasource` | Lanza las excepciones reales del flujo de Google (`GoogleSignInException`, `ClientException`, `AuthException`), así que corre `googleSignInFailureFor` y las pantallas de producción. |
 | Secciones del panel | `LocationSimulationSection` y `GoogleSimulationSection`. |
 
+## Piezas (entrega D)
+
+| Pieza | Función |
+|---|---|
+| `simulationPresets` | Los 6 escenarios de OUR-140 con el resultado esperado de los checklists. Cada preset parte de un estado limpio; los que empiezan al abrir (configuración, sin red al abrir) reinician el arranque; "Sesión vencida" ejecuta la acción. |
+| `SimulationPresetsSection` | Un toque por escenario y "Restablecer todo". |
+| `RealSignalsCard` | Muestra lo que el dispositivo y el backend reportan de verdad (Supabase, sesión, red, permiso) y marca con "≠ simulado" lo que la simulación sobrescribe. Botón "Actualizar". |
+| `DebugSimulationBadge` | Pastilla "SIMULACIÓN" sobre todas las pantallas mientras algo esté activo; al tocarla abre el panel. Solo en debug (envuelve el contenido en `MyApp.builder`). |
+| `lib/core/debugging/simulation/README.md` | Guía para añadir una variable simulada. |
+
 ## Riesgos y límites
 
 - `initialization` falla antes de entrar en `Supabase.initialize`: no reproduce el singleton parcial del SDK, pero la pantalla que ve el usuario es idéntica.
@@ -75,5 +85,11 @@ Cambios mínimos en producción: `StartupInterceptors.httpClient` y la extracci�
 
 ## Verificación de las entregas A, B y C
 
-- Pruebas: `test/core/debugging/simulation/startup_simulation_test.dart` (interceptores contra el `StartupController` real, store, un solo uso, franja con y sin simulación, panel) y `network_session_simulation_test.dart` (cliente HTTP, conectividad combinada, simulador de sesión, secciones del panel) y `location_google_simulation_test.dart` (cada modo de ubicación, prompts que conceden, stream del GPS, mapeo de Google a los fallos de producción).
+- Pruebas: `test/core/debugging/simulation/startup_simulation_test.dart` (interceptores contra el `StartupController` real, store, un solo uso, franja con y sin simulación, panel) y `network_session_simulation_test.dart` (cliente HTTP, conectividad combinada, simulador de sesión, secciones del panel) y `location_google_simulation_test.dart` (cada modo de ubicación, prompts que conceden, stream del GPS, mapeo de Google a los fallos de producción) y `presets_signals_badge_test.dart` (presets, reinicio selectivo, reset, tarjeta de señales y badge).
 - `flutter analyze` y `flutter test` limpios.
+
+## Pendiente tras la entrega D
+
+- Ninguna de las cuatro entregas se ha probado todavía en un emulador o dispositivo (sin dispositivo disponible al implementarlas). Primera tarea: recorrer los 6 presets en Android y anotar diferencias con el comportamiento real.
+- La posición del badge (arriba a la derecha bajo la barra de estado) puede solaparse con controles del mapa; ajustar tras verlo.
+- Con el simulador validado, abordar los criterios de OUR-110 que faltan (sesión, red y ubicación) y dejar la evidencia física para OUR-140.

@@ -565,6 +565,7 @@ This repo has multiple documentation entrypoints. Before creating new docs, pref
 - `TESTING.md`: testing strategy and how to run tests.
 - `MODELS_TEMPLATE.md`: guidelines for models vs entities and serialization.
 - `DESIGN_SYSTEM.md`: visual design system (tokens, components, patterns) documented from current UI implementation.
+- `docs/development/plans/our-110-debug-simulation.md`: debug simulator (startup, network, session, location, Google) and its panel.
 - `docs/development/design/motion/README.md`: container transform (windows that grow out of their trigger): pieces, presets and differences from the spec.
 - `SYSTEM_DESIGN.md`: alias entrypoint; canonical doc is `DESIGN_SYSTEM.md`.
 - `components.md`: project-specific component notes.

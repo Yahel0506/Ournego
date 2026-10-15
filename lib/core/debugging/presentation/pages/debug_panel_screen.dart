@@ -5,6 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ournego/core/debugging/presentation/pages/button_gallery_screen.dart';
 import 'package:ournego/core/debugging/simulation/google_simulation_section.dart';
 import 'package:ournego/core/debugging/simulation/location_simulation_section.dart';
+import 'package:ournego/core/debugging/simulation/presets_section.dart';
+import 'package:ournego/core/debugging/simulation/real_signals_card.dart';
 import 'package:ournego/core/debugging/simulation/network_simulation_section.dart';
 import 'package:ournego/core/debugging/simulation/session_simulation_section.dart';
 import 'package:ournego/core/debugging/simulation/startup_simulation_section.dart';
@@ -68,6 +70,12 @@ class DebugPanel extends StatelessWidget {
                   onChanged: (value) =>
                       OurnegoMotion.containerTransformEnabled.value = value,
                 ),
+              ),
+              const RealSignalsCard(),
+              SimulationPresetsSection(),
+              const Padding(
+                padding: EdgeInsets.fromLTRB(16, 24, 16, 0),
+                child: Divider(),
               ),
               const StartupSimulationSection(),
               const NetworkSimulationSection(),
