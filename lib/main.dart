@@ -1,5 +1,5 @@
 import 'package:feedback/feedback.dart';
-import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
+import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb, debugPrint;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +8,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 
 // Conditional import for web-specific environment configuration
+import 'package:ournego/core/debugging/simulation/debug_restart_scope.dart';
+import 'package:ournego/core/debugging/simulation/debug_simulation_controller.dart';
+import 'package:ournego/core/debugging/simulation/debug_simulation_providers.dart';
+import 'package:ournego/core/debugging/simulation/simulated_startup_failure_banner.dart';
+import 'package:ournego/core/debugging/simulation/startup_fault_interceptors.dart';
 import 'package:ournego/core/env_config_stub.dart'
     if (dart.library.js_interop) 'package:ournego/core/env_config_web.dart';
 import 'package:ournego/core/ournego_colors.dart';
@@ -23,24 +28,42 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   usePathUrlStrategy();
 
+  // Debug builds can simulate startup faults; release builds skip all of it.
+  final simulation = kDebugMode
+      ? await DebugSimulationController.bootstrap()
+      : null;
+
   runApp(
     BetterFeedback(
-      child: ProviderScope(
-        child: StartupGate(
-          controller: StartupController.production(
-            isWeb: kIsWeb,
-            webValue: getWebEnvVariable,
-            readOnboarding: LocalOnboardingDatasource().hasSeenOnboarding,
+      child: DebugRestartScope(
+        builder: (context) => ProviderScope(
+          overrides: [
+            if (simulation != null)
+              debugSimulationControllerProvider.overrideWithValue(simulation),
+          ],
+          child: StartupGate(
+            controller: StartupController.production(
+              isWeb: kIsWeb,
+              webValue: getWebEnvVariable,
+              readOnboarding: LocalOnboardingDatasource().hasSeenOnboarding,
+              interceptors: simulation == null
+                  ? null
+                  : startupInterceptorsFor(simulation.value.startupFault),
+            ),
+            simulatedFailureBannerBuilder: simulation == null
+                ? null
+                : (context) =>
+                      SimulatedStartupFailureBanner(controller: simulation),
+            splashBuilder: kIsWeb
+                ? null
+                : (onAnimationCompleted) => OurnegoSplashAnimation(
+                    onAnimationCompleted: onAnimationCompleted,
+                  ),
+            appBuilder: (startOnMap) {
+              final app = MyApp(startOnMap: startOnMap);
+              return kIsWeb ? AuthStateListener(child: app) : app;
+            },
           ),
-          splashBuilder: kIsWeb
-              ? null
-              : (onAnimationCompleted) => OurnegoSplashAnimation(
-                  onAnimationCompleted: onAnimationCompleted,
-                ),
-          appBuilder: (startOnMap) {
-            final app = MyApp(startOnMap: startOnMap);
-            return kIsWeb ? AuthStateListener(child: app) : app;
-          },
         ),
       ),
     ),

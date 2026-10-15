@@ -146,6 +146,10 @@ La validación nativa usa un inicializador simulado: no prueba una caída real,
 la recuperación de sesión ni la conexión de producción a Supabase. Tampoco
 equivale a ejecutar la suite Patrol pendiente indicada arriba.
 
+### Simulador de debug: arranque (OUR-110)
+
+En `Debug Panel → Simulación de arranque` se elige un fallo (configuración, preparación local con reintento, preparación persistente, inicialización, timeout) y "Reiniciar arranque ahora" vuelve a pasar por `StartupGate` sin cerrar la app. La pantalla de error es la real, con una franja "Fallo simulado (debug)" que solo aparece si el fallo es inyectado y ofrece "Desactivar simulación y reiniciar". Un fallo guardado se aplica a un único arranque en frío. Solo en builds debug. Plan completo: `docs/development/plans/our-110-debug-simulation.md`. No sustituye la validación en dispositivo físico de OUR-140.
+
 ## Checklist manual: sesión vencida y fallos de red (OUR-132)
 
 Ejecutar en Android (emulador o dispositivo), con una cuenta completa:

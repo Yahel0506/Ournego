@@ -13,6 +13,7 @@ import 'package:ournego/shared/widgets/container_transform/show_ournego_window.d
 
 typedef StartupAppBuilder = Widget Function(bool startOnMap);
 typedef StartupSupportLauncher = Future<bool> Function(Uri uri);
+typedef StartupSimulatedBannerBuilder = Widget Function(BuildContext context);
 
 /// Builds the animated splash. It must call `onAnimationCompleted` once the
 /// animation reaches its final (static) logo frame.
@@ -25,6 +26,7 @@ class StartupGate extends StatefulWidget {
     required this.controller,
     required this.appBuilder,
     this.supportLauncher = _launchSupport,
+    this.simulatedFailureBannerBuilder,
     this.splashBuilder,
     this.splashMinimumHold = const Duration(milliseconds: 500),
     this.splashExitDuration = const Duration(milliseconds: 900),
@@ -33,6 +35,9 @@ class StartupGate extends StatefulWidget {
   final StartupController controller;
   final StartupAppBuilder appBuilder;
   final StartupSupportLauncher supportLauncher;
+
+  /// Debug only: banner shown above the error when the failure is simulated.
+  final StartupSimulatedBannerBuilder? simulatedFailureBannerBuilder;
 
   /// Animated splash shown over startup; null disables it (web).
   ///
@@ -149,6 +154,7 @@ class _StartupGateState extends State<StartupGate>
         state: state,
         onRetry: widget.controller.retry,
         supportLauncher: widget.supportLauncher,
+        simulatedBannerBuilder: widget.simulatedFailureBannerBuilder,
       ),
     );
   }
@@ -319,11 +325,13 @@ class _StartupStatusScreen extends StatefulWidget {
     required this.state,
     required this.onRetry,
     required this.supportLauncher,
+    this.simulatedBannerBuilder,
   });
 
   final StartupState state;
   final VoidCallback onRetry;
   final StartupSupportLauncher supportLauncher;
+  final StartupSimulatedBannerBuilder? simulatedBannerBuilder;
 
   @override
   State<_StartupStatusScreen> createState() => _StartupStatusScreenState();
@@ -423,6 +431,9 @@ class _StartupStatusScreenState extends State<_StartupStatusScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  if (failure?.simulated == true &&
+                      widget.simulatedBannerBuilder != null)
+                    widget.simulatedBannerBuilder!(context),
                   Icon(
                     isStarting ? Icons.hourglass_top : Icons.error_outline,
                     size: 48,
