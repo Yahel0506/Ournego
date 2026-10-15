@@ -164,21 +164,25 @@ class OurnegoChip<T> extends StatelessWidget {
         child: Material(
           type: MaterialType.transparency,
           child: OurnegoPopoverSurface(
-            child: IntrinsicWidth(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  for (var i = 0; i < options.length; i++)
-                    _OptionTile(
-                      key: ValueKey('chipOption_$i'),
-                      label: options[i].label,
-                      selected: options[i].value == value,
-                      onTap: () => Navigator.of(
-                        popoverContext,
-                      ).pop(_Picked<T>(options[i].value)),
-                    ),
-                ],
+            // Scrolls when the options do not fit between the chip and the edge
+            // of the screen.
+            child: SingleChildScrollView(
+              child: IntrinsicWidth(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (var i = 0; i < options.length; i++)
+                      _OptionTile(
+                        key: ValueKey('chipOption_$i'),
+                        label: options[i].label,
+                        selected: options[i].value == value,
+                        onTap: () => Navigator.of(
+                          popoverContext,
+                        ).pop(_Picked<T>(options[i].value)),
+                      ),
+                  ],
+                ),
               ),
             ),
           ),

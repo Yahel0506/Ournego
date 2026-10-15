@@ -208,5 +208,46 @@ void main() {
       }
       expect(picks, [5000, 5000]);
     });
+
+    testWidgets('a long list scrolls instead of overflowing a short screen', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(400, 360);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final picks = <int?>[];
+      await tester.pumpWidget(
+        host(
+          Align(
+            alignment: Alignment.topLeft,
+            child: SizedBox(
+              width: 180,
+              child: OurnegoChip<int?>.dropdown(
+                placeholder: 'Categoría',
+                value: null,
+                options: [
+                  for (var i = 0; i < 14; i++)
+                    OurnegoChipOption<int?>(value: i, label: 'Opción $i'),
+                ],
+                onChanged: picks.add,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Categoría'));
+      await tester.pumpAndSettle();
+
+      // No overflow error, and the last option is reachable by scrolling.
+      expect(tester.takeException(), isNull);
+      await tester.dragUntilVisible(
+        find.byKey(const ValueKey('chipOption_13')),
+        find.byType(SingleChildScrollView),
+        const Offset(0, -120),
+      );
+      await tester.tap(find.byKey(const ValueKey('chipOption_13')));
+      await tester.pumpAndSettle();
+      expect(picks, [13]);
+    });
   });
 }
