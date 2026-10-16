@@ -577,8 +577,12 @@ class _MapScreenState extends ConsumerState<MapScreen>
               checkMinZoom(zoom);
               await _persistMapAndSheetState();
             },
-            onBusinessTap: (business) {
-              _viewController.openBusinessSheet(business, source: 'map');
+            onBusinessTap: (business, origin) {
+              _viewController.openBusinessSheet(
+                business,
+                source: 'map',
+                origin: origin,
+              );
             },
             onMapTap: () {
               if (_isSearchPanelVisible) _dismissSearchPanel();
@@ -691,11 +695,12 @@ class _MapScreenState extends ConsumerState<MapScreen>
                       );
                     });
                   },
-                  onBusinessSelected: (business) {
+                  onBusinessSelected: (business, origin) {
                     // The query stays in the bar (D31).
                     _viewController.openBusinessSheet(
                       business,
                       source: 'search',
+                      origin: origin,
                     );
                     _dismissSearchPanel();
                   },

@@ -33,7 +33,10 @@ class MapCanvasWidget extends StatelessWidget {
   final bool isMarkerVisible;
   final bool isMarkerHidden;
   final Future<void> Function(double zoom) onCameraChanged;
-  final void Function(Business business) onBusinessTap;
+
+  /// [origin] is the marker's rectangle in global coordinates, where the
+  /// sheet grows from.
+  final void Function(Business business, Rect origin) onBusinessTap;
   final BusinessMarkerUiModel Function(Business business) markerUiMapper;
   final VoidCallback? onRetryBusinesses;
 
@@ -159,22 +162,27 @@ class MapCanvasWidget extends StatelessWidget {
                   return Marker(
                     rotate: true,
                     point: LatLng(business.latitude, business.longitude),
-                    child: GestureDetector(
-                      onTap: () => onBusinessTap(business),
-                      child: Container(
-                        key: ValueKey('businessMarker-${business.id}'),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            width: 2,
+                    child: Builder(
+                      builder: (markerContext) => GestureDetector(
+                        onTap: () => onBusinessTap(
+                          business,
+                          globalRectOf(markerContext),
+                        ),
+                        child: Container(
+                          key: ValueKey('businessMarker-${business.id}'),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              width: 2,
+                              color: marker.foregroundColor,
+                            ),
+                            color: marker.backgroundColor,
+                          ),
+                          child: Icon(
+                            marker.icon,
+                            size: 18,
                             color: marker.foregroundColor,
                           ),
-                          color: marker.backgroundColor,
-                        ),
-                        child: Icon(
-                          marker.icon,
-                          size: 18,
-                          color: marker.foregroundColor,
                         ),
                       ),
                     ),
@@ -187,17 +195,22 @@ class MapCanvasWidget extends StatelessWidget {
                     width: 12,
                     rotate: true,
                     point: LatLng(business.latitude, business.longitude),
-                    child: GestureDetector(
-                      onTap: () => onBusinessTap(business),
-                      child: Container(
-                        key: ValueKey('businessMarker-${business.id}'),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            width: 2,
-                            color: marker.foregroundColor,
+                    child: Builder(
+                      builder: (markerContext) => GestureDetector(
+                        onTap: () => onBusinessTap(
+                          business,
+                          globalRectOf(markerContext),
+                        ),
+                        child: Container(
+                          key: ValueKey('businessMarker-${business.id}'),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              width: 2,
+                              color: marker.foregroundColor,
+                            ),
+                            color: marker.backgroundColor,
                           ),
-                          color: marker.backgroundColor,
                         ),
                       ),
                     ),
