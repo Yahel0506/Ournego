@@ -178,8 +178,11 @@ const OurnegoSpringPreset kFloatingSheetSpring = OurnegoSpringPreset(
   openDamping: 0.90,
   closeStiffness: 400,
   closeDamping: 1,
-  contentStart: 0.25,
-  contentEnd: 0.65,
+  contentStart: 0.10,
+  contentEnd: 0.35,
+  maxItemBlur: 12,
+  blurClearStart: 0.62,
+  verticalPath: kWindowVerticalPath,
 );
 
 /// Collapsed to expanded floating sheet; tied to the drag gesture.
@@ -202,6 +205,9 @@ const OurnegoSpringPreset kMinimizeSpring = OurnegoSpringPreset(
   closeDamping: 1,
   contentStart: 0.60,
   contentEnd: 1.0,
+  maxItemBlur: 12,
+  blurClearStart: 0.62,
+  verticalPath: kWindowVerticalPath,
 );
 
 /// Search bar growing into the results panel, in place.

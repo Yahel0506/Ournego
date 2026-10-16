@@ -1,5 +1,9 @@
+import 'dart:math' as math;
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ournego/core/motion/motion_window.dart';
 import 'package:ournego/core/motion/ournego_motion_level.dart';
 import 'package:ournego/core/motion/spring_clock.dart';
 import 'package:ournego/core/ournego_motion.dart';
@@ -533,14 +537,16 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
     final pm = _minimize.value.clamp(0.0, 1.0);
     final resting = _restingRect(stack, pe);
     final origin = _entryOrigin == null ? null : _toLocal(_entryOrigin!);
+    // The same smooth curve as the windows: a marker or row leans into the
+    // sheet's place. From the bottom edge the sheet simply rises.
     final opened = origin == null
         ? resting.shift(Offset(0, (1 - po) * (stack.height - resting.top)))
-        : Rect.lerp(origin, resting, po)!;
+        : _along(origin, resting, po, kFloatingSheetSpring.verticalPath);
     final slot = controller.minimizedBusinesses.indexWhere(
       (b) => b.id == business.id,
     );
     final iconRect = _slotRect(slot < 0 ? 0 : slot);
-    final frame = Rect.lerp(opened, iconRect, pm)!;
+    final frame = _along(opened, iconRect, pm, kMinimizeSpring.verticalPath);
     final radius = BorderRadius.circular(
       _lerpDouble(
         OurnegoRadiusTokens.window,
@@ -567,6 +573,17 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
     final iconAlpha =
         _segment(pm, kMinimizeSpring.contentStart, kMinimizeSpring.contentEnd) *
         shown;
+    // Content travels blurred and sharpens at the end (level B only).
+    final blurOn =
+        OurnegoMotion.resolveLevel(context, wantsBlur: true) ==
+        OurnegoMotionLevel.b;
+    final contentBlur = blurOn
+        ? math.max(
+            transitBlurSigma(po, kFloatingSheetSpring),
+            kMinimizeSpring.maxItemBlur * _segment(pm, 0, 0.1),
+          )
+        : 0.0;
+    final iconBlur = blurOn ? transitBlurSigma(pm, kMinimizeSpring) : 0.0;
     final interactive =
         shown == 1 &&
         po > 0.5 &&
@@ -618,26 +635,32 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
                     child: SizedBox(
                       width: resting.width,
                       height: resting.height,
-                      child: Opacity(
-                        opacity: contentAlpha,
-                        child: _buildSheetCard(
-                          business: business,
-                          controller: controller,
-                          pe: pe,
+                      child: _blurred(
+                        contentBlur,
+                        Opacity(
+                          opacity: contentAlpha,
+                          child: _buildSheetCard(
+                            business: business,
+                            controller: controller,
+                            pe: pe,
+                          ),
                         ),
                       ),
                     ),
                   ),
                   if (iconAlpha > 0)
                     Center(
-                      child: Opacity(
-                        opacity: iconAlpha,
-                        child: SizedBox.square(
-                          dimension: _stackIconSize,
-                          child: MinimizedStackIcon(
-                            business: business,
-                            onTap: () {},
-                            onLongPress: () {},
+                      child: _blurred(
+                        iconBlur,
+                        Opacity(
+                          opacity: iconAlpha,
+                          child: SizedBox.square(
+                            dimension: _stackIconSize,
+                            child: MinimizedStackIcon(
+                              business: business,
+                              onTap: () {},
+                              onLongPress: () {},
+                            ),
                           ),
                         ),
                       ),
@@ -648,6 +671,31 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
           ),
         ),
       ),
+    );
+  }
+
+  /// Moves from [from] to [to] with the plain route, and the vertical position
+  /// on [path] when there is one (as in the windows).
+  Rect _along(Rect from, Rect to, double p, Curve? path) {
+    final rect = Rect.lerp(from, to, p)!;
+    if (path == null) {
+      return rect;
+    }
+    final g = p.clamp(0.0, 1.0);
+    return rect.shift(
+      Offset(0, (path.transform(g) - g) * (to.center.dy - from.center.dy)),
+    );
+  }
+
+  Widget _blurred(double sigma, Widget child) {
+    return ImageFiltered(
+      enabled: sigma > 0.1,
+      imageFilter: ui.ImageFilter.blur(
+        sigmaX: sigma,
+        sigmaY: sigma,
+        tileMode: TileMode.decal,
+      ),
+      child: child,
     );
   }
 

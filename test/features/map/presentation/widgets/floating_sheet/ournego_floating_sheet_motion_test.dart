@@ -140,6 +140,52 @@ void main() {
     });
   });
 
+  group('transit blur', () {
+    bool blurred(WidgetTester tester) => tester
+        .widgetList<ImageFiltered>(
+          find.descendant(of: _frame, matching: find.byType(ImageFiltered)),
+        )
+        .any((w) => w.enabled);
+
+    testWidgets('the content opens blurred and is sharp at rest', (
+      tester,
+    ) async {
+      final controller = await _pumpSheet(tester);
+      controller.openBusiness(
+        _biz('a'),
+        origin: const Rect.fromLTWH(280, 500, 40, 40),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 48));
+      expect(blurred(tester), isTrue);
+
+      await tester.pumpAndSettle();
+      expect(blurred(tester), isFalse);
+    });
+
+    testWidgets('the vertical position leads the horizontal one', (
+      tester,
+    ) async {
+      final controller = await _pumpSheet(tester);
+      const origin = Rect.fromLTWH(60, 500, 40, 40);
+      controller.openBusiness(_biz('a'), origin: origin);
+      await tester.pump();
+      for (var i = 0; i < 6; i++) {
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+      final rest = Rect.fromLTWH(12, 800 - 96 - 200, 576, 200);
+      final frame = tester.getRect(_frame);
+      final x =
+          (frame.center.dx - origin.center.dx) /
+          (rest.center.dx - origin.center.dx);
+      final y =
+          (frame.center.dy - origin.center.dy) /
+          (rest.center.dy - origin.center.dy);
+      expect(y, greaterThan(x));
+      await tester.pumpAndSettle();
+    });
+  });
+
   group('minimize', () {
     testWidgets(
       'the sheet becomes its stacked icon, never two copies at once',
