@@ -61,9 +61,9 @@ Carácter: calmado. El tamaño y la X nunca se pasan de su destino. La única ex
 | D31 | Barra tras elegir un resultado | Conserva la consulta | Hecho (ola 3) |
 | D32 | Fichas de la spec §13 | Una por preset en `docs/development/design/motion/` | La del preset `dialog` está hecha |
 
-### 2.2 Cambios de diseño aprobados después (E1–E8)
+### 2.2 Cambios de diseño aprobados después (E1–E15)
 
-Surgieron al revisar la ola 1 en el teléfono. Prevalecen sobre la spec y sobre D3/D8 donde chocan.
+E1–E8 surgieron al revisar la ola 1 en el teléfono; E9–E15, al revisar la ola 4. Prevalecen sobre la spec y sobre D3/D8 donde chocan.
 
 | # | Cambio | Motivo |
 | --- | --- | --- |
@@ -75,6 +75,13 @@ Surgieron al revisar la ola 1 en el teléfono. Prevalecen sobre la spec y sobre 
 | E6 | **El diálogo de feedback es una ventana Ournego**: misma superficie y misma animación (antes un `AlertDialog` de Material con fundido de respaldo) | Pedido explícito |
 | E7 | **Menú de cuenta en bloques** (estilo ajustes de Google): cada sección es un rectángulo redondeado de bloques (esquinas externas 18, internas 4, 2 dp entre bloques); cerrar sesión en su propio grupo | Pedido explícito |
 | E8 | **Diálogo de alerta sin `AlertDialog` interno**: título, cuerpo y barra de acciones directamente en la superficie, con el padding del menú (margen de texto ~20 dp). Antes el texto quedaba a 65 dp del borde | Error visual reportado |
+| E9 | **El scrim sigue a la hoja visible**, no solo a su expansión: se aclara al minimizar o cerrar desde expandida | Error reportado: el scrim se quedaba oscuro al minimizar desde expandida |
+| E10 | **Se cierra hacia un origen vivo**: el origen se vuelve a medir al cerrar. Si ya no existe (ícono restaurado, fila de un panel cerrado) o quedó fuera de la pantalla, la hoja sale hacia abajo como antes | Error reportado: la hoja volvía al hueco de un ícono que ya no estaba |
+| E11 | **Descartar en dos fases**: mientras el dedo arrastra hacia abajo, la hoja baja y se encoge; al soltar, desaparece mientras viaja a su origen con la curva de E2 | Pedido explícito |
+| E12 | **La hoja usa el motor de las olas 1–2**: blur estático de E4 en el contenido al abrir y cerrar, y la trayectoria curva de E2 al abrir, cerrar, minimizar y restaurar. La hoja pasa de nivel C a nivel B (sin blur en web, nada en movimiento reducido) | Pedido explícito |
+| E13 | **El ícono minimizado no parpadea**: relevo en el mismo cuadro, sin fundido de la pila | Error reportado |
+| E14 | **La pila crece hacia abajo**: el negocio que se minimiza ocupa el hueco bajo la pila sin mover a los demás; con 4, el más viejo (arriba) sale animado y el resto sube un lugar | Pedido explícito |
+| E15 | **Del marcador a la hoja también cambia el contenido**: la hoja nace con el aspecto del marcador (círculo, color, ícono) y el contenido se funde con blur estático solo en la primera fracción | Pedido explícito |
 
 ---
 
@@ -233,6 +240,71 @@ Cada ola se ejecuta igual que la 2:
 **Pruebas:** caracterización sin cambios de expectativa (salvo la del retardo de 40 ms); `restoreState` no anima; arrastre parcial y suelta por umbral y por velocidad; nunca dos objetos al minimizar; interrupción con otro marcador; la cámara arranca después de `p = 0.4`; movimiento reducido.
 
 **Rendimiento:** `RepaintBoundary` separados para scrim, hoja y pila; la sombra de la hoja se conserva (excepción documentada). Es la superficie más usada: perfilar con el mapa en movimiento.
+
+#### Estado
+
+Implementada en `feat/container-transform-w4` (dos commits locales, sin PR): tres `SpringClock`, arrastre ligado al dedo, minimizar como un solo objeto, apertura desde el marcador o la fila de búsqueda, cámara después de `p = 0.4`, sin el retraso de 40 ms. Verificado en el teléfono: apertura desde el marcador, expansión por arrastre y minimizar. Pendiente: los ajustes de abajo, y 5.7/5.8 (comparación), que siguen con el `AnimatedSwitcher` anterior.
+
+#### Ajustes tras la revisión en el teléfono (E9–E15)
+
+Van en la misma rama, antes de abrir la PR. Cada ajuste dice qué falla hoy, por qué, y cómo se resuelve.
+
+**E9. El scrim se queda oscuro al minimizar desde expandida.**
+- *Causa:* el scrim lee solo `pExpand` (`0.40 · pExpand`). Al minimizar, el estado pasa a `minimized`, `_syncSheetMotion` deja de mover `pExpand` y este se queda en 1; tras `finalizeTransitionOut` la hoja desaparece, pero el scrim sigue pintado.
+- *Diseño:* `alpha = 0.40 · pExpand · (1 − seg(pMin, 0, 0.6)) · presencia`, donde `presencia = seg(pOpen, 0, 0.3)`, así el scrim se va con la hoja al minimizar y al cerrar. Cuando la hoja termina de irse (`activeBusiness == null`), `pExpand.jumpTo(0)`. El scrim deja de bloquear toques en cuanto el estado deja de ser `expanded`, como hoy.
+- *Pruebas:* minimizar desde expandida deja el scrim en 0 al terminar; cerrar desde expandida, igual; colapsar sigue aclarando el scrim con la expansión.
+
+**E10. Al cerrar, el origen puede no existir ya.**
+- *Causa:* el origen es un `Rect` fijo medido al tocar. Si la hoja salió del ícono de la pila, ese ícono ya no existe al cerrar; si salió de un marcador, la cámara se movió después y el rectángulo ya no coincide.
+- *Diseño:* `SheetEntry.origin` pasa a ser un `SheetOrigin` con: un `resolve()` que vuelve a medir el origen en el momento de cerrar, y el aspecto del origen (E15). Para el marcador, `resolve()` proyecta su `LatLng` con la cámara actual (`camera.latLngToScreenOffset`) y lo devuelve solo si cae dentro de la pantalla visible (descontando la barra superior y la navegación inferior, con un margen de 8 dp). El ícono de la pila restaurado y la fila de búsqueda devuelven `null`, porque ya no están. Con `null`, la hoja sale hacia abajo: se desliza fuera de la pantalla con trayectoria recta, sin la curva (con la curva rebotaría hacia arriba antes de bajar).
+- *Archivos:* `floating_sheet_controller.dart` (`SheetOrigin`), `map_canvas_widget.dart` y `map_screen.dart` (el marcador entrega su `LatLng` y su aspecto), `ournego_floating_sheet.dart` (resolver al empezar el cierre y fijar el destino para todo el cierre, para que no salte si la cámara se mueve durante el cierre).
+- *Pruebas:* cerrar una hoja restaurada desde la pila sale hacia abajo; cerrar con el marcador fuera de la pantalla sale hacia abajo; cerrar con el marcador visible termina sobre su posición actual.
+
+**E11. Descartar con el dedo, en dos fases.**
+- *Fase 1, el dedo:* con la hoja colapsada, arrastrar hacia abajo alimenta un progreso de descarte `d = clamp(dy / 280, 0, 1)`. La hoja se desplaza `dy` con un poco de resistencia (`dy · (1 − 0.3·d)`) y se encoge de 1 a 0.88 alrededor de su centro. Desde expandida, el mismo gesto primero colapsa (`pExpand` baja a 0) y lo que sobra del recorrido pasa a `d`: un solo gesto continuo.
+- *Fase 2, al soltar:* si `dy ≥ 96 dp` o la velocidad es mayor a 700 dp/s hacia abajo, se cierra. Si no, `d` vuelve a 0 con un resorte (`kSheetExpandSpring`, cierre). El cierre arranca del rectángulo actual (desplazado y encogido), no del de reposo: se guarda como `closeFrom`, y `pOpen` se asienta en 0 con la velocidad del dedo convertida a unidades de `p`. Con la curva de E2, una hoja cuyo origen está arriba sigue bajando un poco antes de curvarse hacia él, que es el «primero baja y luego regresa» pedido. El contenido se desenfoca y se desvanece según E12.
+- *El botón de cerrar y atrás* usan la misma fase 2 desde el reposo, sin la fase 1.
+- *Pruebas:* arrastrar 60 dp y soltar despacio vuelve a su lugar; arrastrar 120 dp cierra; a mitad del arrastre la hoja está más abajo y es más pequeña que en reposo; desde expandida, un solo gesto largo colapsa y después descarta.
+
+**E12. El motor de las olas 1–2 en la hoja.**
+- *Blur:* se extrae la cuenta de `ContainerTransformBlur` (blur constante de 12 dp que se despeja desde `blurClearStart` con `easeInQuad` y vale 0 en `p = 1`) a una función pura compartida, `transitBlurSigma(p, preset)`. La ruta la sigue usando igual, y la hoja la aplica con un `ImageFiltered` solo sobre el contenido (no sobre el fondo ni el borde), que se omite cuando sigma es 0. Al cerrar es la misma cuenta en reversa, así que el contenido se desenfoca en cuanto empieza el cierre.
+- *Trayectoria:* la Y del marco sigue `kWindowVerticalPath` y la X y el tamaño siguen `p`, igual que en las ventanas, al abrir, cerrar, minimizar y restaurar. La salida hacia abajo de E10 es la excepción (recta).
+- *Presets:* `kFloatingSheetSpring` y `kMinimizeSpring` ganan `maxItemBlur: 12`, `blurClearStart: 0.62` y `verticalPath: kWindowVerticalPath`. La ventana del contenido de la hoja pasa a `[0.10, 0.35]` para que aparezca pronto y desenfocado, como en E4. Se calibra en el teléfono.
+- *Minimizar y restaurar:* el contenido que sale y el ícono que entra llevan el mismo blur estático durante su fundido.
+- *Niveles:* B en Android e iOS; C en web (curva sí, blur no); R con movimiento reducido o con el interruptor global apagado (sin curva ni blur, saltos instantáneos, como hoy).
+- *Rendimiento:* un solo `ImageFiltered` sobre ~576 × 200 dp. Se mide en el teléfono; si cae de 60 fps, la degradación dinámica de la ola 8 (D18) lo baja a C.
+- *Pruebas:* a mitad de la apertura el contenido tiene blur y al terminar no; la Y del marco no es lineal respecto a `p` mientras la X sí; en web no hay `ImageFiltered`.
+
+**E13. Parpadeo del ícono al minimizar.**
+- *Causa:* la columna de la pila está envuelta en un `AnimatedOpacity` (opacidad 0 si está vacía, 1 si no, en 420 ms). Cuando el marco llega y se quita, el ícono nuevo entra en una pila que estaba vacía o recién recalculada y se desvanece desde 0: el ícono desaparece un cuadro y reaparece con fundido.
+- *Diseño:* se quita el `AnimatedOpacity` de la pila. Cada ícono maneja su propia entrada (E14). Un ícono que llega por relevo desde la hoja aparece con opacidad 1 en el mismo cuadro en que se quita el marco, que en `pMin = 1` ya pinta exactamente el mismo ícono en el mismo rectángulo y con el mismo radio (`innerCard`) y borde.
+- *Pruebas:* en cada cuadro del relevo hay exactamente una copia visible del ícono, con opacidad 1, en su hueco.
+
+**E14. La pila crece hacia abajo.**
+- *Orden:* `minimizedBusinesses` pasa de «más nuevo primero» a «más viejo primero». `_pushToMinimized` agrega al final y, con más de 4, quita el primero. Afecta a todos los que apilan: minimizar, reemplazar el negocio abierto y minimizar en comparación. `restoreState` conserva los últimos 4. El orden guardado por versiones anteriores se verá invertido una sola vez; es solo orden visual, así que no hace falta migrar.
+- *Pila animada:* `_MinimizedStack` pasa a ser un widget con estado. Cada ícono va `Positioned` en su hueco (`top = sideStackTop + i · 56`) con un resorte corto propio, identificado por id. Al cambiar el hueco de un ícono (por expulsión o por restaurar uno del medio), se desliza al nuevo hueco. El ícono expulsado queda como «fantasma»: sube un hueco, se encoge a 0.8 y se desvanece, y después se quita.
+- *Destino de minimizar:* el hueco del negocio en la lista nueva, `min(n, 3)`, fijado al empezar. La expulsión y el desplazamiento empiezan a la vez que el minimizado, así que el hueco está libre cuando la hoja llega y los demás nunca saltan.
+- *Íconos que llegan sin hoja que viaje* (al reemplazar el negocio abierto, al minimizar en comparación): entran en su hueco con fundido y escala de 0.8 a 1.
+- *Restaurar desde la pila* es el minimizado en reversa (`pMin` de 1 a 0 desde ese hueco), y los íconos de abajo suben un lugar.
+- *Pruebas:* el orden nuevo en `floating_sheet_controller_test.dart` (más viejo primero, el quinto expulsa al primero); con 2 apilados, minimizar no mueve a los 2; con 4, el primero sale, los otros 3 suben y la hoja aterriza en el hueco 3; el fantasma se quita al terminar.
+
+**E15. Del marcador a la hoja, también el contenido.**
+- *Datos:* `SheetOrigin` lleva el aspecto del marcador: radio (mitad de su tamaño), color de fondo, color e ícono (`BusinessMarkerUiModel`). Lo entrega `map_canvas_widget.dart` al tocar.
+- *Marco:* en `p = 0` es el círculo del marcador, con su color. El radio va al de la hoja y el relleno pasa del color del marcador a `surface` en `[0, 0.3]`.
+- *Contenido:* el ícono del marcador, al tamaño del marcador y centrado en el marco, se desvanece en `[0, 0.25]`; el contenido de la hoja entra en `[0.10, 0.35]` (E12). Los dos llevan blur estático durante el fundido, así que el cambio se mezcla en vez de cortarse, y termina en la primera fracción. El contenido de la hoja después sigue la regla de E12 (el blur se despeja desde 0.62).
+- *Cierre:* si el marcador es visible (E10), el marco vuelve a su aspecto en reversa; si no, sale hacia abajo sin el aspecto del marcador.
+- *El marcador real* no se oculta: el marco empieza exactamente encima, con su mismo aspecto, y la cámara se mueve después.
+- *Otros orígenes:* la fila de búsqueda y el borde inferior usan el aspecto genérico (relleno `surface`, sin contenido de origen); la pila usa el ícono (E14).
+- *Pruebas:* en el primer cuadro el marco es un círculo del color del marcador; en `p ≈ 0.15` se ven los dos contenidos; desde `p ≈ 0.35` solo el de la hoja.
+
+**Orden de implementación** (cada paso con sus pruebas, suite completa en verde y revisión en el teléfono antes del siguiente):
+1. E14 y E13: orden de la pila, pila animada y relevo sin parpadeo. Cambia el controlador y su prueba de caracterización.
+2. E9: scrim.
+3. E12: función de blur compartida, presets y trayectoria curva.
+4. E10 y E15: `SheetOrigin`, origen vivo y aspecto del marcador.
+5. E11: descarte en dos fases.
+
+**Verificación en el teléfono:** marcador → hoja → arrastrar abajo → cerrar, con el marcador visible y con el marcador fuera de la pantalla; minimizar con 0, 2 y 4 apilados; restaurar del medio de la pila y cerrar la hoja restaurada; minimizar desde expandida (scrim); grabar cada caso y revisar los cuadros a 60 fps.
 
 ### Ola 5: franja superior, zona y ubicación (6.2–6.6, 9.3)
 
