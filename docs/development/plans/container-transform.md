@@ -243,7 +243,7 @@ Cada ola se ejecuta igual que la 2:
 
 #### Estado
 
-Implementada en `feat/container-transform-w4` (dos commits locales, sin PR): tres `SpringClock`, arrastre ligado al dedo, minimizar como un solo objeto, apertura desde el marcador o la fila de búsqueda, cámara después de `p = 0.4`, sin el retraso de 40 ms. Verificado en el teléfono: apertura desde el marcador, expansión por arrastre y minimizar. Pendiente: los ajustes de abajo, y 5.7/5.8 (comparación), que siguen con el `AnimatedSwitcher` anterior.
+Implementada en `feat/container-transform-w4` (dos commits locales, sin PR): tres `SpringClock`, arrastre ligado al dedo, minimizar como un solo objeto, apertura desde el marcador o la fila de búsqueda, cámara después de `p = 0.4`, sin el retraso de 40 ms. Verificado en el teléfono: apertura desde el marcador, expansión por arrastre y minimizar. Los ajustes E9–E15 de abajo también están implementados (cinco commits, en el orden indicado). Verificado en el teléfono: apertura desde el marcador con color, icono y blur; descarte con swipe (se hunde, se encoge y regresa al marcador); minimizar con un negocio ya apilado (el nuevo queda debajo sin mover al primero). Sin verificar en el teléfono: scrim al minimizar desde expandida, expulsión con 4 apilados, cierre con el marcador fuera de pantalla y restaurar desde la pila. Pendiente: 5.7/5.8 (comparación), que siguen con el `AnimatedSwitcher` anterior.
 
 #### Ajustes tras la revisión en el teléfono (E9–E15)
 
