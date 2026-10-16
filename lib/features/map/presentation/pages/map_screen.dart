@@ -9,6 +9,8 @@ import 'package:ournego/core/failures.dart';
 import 'package:ournego/core/location/app_position.dart';
 import 'package:ournego/core/location/location_access_status.dart';
 import 'package:ournego/core/location/open_app_location_settings.dart';
+import 'package:ournego/core/motion/spring_clock.dart';
+import 'package:ournego/core/ournego_motion.dart';
 import 'package:ournego/core/mapbox_config.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/core/routing/route_names.dart';
@@ -35,6 +37,7 @@ import 'package:ournego/features/map/presentation/widgets/location_access_sheet_
 import 'package:ournego/features/map/presentation/widgets/map_controls_widget.dart';
 import 'package:ournego/features/map/presentation/widgets/map_location_banner_widget.dart';
 import 'package:ournego/features/map/presentation/widgets/map_search_overlay_widget.dart';
+import 'package:ournego/features/map/presentation/widgets/search_morph_surface.dart';
 import 'package:ournego/features/map/presentation/widgets/top_navigation_bar_widget.dart';
 import 'package:ournego/features/map/presentation/widgets/zone_picker_sheet_widget.dart';
 import 'package:ournego/shared/widgets/buttons/buttons.dart';
@@ -64,9 +67,16 @@ class _MapScreenState extends ConsumerState<MapScreen>
   static const double _searchPanelGap = 12;
 
   late final _animatedMapController = AnimatedMapController(vsync: this);
-  late final AnimationController _searchPanelAnimationController;
-  late final Animation<double> _searchPanelOpacity;
-  late final Animation<Offset> _searchPanelSlide;
+
+  /// Opens and closes the search panel in place (see [SearchMorphSurface]).
+  late final SpringClock _searchPanelClock;
+  final _searchMorphKey = GlobalKey();
+
+  /// Where the search bar sits, measured each time the panel opens.
+  Rect? _searchBarRect;
+
+  /// Set by the close button: the query is cleared once the panel has closed.
+  bool _clearQueryWhenClosed = false;
   late ProviderSubscription<AsyncValue<MapLocationState>> _providerSubscription;
   late ProviderSubscription<MapVoiceSearchState> _voiceSubscription;
   late final FloatingSheetController _floatingSheetController;
@@ -345,20 +355,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
   @override
   void initState() {
     super.initState();
-    _searchPanelAnimationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 260),
-      reverseDuration: const Duration(milliseconds: 220),
-    );
-    _searchPanelOpacity = CurvedAnimation(
-      parent: _searchPanelAnimationController,
-      curve: Curves.easeOutCubic,
-      reverseCurve: Curves.easeInCubic,
-    );
-    _searchPanelSlide = Tween<Offset>(
-      begin: const Offset(0, 0.04),
-      end: Offset.zero,
-    ).animate(_searchPanelOpacity);
+    _searchPanelClock = SpringClock(vsync: this, preset: kSearchInPlaceSpring)
+      ..onSettled = _onSearchPanelSettled;
 
     _floatingSheetController = FloatingSheetController();
     _viewController = MapViewController(
@@ -494,7 +492,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
     _searchController.dispose();
     _searchFocusNode.dispose();
     _keysFocusNode.dispose();
-    _searchPanelAnimationController.dispose();
+    _searchPanelClock.dispose();
     _floatingSheetController.removeListener(_persistMapAndSheetState);
     _animatedMapController.dispose();
     _providerSubscription.close();
@@ -652,58 +650,55 @@ class _MapScreenState extends ConsumerState<MapScreen>
           Positioned.fill(
             child: IgnorePointer(
               ignoring: !_showSearchPanel,
-              child: FadeTransition(
-                opacity: _searchPanelOpacity,
-                child: SlideTransition(
-                  position: _searchPanelSlide,
-                  child: MapSearchOverlayWidget(
-                    results: searchResults,
-                    query: _searchQuery,
-                    hasData: businessState.hasValue,
-                    location: location,
-                    referenceLabel: reference.isGps ? null : reference.label,
-                    topBarHeight: topBarHeight,
-                    bottomInset: _searchPanelBottomInset,
-                    filters: _searchFilters,
-                    categoryOptions: _searchCategoryOptions,
-                    distanceOptionsMeters: _distanceOptionsMeters,
-                    onClear: _clearSearchState,
-                    onClose: _closeSearchOverlay,
-                    onOpenNowChanged: (selected) {
-                      setState(() {
-                        _searchFilters = _searchFilters.copyWith(
-                          onlyOpenNow: selected,
-                        );
-                      });
-                    },
-                    onCategoryChanged: (category) {
-                      setState(() {
-                        _searchFilters = _searchFilters.copyWith(
-                          category: category,
-                          clearCategory: category == null,
-                        );
-                      });
-                    },
-                    onDistanceChanged: (distance) {
-                      setState(() {
-                        _searchFilters = _searchFilters.copyWith(
-                          maxDistanceMeters: distance,
-                          clearMaxDistanceMeters: distance == null,
-                        );
-                      });
-                    },
-                    onBusinessSelected: (business) {
-                      _searchController.text = business.name;
-                      _searchController.selection = TextSelection.fromPosition(
-                        TextPosition(offset: _searchController.text.length),
+              child: SearchMorphSurface(
+                key: _searchMorphKey,
+                progress: _searchPanelClock.animation,
+                barRect: _searchBarRect ?? _fallbackSearchBarRect,
+                panelRect: _searchPanelRect,
+                fill: Theme.of(context).colorScheme.surface,
+                preset: kSearchInPlaceSpring,
+                child: MapSearchOverlayWidget(
+                  results: searchResults,
+                  query: _searchQuery,
+                  hasData: businessState.hasValue,
+                  location: location,
+                  referenceLabel: reference.isGps ? null : reference.label,
+                  filters: _searchFilters,
+                  categoryOptions: _searchCategoryOptions,
+                  distanceOptionsMeters: _distanceOptionsMeters,
+                  onClear: _clearSearchState,
+                  onClose: _closeSearchOverlay,
+                  onOpenNowChanged: (selected) {
+                    setState(() {
+                      _searchFilters = _searchFilters.copyWith(
+                        onlyOpenNow: selected,
                       );
-                      _viewController.openBusinessSheet(
-                        business,
-                        source: 'search',
+                    });
+                  },
+                  onCategoryChanged: (category) {
+                    setState(() {
+                      _searchFilters = _searchFilters.copyWith(
+                        category: category,
+                        clearCategory: category == null,
                       );
-                      _closeSearchOverlay();
-                    },
-                  ),
+                    });
+                  },
+                  onDistanceChanged: (distance) {
+                    setState(() {
+                      _searchFilters = _searchFilters.copyWith(
+                        maxDistanceMeters: distance,
+                        clearMaxDistanceMeters: distance == null,
+                      );
+                    });
+                  },
+                  onBusinessSelected: (business) {
+                    // The query stays in the bar (D31).
+                    _viewController.openBusinessSheet(
+                      business,
+                      source: 'search',
+                    );
+                    _dismissSearchPanel();
+                  },
                 ),
               ),
             ),
@@ -970,15 +965,50 @@ class _MapScreenState extends ConsumerState<MapScreen>
     _syncSearchPanelVisibility();
   }
 
-  /// The close button: hides the panel and clears the query.
+  /// The close button: the panel closes into the bar and the query is cleared
+  /// once it has settled, so the results do not vanish mid-close.
   void _closeSearchOverlay() {
-    _isSearchPanelDismissed = false;
+    _clearQueryWhenClosed = true;
+    _isSearchPanelDismissed = true;
     _searchFocusNode.unfocus();
+    _syncSearchPanelVisibility();
+  }
+
+  void _onSearchPanelSettled(double target) {
+    if (target > 0.5 || !_clearQueryWhenClosed) return;
+    _clearQueryWhenClosed = false;
     setState(() {
       _searchQuery = '';
       _searchController.clear();
     });
-    _syncSearchPanelVisibility();
+  }
+
+  /// Where the panel sits at `p = 1`: under the bar, between the screen
+  /// edges, above the sheet's footprint.
+  Rect _searchPanelRect(Size size) {
+    final padding = MediaQuery.paddingOf(context);
+    return Rect.fromLTRB(
+      padding.left + 16,
+      padding.top + _topNavigationHeight + 10,
+      size.width - padding.right - 16,
+      size.height - padding.bottom - _searchPanelBottomInset,
+    );
+  }
+
+  /// Used only before the bar has been measured, which normally happens on
+  /// the first frame of every opening.
+  static const Rect _fallbackSearchBarRect = Rect.fromLTWH(16, 40, 200, 52);
+
+  Rect? _measureSearchBar() {
+    final barBox = searchBarKey.currentContext?.findRenderObject();
+    final morphBox = _searchMorphKey.currentContext?.findRenderObject();
+    if (barBox is! RenderBox ||
+        !barBox.hasSize ||
+        morphBox is! RenderBox ||
+        !morphBox.hasSize) {
+      return null;
+    }
+    return barBox.localToGlobal(Offset.zero, ancestor: morphBox) & barBox.size;
   }
 
   void _clearSearchState() {
@@ -994,18 +1024,30 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final shouldShow =
         !_isSearchPanelDismissed &&
         (_searchFocusNode.hasFocus || _searchQuery.trim().isNotEmpty);
-    if (shouldShow == _isSearchPanelVisible) {
+    final wasVisible = _isSearchPanelVisible;
+    // The user came back while the close was still running: the close button
+    // had already decided to clear the query, so it does so now.
+    final shouldClearQuery = shouldShow && _clearQueryWhenClosed;
+    if (shouldClearQuery) {
+      _clearQueryWhenClosed = false;
+    }
+    if (shouldShow == wasVisible && !shouldClearQuery) {
       return;
     }
 
+    if (shouldShow && !wasVisible) {
+      _searchBarRect = _measureSearchBar() ?? _searchBarRect;
+    }
     setState(() {
       _isSearchPanelVisible = shouldShow;
+      if (shouldClearQuery) {
+        _searchQuery = '';
+        _searchController.clear();
+      }
     });
 
-    if (shouldShow) {
-      _searchPanelAnimationController.forward();
-    } else {
-      _searchPanelAnimationController.reverse();
+    if (shouldShow != wasVisible) {
+      _searchPanelClock.animateTo(shouldShow ? 1 : 0);
     }
   }
 

@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:ournego/features/map/domain/entities/business.dart';
 import 'package:ournego/features/map/domain/entities/business_type.dart';
+import 'package:ournego/features/map/presentation/widgets/search_morph_surface.dart';
 
 import '../../../fakes/fake_auth_repository.dart';
 import '../../../fakes/fake_map_repository.dart';
@@ -156,5 +157,66 @@ void main() {
       expect(_panel(), findsNothing);
       expect(_barText(tester), isEmpty);
     });
+
+    testWidgets('the panel grows out of the bar and settles on its frame', (
+      tester,
+    ) async {
+      await _pumpMap(tester);
+      final bar = tester.getRect(find.byType(SearchBar));
+      await _openPanel(tester);
+
+      final panel = tester.getRect(find.byKey(SearchMorphSurface.frameKey));
+      expect(panel.height, greaterThan(bar.height));
+      expect(panel.top, greaterThan(bar.bottom));
+      expect(panel.width, greaterThan(bar.width));
+    });
+
+    testWidgets(
+      'the bar keeps keyboard focus while the panel opens and closes',
+      (tester) async {
+        await _pumpMap(tester);
+        await tester.tap(find.byType(SearchBar));
+        await tester.pump(const Duration(milliseconds: 16));
+        expect(_barHasFocus(tester), isTrue);
+
+        await tester.pump(const Duration(milliseconds: 200));
+        expect(_barHasFocus(tester), isTrue);
+
+        await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+        await tester.pump(const Duration(milliseconds: 16));
+        expect(_barHasFocus(tester), isFalse);
+        await _settle(tester);
+      },
+    );
+
+    testWidgets('the close button keeps the query until the panel has closed', (
+      tester,
+    ) async {
+      await _pumpMap(tester);
+      await _openPanel(tester);
+      await _type(tester, 'pan');
+
+      await tester.tap(_panel());
+      await tester.pump(const Duration(milliseconds: 16));
+      expect(_barText(tester), 'pan');
+
+      await _settle(tester);
+      expect(_barText(tester), isEmpty);
+    });
+
+    testWidgets('choosing a result keeps the query in the bar', (tester) async {
+      await _pumpMap(tester);
+      await _openPanel(tester);
+      await _type(tester, 'pan');
+
+      await tester.tap(find.widgetWithText(ListTile, 'Panaderia Sol'));
+      await _settle(tester);
+
+      expect(_panel(), findsNothing);
+      expect(_barText(tester), 'pan');
+    });
   });
 }
+
+bool _barHasFocus(WidgetTester tester) =>
+    tester.widget<EditableText>(find.byType(EditableText)).focusNode.hasFocus;

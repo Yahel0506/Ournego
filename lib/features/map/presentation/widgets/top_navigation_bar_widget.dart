@@ -8,6 +8,9 @@ import 'package:ournego/shared/widgets/container_transform/container_transform_o
 
 final GlobalKey topNavigationBarKey = GlobalKey(debugLabel: 'topNavigationBar');
 
+/// Measured when the search panel opens, so it can grow out of the bar.
+final GlobalKey searchBarKey = GlobalKey(debugLabel: 'searchBar');
+
 class TopNavigationBarWidget extends ConsumerWidget {
   final TextEditingController? searchController;
   final FocusNode? searchFocusNode;
@@ -56,6 +59,7 @@ class TopNavigationBarWidget extends ConsumerWidget {
           const SizedBox(width: OurnegoSpacingTokens.controlGap),
           Expanded(
             child: OurnegoGlassSurface(
+              key: searchBarKey,
               child: SearchBar(
                 controller: searchController,
                 focusNode: searchFocusNode,
