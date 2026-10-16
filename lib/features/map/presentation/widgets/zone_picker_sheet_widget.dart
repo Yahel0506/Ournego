@@ -207,7 +207,8 @@ class _ZonePickerSheetState extends ConsumerState<ZonePickerSheet> {
                     onTap: () => _finish(const ZoneCleared()),
                   ),
                 const Divider(height: OurnegoSpacingTokens.md),
-                Flexible(child: _buildResults(context)),
+                // Loose: the sheet is as tall as its content, not as the space.
+                Flexible(fit: FlexFit.loose, child: _buildResults(context)),
               ],
             ),
           ),

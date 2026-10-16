@@ -67,7 +67,8 @@ class _OurnegoSheetSurfaceState extends State<OurnegoSheetSurface> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final face = OurnegoGlassPalette.navFace(scheme);
-    final insets = MediaQuery.viewInsetsOf(context).bottom;
+    final media = MediaQuery.of(context);
+    final insets = media.viewInsets.bottom;
 
     return Padding(
       // The whole sheet rises above the keyboard; its content does not need to.
@@ -99,33 +100,36 @@ class _OurnegoSheetSurfaceState extends State<OurnegoSheetSurface> {
                       padding: const EdgeInsets.only(
                         bottom: OurnegoSheetSurface.hiddenBelow,
                       ),
-                      child: MediaQuery.removeViewInsets(
-                        context: context,
-                        removeBottom: true,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const SizedBox(height: 10),
-                            Container(
-                              key: const Key('sheet-drag-handle'),
-                              width: 40,
-                              height: 4,
-                              decoration: BoxDecoration(
-                                color: scheme.onSurface.withValues(alpha: 0.3),
-                                borderRadius: BorderRadius.circular(2),
-                              ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const SizedBox(height: 10),
+                          Container(
+                            key: const Key('sheet-drag-handle'),
+                            width: 40,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: scheme.onSurface.withValues(alpha: 0.3),
+                              borderRadius: BorderRadius.circular(2),
                             ),
-                            Flexible(
-                              // The sheet sits below the status bar: its content
-                              // must not keep a top inset of its own.
-                              child: MediaQuery.removePadding(
-                                context: context,
-                                removeTop: true,
-                                child: widget.child,
+                          ),
+                          Flexible(
+                            fit: FlexFit.loose,
+                            child: MediaQuery(
+                              // The sheet already sits below the status bar and
+                              // above the keyboard: its content must not keep
+                              // those insets of its own.
+                              data: media.copyWith(
+                                padding: media.padding.copyWith(top: 0),
+                                viewPadding: media.viewPadding.copyWith(top: 0),
+                                viewInsets: media.viewInsets.copyWith(
+                                  bottom: 0,
+                                ),
                               ),
+                              child: widget.child,
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
