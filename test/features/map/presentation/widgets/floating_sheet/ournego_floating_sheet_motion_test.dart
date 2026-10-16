@@ -382,6 +382,101 @@ void main() {
     });
   });
 
+  group('dismissal', () {
+    testWidgets('mid-drag the sheet is lower and smaller than at rest', (
+      tester,
+    ) async {
+      final controller = await _pumpSheet(tester);
+      controller.openBusiness(_biz('a'));
+      await tester.pumpAndSettle();
+      final rest = tester.getRect(_frame);
+
+      final gesture = await tester.startGesture(rest.center);
+      await gesture.moveBy(const Offset(0, 40));
+      await gesture.moveBy(const Offset(0, 40));
+      await tester.pump();
+      final dragged = tester.getRect(_frame);
+      expect(dragged.top, greaterThan(rest.top + 40));
+      expect(dragged.width, lessThan(rest.width));
+
+      await gesture.up();
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('a short push springs back', (tester) async {
+      final controller = await _pumpSheet(tester);
+      controller.openBusiness(_biz('a'));
+      await tester.pumpAndSettle();
+      final rest = tester.getRect(_frame);
+
+      final gesture = await tester.startGesture(rest.center);
+      await gesture.moveBy(const Offset(0, 40));
+      await gesture.moveBy(const Offset(0, 20));
+      await gesture.up();
+      await tester.pumpAndSettle();
+
+      expect(controller.activeBusiness, isNotNull);
+      expect(tester.getRect(_frame).top, closeTo(rest.top, 1));
+      expect(tester.getRect(_frame).width, closeTo(rest.width, 1));
+    });
+
+    testWidgets('a long push dismisses: first down, then it goes away', (
+      tester,
+    ) async {
+      final controller = await _pumpSheet(tester);
+      controller.openBusiness(_biz('a'));
+      await tester.pumpAndSettle();
+      final rest = tester.getRect(_frame);
+
+      final gesture = await tester.startGesture(rest.center);
+      await gesture.moveBy(const Offset(0, 60));
+      await gesture.moveBy(const Offset(0, 60));
+      await gesture.up();
+      var lowest = rest.top;
+      for (var i = 0; i < 120 && controller.activeBusiness != null; i++) {
+        await tester.pump(const Duration(milliseconds: 16));
+        if (_frame.evaluate().isNotEmpty) {
+          final top = tester.getRect(_frame).top;
+          if (top > lowest) lowest = top;
+        }
+      }
+      expect(lowest, greaterThan(rest.top + 100));
+      expect(controller.activeBusiness, isNull);
+    });
+
+    testWidgets('a fast downward fling dismisses', (tester) async {
+      final controller = await _pumpSheet(tester);
+      controller.openBusiness(_biz('a'));
+      await tester.pumpAndSettle();
+
+      await tester.fling(_frame, const Offset(0, 120), 1500);
+      await tester.pumpAndSettle();
+
+      expect(controller.activeBusiness, isNull);
+    });
+
+    testWidgets('from expanded one long drag collapses and then dismisses', (
+      tester,
+    ) async {
+      final controller = await _pumpSheet(tester);
+      controller.openBusiness(_biz('a'));
+      await tester.pumpAndSettle();
+      controller.toggleExpandedCollapsed();
+      await tester.pumpAndSettle();
+
+      final gesture = await tester.startGesture(
+        tester.getRect(_frame).topCenter + const Offset(0, 30),
+      );
+      for (var i = 0; i < 12; i++) {
+        await gesture.moveBy(const Offset(0, 50));
+      }
+      await gesture.up();
+      await tester.pumpAndSettle();
+
+      expect(controller.activeBusiness, isNull);
+    });
+  });
+
   group('expansion', () {
     testWidgets('a fast upward fling expands and dims the map', (tester) async {
       final controller = await _pumpSheet(tester);

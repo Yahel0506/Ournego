@@ -87,6 +87,24 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
 
   bool _dragging = false;
 
+  /// Dismissal by dragging down: 0 at rest, 1 when the sheet has been pushed
+  /// down by [_dismissRange] and shrunk. It is the first phase of every close.
+  late final SpringClock _dismiss;
+
+  /// How far the finger pushed the sheet down, in dp.
+  double _dismissPx = 0;
+
+  /// A close is waiting for the first phase to finish before heading to the
+  /// origin.
+  bool _closeStaged = false;
+
+  static const double _dismissRange = 280;
+  static const double _dismissCommitPx = 96;
+  static const double _dismissCommitVelocity = 700;
+
+  /// Fraction of the dismissal after which the sheet starts to go back.
+  static const double _dismissHandover = 0.75;
+
   @override
   void initState() {
     super.initState();
@@ -100,8 +118,10 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
     )..onSettled = _onExpandSettled;
     _minimize = SpringClock(vsync: this, preset: kMinimizeSpring)
       ..onSettled = _onMinimizeSettled;
+    _dismiss = SpringClock(vsync: this, preset: kSheetExpandSpring);
     _shownId = controller.activeBusiness?.id;
     _entry.animation.addListener(_publishEntryProgress);
+    _dismiss.animation.addListener(_onDismissTick);
     controller.addListener(_onControllerChanged);
   }
 
@@ -120,6 +140,8 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
   void dispose() {
     widget.controller.removeListener(_onControllerChanged);
     _entry.animation.removeListener(_publishEntryProgress);
+    _dismiss.animation.removeListener(_onDismissTick);
+    _dismiss.dispose();
     _entry.dispose();
     _expand.dispose();
     _minimize.dispose();
@@ -146,6 +168,9 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
     if (active == null) {
       _shownId = null;
       _entryOrigin = null;
+      _closeStaged = false;
+      _dismissPx = 0;
+      _dismiss.jumpTo(0);
       _expand.jumpTo(0);
       return;
     }
@@ -163,16 +188,24 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
 
     final closing =
         controller.pendingClearActive && !controller.pendingMinimizeToStack;
-    if (closing && _entry.target != 0) {
-      // The origin may have moved or disappeared since the sheet opened. The
-      // target is fixed for the whole close, so it never jumps mid-way.
-      final origin = _entryOrigin;
-      final resolved = origin?.resolve?.call();
-      _entryOrigin = origin != null && resolved != null
-          ? origin.withRect(resolved)
-          : null;
+    if (closing) {
+      if (_entry.target != 0 && !_closeStaged) {
+        if (instant) {
+          _beginClose(instant: true);
+        } else {
+          // First the sheet sinks and shrinks; the way back starts from there.
+          _closeStaged = true;
+          if (_dismiss.target != 1) {
+            _dismiss.settleTo(1);
+          }
+        }
+      }
+    } else {
+      _closeStaged = false;
+      _dismissPx = 0;
+      _move(_dismiss, 0, instant);
+      _move(_entry, 1, instant);
     }
-    _move(_entry, closing ? 0 : 1, instant);
     _move(
       _minimize,
       controller.pendingMinimizeToStack && controller.pendingClearActive
@@ -189,12 +222,31 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
     }
   }
 
+  void _onDismissTick() {
+    if (_closeStaged && _dismiss.value >= _dismissHandover) {
+      _closeStaged = false;
+      _beginClose(instant: false);
+    }
+  }
+
+  void _beginClose({required bool instant}) {
+    // The origin may have moved or disappeared since the sheet opened. The
+    // target is fixed for the whole close, so it never jumps mid-way.
+    final origin = _entryOrigin;
+    final resolved = origin?.resolve?.call();
+    _entryOrigin = origin != null && resolved != null
+        ? origin.withRect(resolved)
+        : null;
+    _move(_entry, 0, instant);
+  }
+
   void _move(SpringClock clock, double target, bool instant) {
     if (clock.target == target) {
       return;
     }
     if (instant) {
       clock.jumpTo(target);
+      clock.onSettled?.call(target);
     } else {
       clock.animateTo(target);
     }
@@ -508,6 +560,7 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
           _entry.animation,
           _expand.animation,
           _minimize.animation,
+          _dismiss.animation,
         ]),
         builder: (context, _) {
           final business = controller.activeBusiness;
@@ -565,7 +618,17 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
       (b) => b.id == business.id,
     );
     final iconRect = _slotRect(slot < 0 ? 0 : slot);
-    final frame = _along(opened, iconRect, pm, kMinimizeSpring.verticalPath);
+    // The finger (or the first phase of a close) pushes the sheet down and
+    // shrinks it; the push relaxes while the sheet goes back to its origin.
+    final dismissal = _dismiss.value.clamp(0.0, 1.0);
+    final push = dismissal * _dismissRange * (1 - 0.3 * dismissal) * po;
+    final shrink = 1 - 0.12 * dismissal;
+    final frame = _along(
+      opened,
+      iconRect,
+      pm,
+      kMinimizeSpring.verticalPath,
+    ).shift(Offset(0, push));
     final entryRadius = _lerpDouble(
       entryOrigin?.radius ?? OurnegoRadiusTokens.window,
       OurnegoRadiusTokens.window,
@@ -595,6 +658,7 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
           kFloatingSheetSpring.contentEnd,
         ) *
         (1 - _segment(pm, 0, 0.3)) *
+        (1 - _segment(dismissal, 0.5, 1)) *
         shown;
     final iconAlpha =
         _segment(pm, kMinimizeSpring.contentStart, kMinimizeSpring.contentEnd) *
@@ -605,8 +669,11 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
         OurnegoMotionLevel.b;
     final contentBlur = blurOn
         ? math.max(
-            transitBlurSigma(po, kFloatingSheetSpring),
-            kMinimizeSpring.maxItemBlur * _segment(pm, 0, 0.1),
+            math.max(
+              transitBlurSigma(po, kFloatingSheetSpring),
+              kMinimizeSpring.maxItemBlur * _segment(pm, 0, 0.1),
+            ),
+            kFloatingSheetSpring.maxItemBlur * _segment(dismissal, 0, 0.5),
           )
         : 0.0;
     final iconBlur = blurOn ? transitBlurSigma(pm, kMinimizeSpring) : 0.0;
@@ -634,95 +701,100 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
         : 0.0;
     return Positioned.fromRect(
       rect: frame,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onVerticalDragStart: interactive ? _onSheetDragStart : null,
-        onVerticalDragUpdate: interactive ? _onSheetDragUpdate : null,
-        onVerticalDragEnd: interactive ? _onSheetDragEnd : null,
-        child: IgnorePointer(
-          ignoring: !interactive,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: fillColor.withValues(alpha: chrome),
-              border: Border.all(
-                color: borderColor.withValues(
-                  alpha: borderColor.a * edge * handover,
-                ),
-                width: markerColor == null ? 1 : _lerpDouble(2, 1, settle),
-              ),
-              borderRadius: radius,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.35 * edge * handover),
-                  blurRadius: 24,
-                  spreadRadius: -4,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              key: frameKey,
-              borderRadius: radius,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  // What the marker looked like melts into the sheet's content.
-                  if (markerAlpha > 0 && entryOrigin?.icon != null)
-                    Center(
-                      child: _blurred(
-                        markerBlur,
-                        Opacity(
-                          opacity: markerAlpha * shown,
-                          child: Icon(
-                            entryOrigin!.icon,
-                            size: 18,
-                            color: entryOrigin.foregroundColor,
-                          ),
-                        ),
-                      ),
-                    ),
-                  // The card keeps its resting size and rides the frame's
-                  // center, so it is never squeezed while the frame moves.
-                  OverflowBox(
-                    alignment: Alignment.center,
-                    minWidth: resting.width,
-                    maxWidth: resting.width,
-                    minHeight: resting.height,
-                    maxHeight: resting.height,
-                    child: SizedBox(
-                      width: resting.width,
-                      height: resting.height,
-                      child: _blurred(
-                        contentBlur,
-                        Opacity(
-                          opacity: contentAlpha,
-                          child: _buildSheetCard(
-                            business: business,
-                            controller: controller,
-                            pe: pe,
-                          ),
-                        ),
-                      ),
-                    ),
+      child: Transform.scale(
+        scale: shrink,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onVerticalDragStart: interactive ? _onSheetDragStart : null,
+          onVerticalDragUpdate: interactive ? _onSheetDragUpdate : null,
+          onVerticalDragEnd: interactive ? _onSheetDragEnd : null,
+          child: IgnorePointer(
+            ignoring: !interactive,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: fillColor.withValues(alpha: chrome),
+                border: Border.all(
+                  color: borderColor.withValues(
+                    alpha: borderColor.a * edge * handover,
                   ),
-                  if (iconAlpha > 0)
-                    Center(
-                      child: _blurred(
-                        iconBlur,
-                        Opacity(
-                          opacity: iconAlpha,
-                          child: SizedBox.square(
-                            dimension: _stackIconSize,
-                            child: MinimizedStackIcon(
+                  width: markerColor == null ? 1 : _lerpDouble(2, 1, settle),
+                ),
+                borderRadius: radius,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(
+                      alpha: 0.35 * edge * handover,
+                    ),
+                    blurRadius: 24,
+                    spreadRadius: -4,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                key: frameKey,
+                borderRadius: radius,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    // What the marker looked like melts into the sheet's content.
+                    if (markerAlpha > 0 && entryOrigin?.icon != null)
+                      Center(
+                        child: _blurred(
+                          markerBlur,
+                          Opacity(
+                            opacity: markerAlpha * shown,
+                            child: Icon(
+                              entryOrigin!.icon,
+                              size: 18,
+                              color: entryOrigin.foregroundColor,
+                            ),
+                          ),
+                        ),
+                      ),
+                    // The card keeps its resting size and rides the frame's
+                    // center, so it is never squeezed while the frame moves.
+                    OverflowBox(
+                      alignment: Alignment.center,
+                      minWidth: resting.width,
+                      maxWidth: resting.width,
+                      minHeight: resting.height,
+                      maxHeight: resting.height,
+                      child: SizedBox(
+                        width: resting.width,
+                        height: resting.height,
+                        child: _blurred(
+                          contentBlur,
+                          Opacity(
+                            opacity: contentAlpha,
+                            child: _buildSheetCard(
                               business: business,
-                              onTap: () {},
-                              onLongPress: () {},
+                              controller: controller,
+                              pe: pe,
                             ),
                           ),
                         ),
                       ),
                     ),
-                ],
+                    if (iconAlpha > 0)
+                      Center(
+                        child: _blurred(
+                          iconBlur,
+                          Opacity(
+                            opacity: iconAlpha,
+                            child: SizedBox.square(
+                              dimension: _stackIconSize,
+                              child: MinimizedStackIcon(
+                                business: business,
+                                onTap: () {},
+                                onLongPress: () {},
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -868,28 +940,52 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
     return travel > 0 ? travel : 1;
   }
 
-  /// The finger takes the expansion directly, with no spring in the way.
+  /// The finger takes the sheet directly, with no spring in the way. Dragging
+  /// down first collapses an expanded sheet; what is left of the movement
+  /// pushes the sheet down to dismiss it. Dragging up undoes it in reverse.
   void _onSheetDragStart(DragStartDetails details) {
     _dragging = true;
     _expand.dragTo(_expand.value);
+    _dismiss.dragTo(_dismiss.value);
+    _dismissPx = _dismiss.value * _dismissRange;
   }
 
   void _onSheetDragUpdate(DragUpdateDetails details) {
-    _expand.dragTo(
-      (_expand.value - details.delta.dy / _dragTravel).clamp(0.0, 1.0),
-    );
+    var dy = details.delta.dy;
+    if (dy > 0) {
+      final room = _expand.value * _dragTravel;
+      final used = dy < room ? dy : room;
+      _expand.dragTo(_expand.value - used / _dragTravel);
+      dy -= used;
+      _dismissPx += dy;
+    } else if (dy < 0) {
+      final used = -dy < _dismissPx ? -dy : _dismissPx;
+      _dismissPx -= used;
+      dy += used;
+      _expand.dragTo((_expand.value - dy / _dragTravel).clamp(0.0, 1.0));
+    }
+    _dismiss.dragTo((_dismissPx / _dismissRange).clamp(0.0, 1.0));
   }
 
-  /// Flings decide by velocity (upwards expands, downwards collapses); slow
-  /// releases settle to the nearer end. A fast downward fling on the collapsed
-  /// sheet closes it.
+  /// Pushed far enough, or flung down: the sheet is dismissed. Otherwise it
+  /// springs back; flings up or down decide the expansion, slow releases
+  /// settle to the nearer end.
   void _onSheetDragEnd(DragEndDetails details) {
     _dragging = false;
     final controller = widget.controller;
     final velocity = details.primaryVelocity ?? 0;
-    if (velocity > 500 && controller.state == FloatingSheetState.collapsed) {
+    final pushed = _dismissPx > 0;
+    final flungDown = velocity > _dismissCommitVelocity && _expand.value < 0.1;
+
+    if ((pushed && _dismissPx >= _dismissCommitPx) || flungDown) {
+      _expand.settleTo(0);
+      _dismiss.settleTo(1, velocity: velocity / _dismissRange);
       controller.closeActiveBusiness();
       return;
+    }
+    if (pushed) {
+      _dismissPx = 0;
+      _dismiss.settleTo(0, velocity: velocity / _dismissRange);
     }
 
     final expands =
