@@ -115,7 +115,15 @@ class _OurnegoSheetSurfaceState extends State<OurnegoSheetSurface> {
                                 borderRadius: BorderRadius.circular(2),
                               ),
                             ),
-                            Flexible(child: widget.child),
+                            Flexible(
+                              // The sheet sits below the status bar: its content
+                              // must not keep a top inset of its own.
+                              child: MediaQuery.removePadding(
+                                context: context,
+                                removeTop: true,
+                                child: widget.child,
+                              ),
+                            ),
                           ],
                         ),
                       ),
