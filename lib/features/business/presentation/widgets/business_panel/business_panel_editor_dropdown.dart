@@ -26,8 +26,12 @@ class BusinessPanelEditorDropdown extends StatelessWidget {
   final OwnedBusinessProfile ownedBusiness;
   final ValueChanged<ContainerTransformOriginController> onEditIdentity;
   final VoidCallback onAddGalleryImage;
-  final ValueChanged<String> onDeleteGalleryImage;
-  final VoidCallback onEditLocation;
+  final void Function(
+    String imageUrl,
+    ContainerTransformOriginController origin,
+  )
+  onDeleteGalleryImage;
+  final ValueChanged<ContainerTransformOriginController> onEditLocation;
   final ValueChanged<ContainerTransformOriginController> onEditPhone;
   final ValueChanged<ContainerTransformOriginController> onEditHours;
 

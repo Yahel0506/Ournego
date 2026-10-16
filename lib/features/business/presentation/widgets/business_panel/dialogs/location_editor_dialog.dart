@@ -7,6 +7,7 @@ import 'package:ournego/core/theme/tokens/ournego_radius_tokens.dart';
 import 'package:ournego/core/theme/tokens/ournego_spacing_tokens.dart';
 import 'package:ournego/core/theme/tokens/ournego_color_tokens.dart';
 import 'package:ournego/features/business/presentation/widgets/business_panel/models/location_editor_result.dart';
+import 'package:ournego/shared/widgets/container_transform/container_transform_destination.dart';
 import 'package:ournego/shared/widgets/ournego_alert_dialog.dart';
 import 'package:ournego/shared/widgets/ournego_form_dialog.dart';
 import 'package:ournego/shared/widgets/ournego_inputs.dart';
@@ -17,11 +18,19 @@ class LocationEditorDialog extends StatefulWidget {
     required this.initialAddress,
     required this.initialLatitude,
     required this.initialLongitude,
+    required this.onSubmit,
+    this.isSaving = false,
+    this.errorText,
   });
 
   final String initialAddress;
   final double initialLatitude;
   final double initialLongitude;
+
+  /// Called with what the user chose; the host decides when the dialog closes.
+  final ValueChanged<LocationEditorResult> onSubmit;
+  final bool isSaving;
+  final String? errorText;
 
   @override
   State<LocationEditorDialog> createState() => _LocationEditorDialogState();
@@ -57,19 +66,19 @@ class _LocationEditorDialogState extends State<LocationEditorDialog>
     return OurnegoFormDialog(
       title: 'Editar ubicacion',
       maxWidth: 460,
+      isSaving: widget.isSaving,
+      errorText: widget.errorText,
       // The map owns its drag gestures; a scroll view would fight them.
       scrollable: false,
       primaryAction: OurnegoDialogAction(
         label: 'Guardar',
-        onPressed: () {
-          Navigator.of(context).pop(
-            LocationEditorResult(
-              address: _addressController.text.trim(),
-              latitude: _latitude,
-              longitude: _longitude,
-            ),
-          );
-        },
+        onPressed: () => widget.onSubmit(
+          LocationEditorResult(
+            address: _addressController.text.trim(),
+            latitude: _latitude,
+            longitude: _longitude,
+          ),
+        ),
       ),
       secondaryAction: OurnegoDialogAction(
         label: 'Cancelar',
@@ -86,43 +95,46 @@ class _LocationEditorDialogState extends State<LocationEditorDialog>
           const SizedBox(height: OurnegoSpacingTokens.sm),
           SizedBox(
             height: 240,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(OurnegoRadiusTokens.md),
-              child: FlutterMap(
-                mapController: _mapController.mapController,
-                options: MapOptions(
-                  initialCenter: LatLng(_latitude, _longitude),
-                  initialZoom: 16,
-                  maxZoom: 18,
-                  minZoom: 3,
-                  onPositionChanged: (camera, hasGesture) {
-                    setState(() {
-                      _latitude = camera.center.latitude;
-                      _longitude = camera.center.longitude;
-                    });
-                  },
-                ),
-                children: [
-                  TileLayer(
-                    urlTemplate: hasMapbox
-                        ? 'https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/512/{z}/{x}/{y}@2x?access_token=$token'
-                        : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    userAgentPackageName: 'com.ournego.app',
+            // The map does not scale with the window: its tiles come in late.
+            child: ContainerTransformFadeIn(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(OurnegoRadiusTokens.md),
+                child: FlutterMap(
+                  mapController: _mapController.mapController,
+                  options: MapOptions(
+                    initialCenter: LatLng(_latitude, _longitude),
+                    initialZoom: 16,
+                    maxZoom: 18,
+                    minZoom: 3,
+                    onPositionChanged: (camera, hasGesture) {
+                      setState(() {
+                        _latitude = camera.center.latitude;
+                        _longitude = camera.center.longitude;
+                      });
+                    },
                   ),
-                  Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        Icon(
-                          Icons.location_on,
-                          size: 42,
-                          color: OurnegoColorTokens.warning,
-                        ),
-                        SizedBox(height: 36),
-                      ],
+                  children: [
+                    TileLayer(
+                      urlTemplate: hasMapbox
+                          ? 'https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/512/{z}/{x}/{y}@2x?access_token=$token'
+                          : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'com.ournego.app',
                     ),
-                  ),
-                ],
+                    Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Icon(
+                            Icons.location_on,
+                            size: 42,
+                            color: OurnegoColorTokens.warning,
+                          ),
+                          SizedBox(height: 36),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

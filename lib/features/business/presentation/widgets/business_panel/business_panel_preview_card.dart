@@ -25,8 +25,12 @@ class BusinessPanelPreviewCard extends StatelessWidget {
   final OwnedBusinessProfile ownedBusiness;
   final ValueChanged<ContainerTransformOriginController> onEditIdentity;
   final VoidCallback onAddGalleryImage;
-  final ValueChanged<String> onDeleteGalleryImage;
-  final VoidCallback onEditLocation;
+  final void Function(
+    String imageUrl,
+    ContainerTransformOriginController origin,
+  )
+  onDeleteGalleryImage;
+  final ValueChanged<ContainerTransformOriginController> onEditLocation;
   final ValueChanged<ContainerTransformOriginController> onEditPhone;
   final ValueChanged<ContainerTransformOriginController> onEditHours;
 
@@ -67,13 +71,25 @@ class BusinessPanelPreviewCard extends StatelessWidget {
             onAddImage: onAddGalleryImage,
           ),
           const SizedBox(height: OurnegoSpacingTokens.md),
-          BusinessPanelSectionHeader(title: 'Mapa', onEdit: onEditLocation),
-          const SizedBox(height: OurnegoSpacingTokens.sm),
-          BusinessPanelMapPreview(
-            address: ownedBusiness.address,
-            latitude: ownedBusiness.latitude,
-            longitude: ownedBusiness.longitude,
-            onEdit: onEditLocation,
+          // The location editor grows out of the map and its header.
+          ContainerTransformTrigger(
+            radius: OurnegoRadiusTokens.md,
+            builder: (context, origin) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                BusinessPanelSectionHeader(
+                  title: 'Mapa',
+                  onEdit: () => onEditLocation(origin),
+                ),
+                const SizedBox(height: OurnegoSpacingTokens.sm),
+                BusinessPanelMapPreview(
+                  address: ownedBusiness.address,
+                  latitude: ownedBusiness.latitude,
+                  longitude: ownedBusiness.longitude,
+                  onEdit: () => onEditLocation(origin),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: OurnegoSpacingTokens.md),
           BusinessPanelInfoGrid(
