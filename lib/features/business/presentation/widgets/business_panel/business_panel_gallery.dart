@@ -4,6 +4,7 @@ import 'package:ournego/core/theme/tokens/ournego_color_tokens.dart';
 import 'package:ournego/core/theme/tokens/ournego_radius_tokens.dart';
 import 'package:ournego/core/theme/tokens/ournego_spacing_tokens.dart';
 import 'package:ournego/shared/widgets/buttons/buttons.dart';
+import 'package:ournego/shared/widgets/container_transform/container_transform_origin.dart';
 
 class BusinessPanelGallery extends StatelessWidget {
   const BusinessPanelGallery({
@@ -14,7 +15,11 @@ class BusinessPanelGallery extends StatelessWidget {
   });
 
   final List<String> images;
-  final ValueChanged<String> onDeleteImage;
+  final void Function(
+    String imageUrl,
+    ContainerTransformOriginController origin,
+  )
+  onDeleteImage;
   final VoidCallback onAddImage;
 
   @override
@@ -115,11 +120,15 @@ class BusinessPanelGallery extends StatelessWidget {
                   Positioned(
                     right: OurnegoSpacingTokens.xs,
                     bottom: OurnegoSpacingTokens.xs,
-                    child: OurnegoIconButton(
-                      size: OurnegoIconButtonSize.s28,
-                      icon: Icons.delete_outline_rounded,
-                      semanticLabel: 'Eliminar imagen',
-                      onPressed: () => onDeleteImage(imageUrl),
+                    // The confirmation grows out of the delete button.
+                    child: ContainerTransformTrigger(
+                      radius: OurnegoRadiusTokens.sm,
+                      builder: (context, origin) => OurnegoIconButton(
+                        size: OurnegoIconButtonSize.s28,
+                        icon: Icons.delete_outline_rounded,
+                        semanticLabel: 'Eliminar imagen',
+                        onPressed: () => onDeleteImage(imageUrl, origin),
+                      ),
                     ),
                   ),
               ],

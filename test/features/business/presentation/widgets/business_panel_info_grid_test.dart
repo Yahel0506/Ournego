@@ -41,7 +41,7 @@ void main() {
             child: Builder(
               builder: (context) => BusinessPanelInfoGrid(
                 ownedBusiness: _business,
-                onEditLocation: () => calls.add('location'),
+                onEditLocation: (origin) => calls.add('location'),
                 onEditPhone: (origin) {
                   calls.add('phone');
                   showOurnegoDialog<void>(

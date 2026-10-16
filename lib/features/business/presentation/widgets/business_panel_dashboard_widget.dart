@@ -20,6 +20,7 @@ import 'package:ournego/features/business/presentation/widgets/business_panel/mo
 import 'package:ournego/shared/widgets/ournego_alert_dialog.dart';
 import 'package:ournego/shared/widgets/ournego_form_dialog.dart';
 import 'package:ournego/shared/widgets/ournego_inputs.dart';
+import 'package:ournego/shared/widgets/ournego_saving_dialog.dart';
 import 'package:ournego/shared/widgets/ournego_snackbars.dart';
 import 'package:ournego/shared/widgets/container_transform/container_transform_origin.dart';
 import 'package:ournego/shared/widgets/container_transform/show_ournego_window.dart';
@@ -44,12 +45,7 @@ class _BusinessPanelDashboardWidgetState
     setState(() => _isSaving = true);
     try {
       await action();
-      if (!mounted) return;
-      ref.invalidate(ownedBusinessProvider);
-      ref.invalidate(isOwnerProvider);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(OurnegoSnackbars.info('Cambios guardados.'));
+      _afterSaved();
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -59,6 +55,20 @@ class _BusinessPanelDashboardWidgetState
       if (mounted) setState(() => _isSaving = false);
     }
   }
+
+  /// What follows a saved change: the panel reloads and says so.
+  void _afterSaved() {
+    if (!mounted) return;
+    ref.invalidate(ownedBusinessProvider);
+    ref.invalidate(isOwnerProvider);
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(OurnegoSnackbars.info('Cambios guardados.'));
+  }
+
+  // Every editor below saves from inside its dialog: the dialog stays open
+  // (with its save button loading) until the change is stored, and keeps what
+  // the user typed if it fails.
 
   Future<void> _editIdentity(
     OwnedBusinessProfile business,
@@ -70,117 +80,153 @@ class _BusinessPanelDashboardWidgetState
     );
     int category = business.category;
 
-    final didConfirm = await showOurnegoDialog<bool>(
+    final saved = await showOurnegoDialog<bool>(
       context: context,
       origin: origin,
       builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setStateDialog) {
-            return OurnegoFormDialog(
-              title: 'Editar informacion',
-              primaryAction: OurnegoDialogAction(
-                label: 'Guardar',
-                onPressed: () => Navigator.of(dialogContext).pop(true),
-              ),
-              secondaryAction: OurnegoDialogAction(
-                label: 'Cancelar',
-                onPressed: () => Navigator.of(dialogContext).pop(false),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  OurnegoInputField(
-                    controller: nameController,
-                    labelText: 'Nombre del negocio',
+        return OurnegoSavingDialog<void>(
+          save: (_) => _saveIdentity(
+            business,
+            name: nameController.text.trim(),
+            description: descriptionController.text.trim(),
+            category: category,
+          ),
+          builder: (context, isSaving, error, submit) {
+            return StatefulBuilder(
+              builder: (context, setStateDialog) {
+                return OurnegoFormDialog(
+                  title: 'Editar informacion',
+                  isSaving: isSaving,
+                  errorText: error,
+                  primaryAction: OurnegoDialogAction(
+                    label: 'Guardar',
+                    onPressed: () => submit(null),
                   ),
-                  const SizedBox(height: OurnegoSpacingTokens.sm),
-                  OurnegoInputField(
-                    controller: descriptionController,
-                    labelText: 'Descripcion',
-                    maxLines: 3,
+                  secondaryAction: OurnegoDialogAction(
+                    label: 'Cancelar',
+                    onPressed: () => Navigator.of(dialogContext).pop(false),
                   ),
-                  const SizedBox(height: OurnegoSpacingTokens.sm),
-                  DropdownButtonFormField<int>(
-                    initialValue: category,
-                    items: categoryOptions,
-                    onChanged: (value) {
-                      setStateDialog(() => category = value ?? category);
-                    },
-                    decoration: OurnegoInputDecorations.filled(
-                      context: dialogContext,
-                      labelText: 'Categoria',
-                    ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      OurnegoInputField(
+                        controller: nameController,
+                        labelText: 'Nombre del negocio',
+                      ),
+                      const SizedBox(height: OurnegoSpacingTokens.sm),
+                      OurnegoInputField(
+                        controller: descriptionController,
+                        labelText: 'Descripcion',
+                        maxLines: 3,
+                      ),
+                      const SizedBox(height: OurnegoSpacingTokens.sm),
+                      DropdownButtonFormField<int>(
+                        initialValue: category,
+                        items: categoryOptions,
+                        onChanged: isSaving
+                            ? null
+                            : (value) {
+                                setStateDialog(
+                                  () => category = value ?? category,
+                                );
+                              },
+                        decoration: OurnegoInputDecorations.filled(
+                          context: dialogContext,
+                          labelText: 'Categoria',
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                );
+              },
             );
           },
         );
       },
     );
 
-    if (didConfirm != true) return;
-    await _runMutation(() async {
-      final upsertName = ref.read(upsertBusinessNameUsecaseProvider);
-      final upsertDescription = ref.read(
-        upsertBusinessDescriptionUsecaseProvider,
-      );
-      final upsertCategory = ref.read(upsertBusinessCategoryUsecaseProvider);
-
-      final name = nameController.text.trim();
-      final description = descriptionController.text.trim();
-      if (name.isNotEmpty && name != business.name) {
-        final result = await upsertName(businessId: business.id, name: name);
-        if (result.isLeft()) throw Exception('upsert name failed');
-      }
-      if (description != business.description) {
-        final result = await upsertDescription(
-          businessId: business.id,
-          description: description,
-        );
-        if (result.isLeft()) throw Exception('upsert description failed');
-      }
-      if (category != business.category) {
-        final result = await upsertCategory(
-          businessId: business.id,
-          category: category,
-        );
-        if (result.isLeft()) throw Exception('upsert category failed');
-      }
-    });
+    if (saved == true) _afterSaved();
   }
 
-  Future<void> _editLocation(OwnedBusinessProfile business) async {
-    final result = await showOurnegoDialog<LocationEditorResult>(
+  Future<void> _saveIdentity(
+    OwnedBusinessProfile business, {
+    required String name,
+    required String description,
+    required int category,
+  }) async {
+    final upsertName = ref.read(upsertBusinessNameUsecaseProvider);
+    final upsertDescription = ref.read(
+      upsertBusinessDescriptionUsecaseProvider,
+    );
+    final upsertCategory = ref.read(upsertBusinessCategoryUsecaseProvider);
+
+    if (name.isNotEmpty && name != business.name) {
+      final result = await upsertName(businessId: business.id, name: name);
+      if (result.isLeft()) throw Exception('upsert name failed');
+    }
+    if (description != business.description) {
+      final result = await upsertDescription(
+        businessId: business.id,
+        description: description,
+      );
+      if (result.isLeft()) throw Exception('upsert description failed');
+    }
+    if (category != business.category) {
+      final result = await upsertCategory(
+        businessId: business.id,
+        category: category,
+      );
+      if (result.isLeft()) throw Exception('upsert category failed');
+    }
+  }
+
+  Future<void> _editLocation(
+    OwnedBusinessProfile business,
+    ContainerTransformOriginController origin,
+  ) async {
+    final saved = await showOurnegoDialog<bool>(
       context: context,
+      origin: origin,
       builder: (dialogContext) {
-        return LocationEditorDialog(
-          initialAddress: business.address,
-          initialLatitude: business.latitude,
-          initialLongitude: business.longitude,
+        return OurnegoSavingDialog<LocationEditorResult>(
+          save: (result) => _saveLocation(business, result),
+          builder: (context, isSaving, error, submit) {
+            return LocationEditorDialog(
+              initialAddress: business.address,
+              initialLatitude: business.latitude,
+              initialLongitude: business.longitude,
+              isSaving: isSaving,
+              errorText: error,
+              onSubmit: submit,
+            );
+          },
         );
       },
     );
-    if (result == null) return;
 
-    await _runMutation(() async {
-      final nextAddress = result.address.trim();
-      final changed =
-          nextAddress != business.address ||
-          result.latitude != business.latitude ||
-          result.longitude != business.longitude;
-      if (!changed || nextAddress.isEmpty) {
-        return;
-      }
-      final upsertLocation = ref.read(upsertBusinessLocationUsecaseProvider);
-      final updateResult = await upsertLocation(
-        businessId: business.id,
-        address: nextAddress,
-        latitude: result.latitude,
-        longitude: result.longitude,
-      );
-      if (updateResult.isLeft()) throw Exception('upsert location failed');
-    });
+    if (saved == true) _afterSaved();
+  }
+
+  Future<void> _saveLocation(
+    OwnedBusinessProfile business,
+    LocationEditorResult result,
+  ) async {
+    final nextAddress = result.address.trim();
+    final changed =
+        nextAddress != business.address ||
+        result.latitude != business.latitude ||
+        result.longitude != business.longitude;
+    if (!changed || nextAddress.isEmpty) {
+      return;
+    }
+    final upsertLocation = ref.read(upsertBusinessLocationUsecaseProvider);
+    final updateResult = await upsertLocation(
+      businessId: business.id,
+      address: nextAddress,
+      latitude: result.latitude,
+      longitude: result.longitude,
+    );
+    if (updateResult.isLeft()) throw Exception('upsert location failed');
   }
 
   Future<void> _editPhone(
@@ -188,51 +234,57 @@ class _BusinessPanelDashboardWidgetState
     ContainerTransformOriginController origin,
   ) async {
     final controller = TextEditingController(text: business.phoneNumber ?? '');
-    final didConfirm = await showOurnegoDialog<bool>(
+    final saved = await showOurnegoDialog<bool>(
       context: context,
       origin: origin,
       builder: (dialogContext) {
-        return OurnegoFormDialog(
-          title: 'Editar telefono',
-          primaryAction: OurnegoDialogAction(
-            label: 'Guardar',
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-          ),
-          secondaryAction: OurnegoDialogAction(
-            label: 'Cancelar',
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-          ),
-          child: OurnegoInputField(
-            controller: controller,
-            keyboardType: TextInputType.phone,
-            labelText: 'Telefono',
-            hintText: '1234 567 8900',
-          ),
+        return OurnegoSavingDialog<void>(
+          save: (_) => _savePhone(business, controller.text.trim()),
+          builder: (context, isSaving, error, submit) {
+            return OurnegoFormDialog(
+              title: 'Editar telefono',
+              isSaving: isSaving,
+              errorText: error,
+              primaryAction: OurnegoDialogAction(
+                label: 'Guardar',
+                onPressed: () => submit(null),
+              ),
+              secondaryAction: OurnegoDialogAction(
+                label: 'Cancelar',
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+              ),
+              child: OurnegoInputField(
+                controller: controller,
+                keyboardType: TextInputType.phone,
+                labelText: 'Telefono',
+                hintText: '1234 567 8900',
+              ),
+            );
+          },
         );
       },
     );
-    if (didConfirm != true) return;
 
-    await _runMutation(() async {
-      final nextPhone = controller.text.trim();
-      if (nextPhone == (business.phoneNumber ?? '')) return;
-      if (nextPhone.isEmpty) {
-        final deleteUsecase = ref.read(
-          deleteBusinessPhoneNumberUsecaseProvider,
-        );
-        final result = await deleteUsecase(businessId: business.id);
-        if (result.isLeft()) throw Exception('delete phone failed');
-      } else {
-        final upsertUsecase = ref.read(
-          upsertBusinessPhoneNumberUsecaseProvider,
-        );
-        final result = await upsertUsecase(
-          businessId: business.id,
-          phoneNumber: nextPhone,
-        );
-        if (result.isLeft()) throw Exception('upsert phone failed');
-      }
-    });
+    if (saved == true) _afterSaved();
+  }
+
+  Future<void> _savePhone(
+    OwnedBusinessProfile business,
+    String nextPhone,
+  ) async {
+    if (nextPhone == (business.phoneNumber ?? '')) return;
+    if (nextPhone.isEmpty) {
+      final deleteUsecase = ref.read(deleteBusinessPhoneNumberUsecaseProvider);
+      final result = await deleteUsecase(businessId: business.id);
+      if (result.isLeft()) throw Exception('delete phone failed');
+    } else {
+      final upsertUsecase = ref.read(upsertBusinessPhoneNumberUsecaseProvider);
+      final result = await upsertUsecase(
+        businessId: business.id,
+        phoneNumber: nextPhone,
+      );
+      if (result.isLeft()) throw Exception('upsert phone failed');
+    }
   }
 
   Future<void> _editHours(
@@ -240,50 +292,60 @@ class _BusinessPanelDashboardWidgetState
     ContainerTransformOriginController origin,
   ) async {
     final draft = buildScheduleMap(business.hours);
-    final didConfirm = await showOurnegoDialog<bool>(
+    final saved = await showOurnegoDialog<bool>(
       context: context,
       origin: origin,
       builder: (dialogContext) {
-        return OurnegoFormDialog(
-          title: 'Editar horarios',
-          maxWidth: 420,
-          primaryAction: OurnegoDialogAction(
-            label: 'Guardar',
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-          ),
-          secondaryAction: OurnegoDialogAction(
-            label: 'Cancelar',
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-          ),
-          child: Column(
-            children: List.generate(7, (day) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: OurnegoSpacingTokens.xs),
-                child: BusinessHoursPicker(
-                  day: day,
-                  initialSchedule: draft[day],
-                  onChanged: (schedule) {
-                    draft[day] = schedule;
-                  },
-                ),
-              );
-            }),
-          ),
+        return OurnegoSavingDialog<void>(
+          save: (_) => _saveHours(business, draft),
+          builder: (context, isSaving, error, submit) {
+            return OurnegoFormDialog(
+              title: 'Editar horarios',
+              maxWidth: 420,
+              isSaving: isSaving,
+              errorText: error,
+              primaryAction: OurnegoDialogAction(
+                label: 'Guardar',
+                onPressed: () => submit(null),
+              ),
+              secondaryAction: OurnegoDialogAction(
+                label: 'Cancelar',
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+              ),
+              child: Column(
+                children: List.generate(7, (day) {
+                  return Padding(
+                    padding: const EdgeInsets.only(
+                      bottom: OurnegoSpacingTokens.xs,
+                    ),
+                    child: BusinessHoursPicker(
+                      day: day,
+                      initialSchedule: draft[day],
+                      onChanged: (schedule) {
+                        draft[day] = schedule;
+                      },
+                    ),
+                  );
+                }),
+              ),
+            );
+          },
         );
       },
     );
-    if (didConfirm != true) return;
 
-    await _runMutation(() async {
-      final schedules = draft.values.whereType<AppSchedule>().toList()
-        ..sort((a, b) => a.dayOfWeek.compareTo(b.dayOfWeek));
-      final upsertHours = ref.read(upsertBusinessHoursUsecaseProvider);
-      final result = await upsertHours(
-        businessId: business.id,
-        hours: schedules,
-      );
-      if (result.isLeft()) throw Exception('upsert hours failed');
-    });
+    if (saved == true) _afterSaved();
+  }
+
+  Future<void> _saveHours(
+    OwnedBusinessProfile business,
+    Map<int, AppSchedule?> draft,
+  ) async {
+    final schedules = draft.values.whereType<AppSchedule>().toList()
+      ..sort((a, b) => a.dayOfWeek.compareTo(b.dayOfWeek));
+    final upsertHours = ref.read(upsertBusinessHoursUsecaseProvider);
+    final result = await upsertHours(businessId: business.id, hours: schedules);
+    if (result.isLeft()) throw Exception('upsert hours failed');
   }
 
   Future<void> _addGalleryImage(OwnedBusinessProfile business) async {
@@ -306,6 +368,33 @@ class _BusinessPanelDashboardWidgetState
       );
       if (result.isLeft()) throw Exception('insert image failed');
     });
+  }
+
+  /// Asks before deleting: the confirmation grows out of the image's button.
+  Future<void> _confirmDeleteImage({
+    required OwnedBusinessProfile business,
+    required String imageUrl,
+    required ContainerTransformOriginController origin,
+  }) async {
+    final confirmed = await showOurnegoDialog<bool>(
+      context: context,
+      origin: origin,
+      builder: (dialogContext) => OurnegoAlertDialog(
+        title: 'Eliminar imagen',
+        content: 'Esta imagen dejara de mostrarse en tu negocio.',
+        primaryAction: OurnegoDialogAction(
+          label: 'Eliminar',
+          isDestructive: true,
+          onPressed: () => Navigator.of(dialogContext).pop(true),
+        ),
+        secondaryAction: OurnegoDialogAction(
+          label: 'Cancelar',
+          onPressed: () => Navigator.of(dialogContext).pop(false),
+        ),
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    await _deleteGalleryImage(business: business, imageUrl: imageUrl);
   }
 
   Future<void> _deleteGalleryImage({
@@ -382,13 +471,14 @@ class _BusinessPanelDashboardWidgetState
                                   _editIdentity(ownedBusiness, origin),
                               onAddGalleryImage: () =>
                                   _addGalleryImage(ownedBusiness),
-                              onDeleteGalleryImage: (imageUrl) =>
-                                  _deleteGalleryImage(
+                              onDeleteGalleryImage: (imageUrl, origin) =>
+                                  _confirmDeleteImage(
                                     business: ownedBusiness,
                                     imageUrl: imageUrl,
+                                    origin: origin,
                                   ),
-                              onEditLocation: () =>
-                                  _editLocation(ownedBusiness),
+                              onEditLocation: (origin) =>
+                                  _editLocation(ownedBusiness, origin),
                               onEditPhone: (origin) =>
                                   _editPhone(ownedBusiness, origin),
                               onEditHours: (origin) =>

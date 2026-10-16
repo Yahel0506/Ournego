@@ -17,7 +17,7 @@ class BusinessPanelInfoGrid extends StatelessWidget {
   });
 
   final OwnedBusinessProfile ownedBusiness;
-  final VoidCallback onEditLocation;
+  final ValueChanged<ContainerTransformOriginController> onEditLocation;
   final ValueChanged<ContainerTransformOriginController> onEditPhone;
   final ValueChanged<ContainerTransformOriginController> onEditHours;
 
@@ -30,7 +30,7 @@ class BusinessPanelInfoGrid extends StatelessWidget {
           icon: Icons.location_on_outlined,
           title: 'Direccion',
           value: ownedBusiness.address,
-          onEdit: (_) => onEditLocation(),
+          onEdit: onEditLocation,
         ),
         const SizedBox(height: OurnegoSpacingTokens.xs),
         _InfoItem(
