@@ -330,6 +330,9 @@ Van en la misma rama, antes de abrir la PR. Cada ajuste dice qué falla hoy, por
 
 ### Ola 6: panel de negocio (7.1, 7.2, 7.4, 7.7)
 
+**Estado:** implementada en `feat/container-transform-w6` (apilada sobre la #114; sin PR ni verificación en el teléfono, que no tiene una sesión de dueño de negocio). `OurnegoSavingDialog` mantiene abierto el diálogo mientras guarda (botón en carga, atrás y toque fuera bloqueados, un segundo toque no guarda dos veces) y, si falla, conserva lo escrito y muestra el error (`OurnegoFormDialog.errorText`). Identidad, ubicación, teléfono y horarios usan ese patrón; desapareció el overlay a pantalla completa para ellos (la galería lo conserva). El editor de ubicación nace del bloque «Mapa» (encabezado y vista previa) y sus tiles entran con `ContainerTransformFadeIn` en [0.5, 0.9]. Borrar una imagen pide confirmación desde su botón.
+**Desviaciones:** (a) los controladores de texto de los editores siguen sin liberarse (ya era así; liberarlos al cerrar el diálogo choca con la animación de cierre); (b) no hay prueba a nivel del panel completo, solo del host de guardado y de los orígenes, porque el panel necesita proveedores de datos de negocio.
+
 **Rama:** `feat/container-transform-w6`. **Preset:** `kDialogSpring`.
 
 **Estado actual.** `business_panel_dashboard_widget.dart`: cada `_edit*` (~63-277) abre el diálogo, espera a que se cierre con `pop(true)` y recién después llama a `_runMutation` (~41), que pone `_isSaving` y un overlay a pantalla completa (~426) sobre el panel. Los orígenes de identidad, teléfono y horarios ya están conectados (ola 2); la ubicación (`_editLocation`, ~153) todavía no. `_deleteGalleryImage` (~311) borra sin confirmación.
