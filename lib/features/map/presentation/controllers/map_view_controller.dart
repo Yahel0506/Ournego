@@ -115,7 +115,7 @@ class MapViewController {
     Business business, {
     bool animateToBusiness = true,
     String source = 'map',
-    Rect? origin,
+    SheetOrigin? origin,
   }) {
     if (floatingSheetController.isComparisonMode) {
       return;

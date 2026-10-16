@@ -1,17 +1,50 @@
-import 'dart:ui' show Rect;
-
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/floating_sheet_state.dart';
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/models/sheet_business_data.dart';
 
-/// How the sheet appears when it was hidden. [origin] is where it grows from,
-/// in global coordinates; null means it rises from the bottom edge. [instant]
-/// places it without animation, e.g. when it is restored at launch.
+/// Where the sheet grows from and goes back to.
+///
+/// [rect] is in global coordinates. [color], [foregroundColor], [icon] and
+/// [radius] describe what the origin looks like (a marker), so the sheet can
+/// start looking like it. [resolve] measures the origin again when the sheet
+/// closes; when it is null or returns null (the origin is gone or off screen),
+/// the sheet leaves downwards instead of heading to an empty spot.
+@immutable
+class SheetOrigin {
+  const SheetOrigin({
+    required this.rect,
+    this.radius,
+    this.color,
+    this.foregroundColor,
+    this.icon,
+    this.resolve,
+  });
+
+  final Rect rect;
+  final double? radius;
+  final Color? color;
+  final Color? foregroundColor;
+  final IconData? icon;
+  final Rect? Function()? resolve;
+
+  SheetOrigin withRect(Rect rect) => SheetOrigin(
+    rect: rect,
+    radius: radius,
+    color: color,
+    foregroundColor: foregroundColor,
+    icon: icon,
+    resolve: resolve,
+  );
+}
+
+/// How the sheet appears when it was hidden. [origin] is where it grows from;
+/// null means it rises from the bottom edge. [instant] places it without
+/// animation, e.g. when it is restored at launch.
 class SheetEntry {
   const SheetEntry({this.origin, this.instant = false});
 
-  final Rect? origin;
+  final SheetOrigin? origin;
   final bool instant;
 }
 
@@ -68,7 +101,7 @@ class FloatingSheetController extends ChangeNotifier {
     return true;
   }
 
-  void openBusiness(SheetBusinessData business, {Rect? origin}) {
+  void openBusiness(SheetBusinessData business, {SheetOrigin? origin}) {
     _comparisonBusiness = null;
 
     final current = _activeBusiness;
@@ -93,7 +126,7 @@ class FloatingSheetController extends ChangeNotifier {
     return entry;
   }
 
-  void _startEntry({Rect? origin, bool instant = false}) {
+  void _startEntry({SheetOrigin? origin, bool instant = false}) {
     _pendingEntry = SheetEntry(origin: origin, instant: instant);
     entryProgress.value = instant ? 1 : 0;
   }
@@ -144,7 +177,7 @@ class FloatingSheetController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void restoreFromMinimized(String businessId, {Rect? origin}) {
+  void restoreFromMinimized(String businessId, {SheetOrigin? origin}) {
     final index = _minimizedBusinesses.indexWhere((b) => b.id == businessId);
     if (index < 0) {
       return;
@@ -167,7 +200,7 @@ class FloatingSheetController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void onMinimizedBusinessTap(String businessId, {Rect? origin}) {
+  void onMinimizedBusinessTap(String businessId, {SheetOrigin? origin}) {
     if (isComparisonMode) {
       return;
     }

@@ -45,7 +45,7 @@ void main() {
 
     test('a new sheet carries its origin and starts its entry at 0', () {
       final c = FloatingSheetController();
-      const origin = Rect.fromLTWH(10, 20, 30, 40);
+      const origin = SheetOrigin(rect: Rect.fromLTWH(10, 20, 30, 40));
       c.openBusiness(biz('a'), origin: origin);
 
       expect(c.entryProgress.value, 0);
@@ -60,7 +60,10 @@ void main() {
       c.openBusiness(biz('a'));
       c.takePendingEntry();
       c.entryProgress.value = 1; // the sheet has arrived
-      c.openBusiness(biz('b'), origin: const Rect.fromLTWH(0, 0, 1, 1));
+      c.openBusiness(
+        biz('b'),
+        origin: const SheetOrigin(rect: Rect.fromLTWH(0, 0, 1, 1)),
+      );
 
       expect(c.takePendingEntry(), isNull);
       expect(c.entryProgress.value, 1);

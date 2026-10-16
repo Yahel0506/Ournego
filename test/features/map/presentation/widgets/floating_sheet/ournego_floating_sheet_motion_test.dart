@@ -95,7 +95,7 @@ void main() {
       final controller = await _pumpSheet(tester);
       const origin = Rect.fromLTWH(180, 500, 40, 40);
 
-      controller.openBusiness(_biz('a'), origin: origin);
+      controller.openBusiness(_biz('a'), origin: SheetOrigin(rect: origin));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 16));
 
@@ -153,7 +153,7 @@ void main() {
       final controller = await _pumpSheet(tester);
       controller.openBusiness(
         _biz('a'),
-        origin: const Rect.fromLTWH(280, 500, 40, 40),
+        origin: const SheetOrigin(rect: Rect.fromLTWH(280, 500, 40, 40)),
       );
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 48));
@@ -168,7 +168,7 @@ void main() {
     ) async {
       final controller = await _pumpSheet(tester);
       const origin = Rect.fromLTWH(60, 500, 40, 40);
-      controller.openBusiness(_biz('a'), origin: origin);
+      controller.openBusiness(_biz('a'), origin: SheetOrigin(rect: origin));
       await tester.pump();
       for (var i = 0; i < 6; i++) {
         await tester.pump(const Duration(milliseconds: 16));
@@ -183,6 +183,80 @@ void main() {
           (rest.center.dy - origin.center.dy);
       expect(y, greaterThan(x));
       await tester.pumpAndSettle();
+    });
+  });
+
+  group('origin', () {
+    const marker = Rect.fromLTWH(100, 500, 24, 24);
+
+    SheetOrigin markerOrigin({Rect? Function()? resolve}) => SheetOrigin(
+      rect: marker,
+      radius: 12,
+      color: const Color(0xFFD32F2F),
+      foregroundColor: const Color(0xFFFFFFFF),
+      icon: Icons.restaurant,
+      resolve: resolve,
+    );
+
+    testWidgets('it starts as the marker: round, its color and its icon', (
+      tester,
+    ) async {
+      final controller = await _pumpSheet(tester);
+      controller.openBusiness(_biz('a'), origin: markerOrigin());
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 16));
+
+      expect(find.byIcon(Icons.restaurant), findsOneWidget);
+      final decorated = tester.widget<DecoratedBox>(
+        find.ancestor(of: _frame, matching: find.byType(DecoratedBox)).first,
+      );
+      final color = (decorated.decoration as BoxDecoration).color!;
+      expect(color.r, greaterThan(0.6), reason: 'close to the marker red');
+      await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.restaurant), findsNothing);
+    });
+
+    testWidgets('it goes back to the marker where it is now', (tester) async {
+      final controller = await _pumpSheet(tester);
+      const moved = Rect.fromLTWH(300, 300, 24, 24);
+      controller.openBusiness(
+        _biz('a'),
+        origin: markerOrigin(resolve: () => moved),
+      );
+      await tester.pumpAndSettle();
+
+      controller.closeActiveBusiness();
+      Rect? last;
+      for (var i = 0; i < 120 && controller.activeBusiness != null; i++) {
+        await tester.pump(const Duration(milliseconds: 16));
+        if (_frame.evaluate().isNotEmpty) last = tester.getRect(_frame);
+      }
+      expect(last, isNotNull);
+      expect((last!.center - moved.center).distance, lessThan(80));
+    });
+
+    testWidgets('with no origin left it leaves downwards, never upwards', (
+      tester,
+    ) async {
+      final controller = await _pumpSheet(tester);
+      controller.openBusiness(
+        _biz('a'),
+        origin: markerOrigin(resolve: () => null),
+      );
+      await tester.pumpAndSettle();
+      final rest = tester.getRect(_frame);
+
+      controller.closeActiveBusiness();
+      var highest = rest.top;
+      for (var i = 0; i < 120 && controller.activeBusiness != null; i++) {
+        await tester.pump(const Duration(milliseconds: 16));
+        if (_frame.evaluate().isNotEmpty) {
+          highest = highest < tester.getRect(_frame).top
+              ? highest
+              : tester.getRect(_frame).top;
+        }
+      }
+      expect(highest, closeTo(rest.top, 1));
     });
   });
 

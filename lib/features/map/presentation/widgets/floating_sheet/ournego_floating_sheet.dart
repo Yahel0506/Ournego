@@ -82,8 +82,8 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
   /// Business the sheet has been showing, or null while it is hidden.
   String? _shownId;
 
-  /// Origin of the current entry, in global coordinates.
-  Rect? _entryOrigin;
+  /// Where the sheet grew from and goes back to. Null makes it leave downwards.
+  SheetOrigin? _entryOrigin;
 
   bool _dragging = false;
 
@@ -163,6 +163,15 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
 
     final closing =
         controller.pendingClearActive && !controller.pendingMinimizeToStack;
+    if (closing && _entry.target != 0) {
+      // The origin may have moved or disappeared since the sheet opened. The
+      // target is fixed for the whole close, so it never jumps mid-way.
+      final origin = _entryOrigin;
+      final resolved = origin?.resolve?.call();
+      _entryOrigin = origin != null && resolved != null
+          ? origin.withRect(resolved)
+          : null;
+    }
     _move(_entry, closing ? 0 : 1, instant);
     _move(
       _minimize,
@@ -232,6 +241,15 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
       index,
     );
     return offset & const Size.square(_stackIconSize);
+  }
+
+  /// The stack icon is not there once the sheet is open, so there is nothing
+  /// to go back to: closing leaves downwards.
+  SheetOrigin? _stackOrigin(int index) {
+    final rect = _stackIconRectGlobal(index);
+    return rect == null
+        ? null
+        : SheetOrigin(rect: rect, radius: OurnegoRadiusTokens.innerCard);
   }
 
   Rect? _stackIconRectGlobal(int index) {
@@ -325,7 +343,7 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
         restoringId: controller.activeBusiness?.id,
         onTap: (business, index) => controller.onMinimizedBusinessTap(
           business.id,
-          origin: _stackIconRectGlobal(index),
+          origin: _stackOrigin(index),
         ),
         onLongPress: (business) => controller.removeFromMinimized(business.id),
       ),
@@ -536,7 +554,8 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
     final pe = _expand.value.clamp(0.0, 1.0);
     final pm = _minimize.value.clamp(0.0, 1.0);
     final resting = _restingRect(stack, pe);
-    final origin = _entryOrigin == null ? null : _toLocal(_entryOrigin!);
+    final entryOrigin = _entryOrigin;
+    final origin = entryOrigin == null ? null : _toLocal(entryOrigin.rect);
     // The same smooth curve as the windows: a marker or row leans into the
     // sheet's place. From the bottom edge the sheet simply rises.
     final opened = origin == null
@@ -547,21 +566,28 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
     );
     final iconRect = _slotRect(slot < 0 ? 0 : slot);
     final frame = _along(opened, iconRect, pm, kMinimizeSpring.verticalPath);
+    final entryRadius = _lerpDouble(
+      entryOrigin?.radius ?? OurnegoRadiusTokens.window,
+      OurnegoRadiusTokens.window,
+      _segment(po, 0, 1) * (2 - _segment(po, 0, 1)),
+    );
     final radius = BorderRadius.circular(
-      _lerpDouble(
-        OurnegoRadiusTokens.window,
-        OurnegoRadiusTokens.innerCard,
-        pm,
-      ),
+      _lerpDouble(entryRadius, OurnegoRadiusTokens.innerCard, pm),
     );
 
     // A sheet from a marker appears as the marker grows; one from the bottom
     // edge slides up in full.
     final shown = controller.isComparisonMode ? 0.0 : 1.0;
-    final fade = (origin == null ? 1.0 : _segment(po, 0, 0.3)) * shown;
+    // From a marker the frame is first the marker itself (its circle, color and
+    // border) and settles into the sheet's surface over the first 30 %.
+    final markerColor = origin == null ? null : entryOrigin?.color;
+    final settle = _segment(po, 0, 0.3);
+    final edge = (origin == null ? 1.0 : settle) * shown;
+    final fade = (origin == null || markerColor != null ? 1.0 : settle) * shown;
     // On arrival the frame is replaced by the stack's own icon, which draws
     // its own fill and border, so the frame's give way to it.
-    final chrome = fade * (1 - _segment(pm, 0.6, 1));
+    final handover = 1 - _segment(pm, 0.6, 1);
+    final chrome = fade * handover;
     final contentAlpha =
         _segment(
           po,
@@ -592,6 +618,20 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
         !controller.pendingMinimizeToStack;
 
     final colorScheme = Theme.of(context).colorScheme;
+    final fillColor = markerColor == null
+        ? colorScheme.surface
+        : Color.lerp(markerColor, colorScheme.surface, settle)!;
+    final borderColor = markerColor == null
+        ? colorScheme.outline.withValues(alpha: 0.3)
+        : Color.lerp(
+            entryOrigin?.foregroundColor ?? colorScheme.outline,
+            colorScheme.outline.withValues(alpha: 0.3),
+            settle,
+          )!;
+    final markerAlpha = markerColor == null ? 0.0 : (1 - _segment(po, 0, 0.25));
+    final markerBlur = blurOn
+        ? kFloatingSheetSpring.maxItemBlur * _segment(po, 0, 0.1)
+        : 0.0;
     return Positioned.fromRect(
       rect: frame,
       child: GestureDetector(
@@ -603,15 +643,17 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
           ignoring: !interactive,
           child: DecoratedBox(
             decoration: BoxDecoration(
-              color: colorScheme.surface.withValues(alpha: chrome),
+              color: fillColor.withValues(alpha: chrome),
               border: Border.all(
-                color: colorScheme.outline.withValues(alpha: 0.3 * chrome),
-                width: 1,
+                color: borderColor.withValues(
+                  alpha: borderColor.a * edge * handover,
+                ),
+                width: markerColor == null ? 1 : _lerpDouble(2, 1, settle),
               ),
               borderRadius: radius,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.35 * chrome),
+                  color: Colors.black.withValues(alpha: 0.35 * edge * handover),
                   blurRadius: 24,
                   spreadRadius: -4,
                   offset: const Offset(0, 8),
@@ -624,6 +666,21 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
               child: Stack(
                 fit: StackFit.expand,
                 children: [
+                  // What the marker looked like melts into the sheet's content.
+                  if (markerAlpha > 0 && entryOrigin?.icon != null)
+                    Center(
+                      child: _blurred(
+                        markerBlur,
+                        Opacity(
+                          opacity: markerAlpha * shown,
+                          child: Icon(
+                            entryOrigin!.icon,
+                            size: 18,
+                            color: entryOrigin.foregroundColor,
+                          ),
+                        ),
+                      ),
+                    ),
                   // The card keeps its resting size and rides the frame's
                   // center, so it is never squeezed while the frame moves.
                   OverflowBox(
