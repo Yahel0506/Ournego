@@ -6,11 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ournego/core/failures.dart';
 import 'package:ournego/core/location/app_position.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
-import 'package:ournego/core/theme/tokens/ournego_radius_tokens.dart';
 import 'package:ournego/core/theme/tokens/ournego_spacing_tokens.dart';
 import 'package:ournego/features/map/domain/entities/manual_zone.dart';
 import 'package:ournego/features/map/domain/entities/reference_location.dart';
 import 'package:ournego/features/map/presentation/providers/map_providers.dart';
+import 'package:ournego/shared/widgets/container_transform/show_ournego_window.dart';
 
 sealed class ZonePickerResult {
   const ZonePickerResult();
@@ -34,16 +34,9 @@ Future<ZonePickerResult?> showZonePickerSheet(
   required AppPosition mapCenter,
   ManualZone? currentZone,
 }) {
-  return showModalBottomSheet<ZonePickerResult>(
+  return showOurnegoSheet<ZonePickerResult>(
     context: context,
     useRootNavigator: true,
-    isScrollControlled: true,
-    showDragHandle: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(
-        top: Radius.circular(OurnegoRadiusTokens.window),
-      ),
-    ),
     builder: (_) =>
         ZonePickerSheet(mapCenter: mapCenter, currentZone: currentZone),
   );
@@ -57,11 +50,16 @@ class ZonePickerSheet extends ConsumerStatefulWidget {
     required this.mapCenter,
     this.currentZone,
     this.debounce = const Duration(milliseconds: 400),
+    this.onResult,
   });
 
   final AppPosition mapCenter;
   final ManualZone? currentZone;
   final Duration debounce;
+
+  /// Called with the result instead of closing the route, when the sheet is
+  /// part of a flow that decides what happens next.
+  final ValueChanged<ZonePickerResult>? onResult;
 
   @override
   ConsumerState<ZonePickerSheet> createState() => _ZonePickerSheetState();
@@ -126,7 +124,16 @@ class _ZonePickerSheetState extends ConsumerState<ZonePickerSheet> {
       widget.mapCenter,
     );
     if (!mounted) return;
-    Navigator.of(context).pop(ZonePicked(zone));
+    _finish(ZonePicked(zone));
+  }
+
+  void _finish(ZonePickerResult result) {
+    final callback = widget.onResult;
+    if (callback != null) {
+      callback(result);
+    } else {
+      Navigator.of(context).pop(result);
+    }
   }
 
   @override
@@ -197,10 +204,11 @@ class _ZonePickerSheetState extends ConsumerState<ZonePickerSheet> {
                     title: Text(
                       'Volver a ${ReferenceLocation.defaultZone.label}',
                     ),
-                    onTap: () => Navigator.of(context).pop(const ZoneCleared()),
+                    onTap: () => _finish(const ZoneCleared()),
                   ),
                 const Divider(height: OurnegoSpacingTokens.md),
-                Flexible(child: _buildResults(context)),
+                // Loose: the sheet is as tall as its content, not as the space.
+                Flexible(fit: FlexFit.loose, child: _buildResults(context)),
               ],
             ),
           ),
@@ -265,7 +273,7 @@ class _ZonePickerSheetState extends ConsumerState<ZonePickerSheet> {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
-              onTap: () => Navigator.of(context).pop(ZonePicked(zone)),
+              onTap: () => _finish(ZonePicked(zone)),
             );
           },
         );

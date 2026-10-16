@@ -27,6 +27,7 @@ class ContainerTransformRoute<T> extends PopupRoute<T> {
     this.returnOrigin,
     this.useSafeArea = true,
     this.dismissible = true,
+    this.rise = false,
     this.label,
     super.settings,
   });
@@ -44,6 +45,9 @@ class ContainerTransformRoute<T> extends PopupRoute<T> {
   /// themselves in screen coordinates, so they turn it off.
   final bool useSafeArea;
   final bool dismissible;
+
+  /// See [ContainerTransformController.rise].
+  final bool rise;
   final String? label;
 
   ContainerTransformController? _transform;
@@ -58,6 +62,7 @@ class ContainerTransformRoute<T> extends PopupRoute<T> {
       originSource: origin,
       staticOrigin: staticOrigin,
       returnSource: returnOrigin,
+      rise: rise,
     );
     animation!.addListener(_syncTrigger);
     origin?.setHasWindow(true);
@@ -75,6 +80,32 @@ class ContainerTransformRoute<T> extends PopupRoute<T> {
   }
 
   bool _closing = false;
+
+  /// Progress `p` of the window, for sheets that follow a finger.
+  double get progress => controller!.value;
+
+  /// The finger sets `p` directly, with no spring in the way.
+  void dragTo(double p) => controller!.value = p.clamp(0.0, 1.0);
+
+  /// Ends a drag: the window either closes (continuing from where the finger
+  /// left it) or springs back open with the finger's [velocity] (in units of
+  /// `p` per second, positive towards open).
+  void endDrag({required bool dismiss, double velocity = 0}) {
+    final nav = navigator;
+    if (dismiss) {
+      nav?.pop();
+    } else {
+      controller!.animateWith(
+        SpringSimulation(
+          preset.open,
+          controller!.value,
+          1,
+          velocity,
+          tolerance: kOurnegoSpringTolerance,
+        ),
+      );
+    }
+  }
 
   @override
   bool didPop(T? result) {

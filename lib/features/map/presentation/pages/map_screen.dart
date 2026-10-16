@@ -35,9 +35,11 @@ import 'package:ournego/features/map/presentation/widgets/floating_sheet/models/
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/ournego_floating_sheet.dart';
 import 'package:ournego/features/map/presentation/widgets/map_canvas_widget.dart';
 import 'package:ournego/features/map/presentation/widgets/location_access_sheet_widget.dart';
+import 'package:ournego/features/map/presentation/widgets/location_flow_sheet_widget.dart';
 import 'package:ournego/features/map/presentation/widgets/map_controls_widget.dart';
 import 'package:ournego/features/map/presentation/widgets/map_location_banner_widget.dart';
 import 'package:ournego/features/map/presentation/widgets/map_search_overlay_widget.dart';
+import 'package:ournego/features/map/presentation/widgets/map_top_strip_widget.dart';
 import 'package:ournego/features/map/presentation/widgets/search_morph_surface.dart';
 import 'package:ournego/features/map/presentation/widgets/top_navigation_bar_widget.dart';
 import 'package:ournego/features/map/presentation/widgets/zone_picker_sheet_widget.dart';
@@ -238,21 +240,32 @@ class _MapScreenState extends ConsumerState<MapScreen>
     }
 
     _isLocationModalOpen = true;
-    final action = await showLocationAccessSheet(context, status: status);
+    final result = await showLocationFlowSheet(
+      context,
+      status: status,
+      mapCenter: _mapCenterOrReference(),
+      currentZone: ref.read(mapProvider).asData?.value.manualZone,
+    );
     _isLocationModalOpen = false;
 
     if (!mounted) {
       return;
     }
 
-    switch (action) {
-      case LocationAccessSheetAction.allow:
-        await ref.read(mapProvider.notifier).requestPermission();
-      case LocationAccessSheetAction.chooseZone:
-        await _openZonePicker();
-      case LocationAccessSheetAction.openSettings:
-        await _openLocationSettings();
-      case LocationAccessSheetAction.continueWithoutLocation || null:
+    switch (result) {
+      case LocationFlowAction(:final action):
+        switch (action) {
+          case LocationAccessSheetAction.allow:
+            await ref.read(mapProvider.notifier).requestPermission();
+          case LocationAccessSheetAction.openSettings:
+            await _openLocationSettings();
+          case LocationAccessSheetAction.chooseZone ||
+              LocationAccessSheetAction.continueWithoutLocation:
+            break;
+        }
+      case LocationFlowZone(:final result):
+        await _applyZoneResult(result);
+      case null:
         break;
     }
   }
@@ -289,6 +302,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
       return;
     }
 
+    await _applyZoneResult(result);
+  }
+
+  Future<void> _applyZoneResult(ZonePickerResult result) async {
     final notifier = ref.read(mapProvider.notifier);
     switch (result) {
       case ZonePicked(:final zone):
@@ -590,15 +607,17 @@ class _MapScreenState extends ConsumerState<MapScreen>
             },
             markerUiMapper: _businessMarkerUiMapper.call,
           ),
-          if (!_showSearchPanel &&
-              !showLocationBanner &&
-              !showZoneChip &&
-              isOwnerState.value == false)
-            Positioned(
-              top: topBarHeight + 8,
-              left: 16,
-              right: 16,
-              child: GestureDetector(
+          Positioned(
+            top: topBarHeight + 8,
+            left: 16,
+            right: 16,
+            child: MapTopStrip(
+              showRegister:
+                  !_showSearchPanel &&
+                  !showLocationBanner &&
+                  !showZoneChip &&
+                  isOwnerState.value == false,
+              register: GestureDetector(
                 onTap: _onRegisterBusinessTap,
                 child: OurnegoContentContainer(
                   hasBlur: true,
@@ -625,33 +644,25 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   ),
                 ),
               ),
-            ),
-          if (showLocationBanner || showZoneChip)
-            Positioned(
-              top: topBarHeight + 8,
-              left: 16,
-              right: 16,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (showLocationBanner)
-                    MapLocationBanner(
+              showBanner: showLocationBanner,
+              banner: showLocationBanner
+                  ? MapLocationBanner(
                       status: locationState!.status,
                       onAction: _onLocationBannerAction,
-                    ),
-                  if (showLocationBanner && showZoneChip)
-                    const SizedBox(height: 8),
-                  if (showZoneChip)
-                    OurnegoGlassChip(
+                    )
+                  : null,
+              showChip: showZoneChip,
+              chip: showZoneChip
+                  ? OurnegoGlassChip(
                       key: const Key('zone-chip'),
                       label: 'Zona: ${reference.label}',
                       actionLabel: 'Cambiar',
                       semanticLabel: 'Zona: ${reference.label}. Cambiar',
                       onPressed: _openZonePicker,
-                    ),
-                ],
-              ),
+                    )
+                  : null,
             ),
+          ),
           Positioned.fill(
             child: IgnorePointer(
               ignoring: !_showSearchPanel,

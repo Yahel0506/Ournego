@@ -4,6 +4,7 @@ import 'package:ournego/core/motion/ournego_motion_level.dart';
 import 'package:ournego/core/ournego_motion.dart';
 import 'package:ournego/shared/widgets/container_transform/container_transform_origin.dart';
 import 'package:ournego/shared/widgets/container_transform/container_transform_route.dart';
+import 'package:ournego/shared/widgets/ournego_sheet_surface.dart';
 
 /// Opens a dialog that grows out of [origin] (or, without one, out of the
 /// center of the screen), and returns what it was popped with, like
@@ -65,6 +66,46 @@ Future<T?> showOurnegoMenu<T>({
     origin: origin,
     scrimAlpha: kDialogSpring.scrimAlpha,
     useRootNavigator: useRootNavigator,
+  );
+}
+
+/// A sheet docked to the bottom edge. It grows out of [origin] (a button) or,
+/// without one, rises from below the screen; it follows a finger dragging it
+/// down and goes back when it is let go far enough. Returns what it was popped
+/// with, like `showModalBottomSheet` does.
+///
+/// The content goes inside an `OurnegoSheetSurface`, which this adds.
+Future<T?> showOurnegoSheet<T>({
+  required BuildContext context,
+  required WidgetBuilder builder,
+  ContainerTransformOriginController? origin,
+  OurnegoSpringPreset preset = kBottomSheetSpring,
+  bool barrierDismissible = true,
+  bool useRootNavigator = true,
+  RouteSettings? routeSettings,
+}) {
+  final navigator = Navigator.of(context, rootNavigator: useRootNavigator);
+  return navigator.push<T>(
+    ContainerTransformRoute<T>(
+      builder: (context) =>
+          OurnegoSheetSurface(child: Builder(builder: builder)),
+      capturedThemes: InheritedTheme.capture(
+        from: context,
+        to: navigator.context,
+      ),
+      motionLevel: OurnegoMotion.resolveLevel(
+        context,
+        wantsBlur: preset.maxItemBlur > 0,
+      ),
+      preset: preset,
+      scrimAlpha: preset.scrimAlpha,
+      origin: origin,
+      rise: origin == null,
+      useSafeArea: false,
+      dismissible: barrierDismissible,
+      label: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+      settings: routeSettings,
+    ),
   );
 }
 
