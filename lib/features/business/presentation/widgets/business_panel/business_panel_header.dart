@@ -6,6 +6,7 @@ import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/features/navigation/presentation/widgets/profile_menu/profile_menu_actions.dart';
 import 'package:ournego/features/navigation/presentation/widgets/profile_menu/profile_menu_dialog_widget.dart';
 import 'package:ournego/shared/widgets/buttons/buttons.dart';
+import 'package:ournego/core/routing/container_transform_page.dart';
 import 'package:ournego/shared/widgets/container_transform/container_transform_origin.dart';
 
 class BusinessPanelHeader extends ConsumerWidget {
@@ -48,7 +49,10 @@ class BusinessPanelHeader extends ConsumerWidget {
                   );
                   return;
                 }
-                context.push(AuthRoutes.authSelection);
+                context.push(
+                  AuthRoutes.authSelection,
+                  extra: ContainerTransformRouteExtra.from(trigger.measure()),
+                );
               },
               child: profileImageUrl.isNotEmpty
                   ? Image.network(

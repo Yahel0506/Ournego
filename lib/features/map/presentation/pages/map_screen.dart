@@ -13,6 +13,7 @@ import 'package:ournego/core/motion/spring_clock.dart';
 import 'package:ournego/core/ournego_motion.dart';
 import 'package:ournego/core/mapbox_config.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
+import 'package:ournego/core/routing/container_transform_page.dart';
 import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/core/theme/tokens/ournego_radius_tokens.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
@@ -74,6 +75,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
   /// Opens and closes the search panel in place (see [SearchMorphSurface]).
   late final SpringClock _searchPanelClock;
   final _searchMorphKey = GlobalKey();
+  final _registerCardKey = GlobalKey(debugLabel: 'registerCard');
 
   /// Where the search bar sits, measured each time the panel opens.
   Rect? _searchBarRect;
@@ -359,10 +361,19 @@ class _MapScreenState extends ConsumerState<MapScreen>
       final isLogged = ref.read(authSessionStatusProvider);
       if (!context.mounted) return;
 
+      // The next page grows out of the register card.
+      final cardContext = _registerCardKey.currentContext;
+      final from = cardContext == null
+          ? null
+          : ContainerTransformRouteExtra.measure(
+              cardContext,
+              radius: 20,
+              color: Theme.of(context).colorScheme.surface,
+            );
       if (isLogged) {
-        context.push(BusinessRoutes.form);
+        context.push(BusinessRoutes.form, extra: from);
       } else {
-        context.push(AuthRoutes.authSelection);
+        context.push(AuthRoutes.authSelection, extra: from);
       }
     } catch (_) {
       if (!context.mounted) return;
@@ -618,6 +629,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   !showZoneChip &&
                   isOwnerState.value == false,
               register: GestureDetector(
+                key: _registerCardKey,
                 onTap: _onRegisterBusinessTap,
                 child: OurnegoContentContainer(
                   hasBlur: true,

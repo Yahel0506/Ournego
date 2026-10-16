@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ournego/core/routing/container_transform_page.dart';
 import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
@@ -9,6 +10,9 @@ import 'package:ournego/shared/widgets/nego/nego_avatar.dart';
 import 'package:ournego/shared/widgets/nego/nego_mood.dart';
 
 import 'package:ournego/features/feedback/presentation/widgets/feedback_flow.dart';
+
+/// Measured when "Comenzar" is tapped, so the next page grows out of the button.
+final _startButtonKey = GlobalKey(debugLabel: 'registerStartButton');
 
 class RegisterBusinessWidget extends ConsumerWidget {
   const RegisterBusinessWidget({super.key});
@@ -37,6 +41,7 @@ class RegisterBusinessWidget extends ConsumerWidget {
                 ),
                 const SizedBox(height: 32),
                 OurnegoButton.primary(
+                  key: _startButtonKey,
                   size: OurnegoButtonSize.large,
                   minWidth: 200,
                   label: 'Comenzar',
@@ -46,10 +51,18 @@ class RegisterBusinessWidget extends ConsumerWidget {
                       final isLogged = ref.read(authSessionStatusProvider);
                       if (!context.mounted) return;
 
+                      final buttonContext = _startButtonKey.currentContext;
+                      final from = buttonContext == null
+                          ? null
+                          : ContainerTransformRouteExtra.measure(
+                              buttonContext,
+                              radius: 24,
+                              color: Theme.of(context).colorScheme.primary,
+                            );
                       if (isLogged) {
-                        context.push(BusinessRoutes.form);
+                        context.push(BusinessRoutes.form, extra: from);
                       } else {
-                        context.push(AuthRoutes.authSelection);
+                        context.push(AuthRoutes.authSelection, extra: from);
                       }
                     } catch (_) {
                       if (!context.mounted) return;
