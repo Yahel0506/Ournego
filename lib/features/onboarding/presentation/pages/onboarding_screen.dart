@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ournego/core/routing/route_names.dart';
+import 'package:ournego/core/routing/container_transform_page.dart';
 import 'package:ournego/core/routing/route_sources.dart';
+import 'package:ournego/core/theme/tokens/ournego_radius_tokens.dart';
+import 'package:ournego/shared/widgets/container_transform/container_transform_origin.dart';
 import 'package:ournego/features/onboarding/presentation/onboarding_flow_state.dart';
 import 'package:ournego/features/onboarding/presentation/pages/components/explore_onboarding_screen.dart';
 import 'package:ournego/features/onboarding/presentation/pages/components/discover_onboarding_screen.dart';
@@ -122,15 +125,25 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 
-  Future<void> _finishOnboarding() async {
+  Future<void> _finishOnboarding(Rect? from) async {
     final setHasSeenOnboarding = ref.read(setHasSeenOnboardingUsecaseProvider);
     await setHasSeenOnboarding();
 
     if (!mounted) return;
 
+    // The login page grows out of the closing message.
     context.go(
       AuthRoutes.authSelection,
-      extra: AuthSelectionRouteSource.onboarding,
+      extra: from == null
+          ? AuthSelectionRouteSource.onboarding
+          : ContainerTransformRouteExtra(
+              ContainerTransformOriginData(
+                rect: from,
+                radius: OurnegoRadiusTokens.window,
+                color: Theme.of(context).scaffoldBackgroundColor,
+              ),
+              fromOnboarding: true,
+            ),
     );
   }
 

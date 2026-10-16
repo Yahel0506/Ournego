@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:ournego/core/routing/container_transform_page.dart';
 import 'package:ournego/core/routing/route_names.dart';
+import 'package:ournego/core/theme/tokens/ournego_radius_tokens.dart';
 import 'package:ournego/features/auth/presentation/providers/session_expiry_providers.dart';
 import 'package:ournego/shared/widgets/ournego_alert_dialog.dart';
 import 'package:ournego/shared/widgets/container_transform/show_ournego_window.dart';
@@ -29,6 +31,7 @@ class SessionExpiredListener extends ConsumerWidget {
       final location = GoRouter.of(navContext).state.uri.toString();
       final notifier = ref.read(sessionExpiryProvider.notifier);
 
+      final loginButtonKey = GlobalKey(debugLabel: 'sessionExpiredLogin');
       showOurnegoDialog<void>(
         context: navContext,
         barrierDismissible: false,
@@ -37,11 +40,21 @@ class SessionExpiredListener extends ConsumerWidget {
           content:
               'Por seguridad, vuelve a iniciar sesión para seguir usando tu cuenta.',
           primaryAction: OurnegoDialogAction(
+            key: loginButtonKey,
             label: 'Iniciar sesión',
             onPressed: () {
+              // The login page grows out of the button that was pressed.
+              final buttonContext = loginButtonKey.currentContext;
+              final from = buttonContext == null
+                  ? null
+                  : ContainerTransformRouteExtra.measure(
+                      buttonContext,
+                      radius: OurnegoRadiusTokens.window,
+                      color: Theme.of(dialogContext).colorScheme.surface,
+                    );
               Navigator.of(dialogContext).pop();
               ref.read(pendingReturnLocationProvider.notifier).set(location);
-              GoRouter.of(navContext).go(AuthRoutes.authSelection);
+              GoRouter.of(navContext).go(AuthRoutes.authSelection, extra: from);
             },
           ),
           secondaryAction: OurnegoDialogAction(

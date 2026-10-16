@@ -350,21 +350,13 @@ Van en la misma rama, antes de abrir la PR. Cada ajuste dice qué falla hoy, por
 
 ### Ola 7: full-bleed y navegación (3.6, 3.7, 6.1, 7.10, 8.1, 8.2, 8.6)
 
-**Rama:** `feat/container-transform-w7`. **Preset:** `kFullBleedSpring` (ζ = 1, sin velo, radio final = el de la pantalla).
-
-**Estado actual.** Casi todas las rutas usan `MaterialPage` o `NoTransitionPage` (`app_router.dart`). La ruta `auth-selection` (~64) ya elige entre `MaterialPage` y un `CustomTransitionPage` según `state.extra == AuthSelectionRouteSource.onboarding`. A `/auth-selection` se llega desde cinco puertas: favorito sin sesión (`map_screen.dart` ~830), tarjeta de registro (~337), menú de cuenta (`profile_menu_actions.dart` ~36), botón del panel (`business_panel_header.dart` ~51), «Comenzar» de registro (`register_business_widget.dart` ~52), además del onboarding (`onboarding_screen.dart` ~132) y la sesión expirada (`session_expired_listener.dart`, sin origen).
-
-| Caso | Implementación |
-| --- | --- |
-| Pieza nueva | `ContainerTransformPage` en `lib/core/routing/`: una `Page` cuya ruta usa el mismo reloj de resorte y lee el origen (rect, radio, color) de `state.extra` mediante un objeto tipado (`ContainerTransformRouteExtra`). Sin origen, transición estándar |
-| 8.1 Cinco puertas → `/auth-selection` | Cada puerta pasa su rect; una sola ruta, un solo código. Generaliza el caso actual de onboarding |
-| 3.6, 3.7 | «Iniciar sesión» y «Mi negocio» del menú usan el traspaso de la ola 2 como origen |
-| 6.1, 7.10 | La tarjeta «Registra tu negocio» y el botón «Comenzar» se expanden al formulario; el Nego viaja al encabezado como elemento compartido (precedente: el Nego del onboarding) |
-| 8.2 | El botón final del onboarding se expande a la selección de acceso (se navega con `go`: no hay regreso) |
-| 8.6 Atrás predictivo | `p` ligado al gesto (back predictivo de Android, deslizar desde el borde en iOS); al soltar, resorte con la velocidad del gesto |
-| Fuera de alcance | Los pasos internos del acceso (correo, registro, contraseña, verificación, perfil) mantienen una transición estándar o de eje compartido, no container transform |
-
-**Riesgos:** el router y el gesto de atrás; `state.extra` no sobrevive a una restauración de estado (sin origen → transición estándar); enlaces profundos.
+**Estado:** implementada en `feat/container-transform-w7` (apilada sobre la #115; sin PR). Lo construido:
+- `ContainerTransformPage` y `ContainerTransformRouteExtra` (`lib/core/routing/container_transform_page.dart`): una `Page` de go_router que reutiliza `ContainerTransformRoute` a pantalla completa con `kFullBleedSpring`, sin velo, con el origen de `state.extra` (rectángulo, radio y color, más el rectángulo de un elemento compartido y la marca del onboarding). `auth-selection` y `business-form` la usan cuando reciben el origen; si no, `MaterialPage`.
+- Puertas: la tarjeta «Registra tu negocio», «Comenzar», el botón de iniciar sesión del panel, la entrada «Iniciar sesión» del menú (con el traspaso de la ola 2), el corazón de la hoja de un negocio (nace de la hoja), el mensaje final del onboarding (el botón no existe: el mensaje avanza solo a los 3,2 s, así que nace del bloque del mensaje y la página de acceso conserva el acceso de invitado) y el botón «Iniciar sesión» del diálogo de sesión vencida.
+- Elemento compartido (`ContainerTransformSharedElement`): el Nego de la tarjeta (36 dp) o de «Comenzar» (180 dp) vuela a un Nego nuevo de 72 dp sobre el título del formulario de negocio, en el primer 70 % de la transición; la copia que vuela vive en el overlay raíz para que el recorte del contenedor no la corte. Es un cambio visible: el formulario ahora lleva ese Nego.
+- Atrás predictivo (8.6): `TransitionRoute` ya implementa `PredictiveBackRoute`, pero solo el constructor de transiciones de Material lo conecta, así que `ContainerTransformRoute` lleva su propio observador del gesto. Durante el deslizamiento `p` sigue al dedo (la ventana se encoge hacia su origen) y al soltar cierra o vuelve a abrir con su resorte. Vale para ventanas, hojas y páginas del motor. Se activó `android:enableOnBackInvokedCallback` en el manifiesto.
+**Verificado en el teléfono:** la tarjeta → acceso crece y el atrás con el botón la encoge de vuelta. **Sin verificar:** el gesto de atrás predictivo, el favorito y la sesión vencida (el teléfono se desconectó), el onboarding (exige borrar los datos de la app) y el vuelo del Nego (exige una cuenta sin negocio con sesión iniciada).
+**Desviaciones:** (a) la ruta es un `PopupRoute` transparente de pantalla completa, no un `PageRoute`: la pantalla de abajo se sigue construyendo mientras la página está abierta; (b) en iOS no hay gesto de borde, porque ese gesto pertenece a las rutas de Cupertino.
 
 ### Ola 8: pulido y degradación dinámica
 

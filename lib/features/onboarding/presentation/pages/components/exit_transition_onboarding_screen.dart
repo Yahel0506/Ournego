@@ -12,7 +12,10 @@ class ExitTransitionOnboardingScreen extends StatefulWidget {
   });
 
   final OnboardingUserRole selectedRole;
-  final FutureOr<void> Function() onFinished;
+
+  /// [from] is the rectangle of the message, so the next page can grow out of
+  /// it.
+  final FutureOr<void> Function(Rect? from) onFinished;
 
   @override
   State<ExitTransitionOnboardingScreen> createState() =>
@@ -24,6 +27,7 @@ class _ExitTransitionOnboardingScreenState
   static const Curve _entranceCurve = Cubic(0.22, 1, 0.36, 1);
   static const Duration _entranceDuration = Duration(milliseconds: 1000);
 
+  final _messageKey = GlobalKey(debugLabel: 'onboardingMessage');
   Timer? _titleTimer;
   Timer? _descriptionTimer;
   Timer? _finishTimer;
@@ -59,7 +63,12 @@ class _ExitTransitionOnboardingScreenState
 
     _finishTimer = Timer(const Duration(milliseconds: 3200), () {
       if (!mounted) return;
-      widget.onFinished();
+      final box = _messageKey.currentContext?.findRenderObject();
+      widget.onFinished(
+        box is RenderBox && box.attached
+            ? box.localToGlobal(Offset.zero) & box.size
+            : null,
+      );
     });
   }
 
@@ -102,6 +111,7 @@ class _ExitTransitionOnboardingScreenState
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Column(
+              key: _messageKey,
               mainAxisSize: MainAxisSize.min,
               children: [
                 AnimatedSlide(

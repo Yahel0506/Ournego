@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:ournego/core/failures.dart';
 import 'package:ournego/core/theme/tokens/ournego_color_tokens.dart';
+import 'package:ournego/core/routing/container_transform_page.dart';
 import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/core/routing/route_observer.dart';
 import 'package:ournego/core/routing/route_sources.dart';
@@ -64,6 +65,15 @@ GoRouter createAppRouter({
         name: 'auth-selection',
         pageBuilder: (context, state) {
           final source = state.extra;
+          if (source is ContainerTransformRouteExtra) {
+            return ContainerTransformPage<void>(
+              key: state.pageKey,
+              origin: source.origin,
+              child: AuthSelectionScreen(
+                isFromOnboarding: source.fromOnboarding,
+              ),
+            );
+          }
           if (source != AuthSelectionRouteSource.onboarding) {
             return MaterialPage<void>(
               key: state.pageKey,
@@ -230,7 +240,20 @@ GoRouter createAppRouter({
       GoRoute(
         path: BusinessRoutes.form,
         name: 'business-form',
-        builder: (context, state) => const BusinessFormScreen(),
+        pageBuilder: (context, state) {
+          final extra = state.extra;
+          if (extra is ContainerTransformRouteExtra) {
+            return ContainerTransformPage<void>(
+              key: state.pageKey,
+              origin: extra.origin,
+              child: BusinessFormScreen(sharedFrom: extra.sharedFrom),
+            );
+          }
+          return MaterialPage<void>(
+            key: state.pageKey,
+            child: const BusinessFormScreen(),
+          );
+        },
       ),
     ],
     redirect: (context, state) async {

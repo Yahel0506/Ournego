@@ -29,7 +29,10 @@ class OurnegoFloatingSheet extends StatefulWidget {
   final double bottomOffset;
   final double sideStackTop;
   final double maxWidth;
-  final Future<bool> Function(SheetBusinessData business) onFavorite;
+
+  /// [origin] is the sheet's rectangle, so a login page can grow out of it.
+  final Future<bool> Function(SheetBusinessData business, Rect? origin)
+  onFavorite;
 
   /// [origin] is the button that was tapped, so the notice can grow out of it.
   final Future<void> Function(
@@ -86,6 +89,7 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
   SheetOrigin? _entryOrigin;
 
   bool _dragging = false;
+  final _frameBoxKey = GlobalKey(debugLabel: 'floatingSheetFrameBox');
 
   /// Dismissal by dragging down: 0 at rest, 1 when the sheet has been pushed
   /// down by [_dismissRange] and shrunk. It is the first phase of every close.
@@ -320,6 +324,15 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
     return box.localToGlobal(local.topLeft) & local.size;
   }
 
+  /// The sheet's rectangle on screen, or null when it is not showing.
+  Rect? _sheetRect() {
+    final box = _frameBoxKey.currentContext?.findRenderObject();
+    if (box is! RenderBox || !box.attached || !box.hasSize) {
+      return null;
+    }
+    return box.localToGlobal(Offset.zero) & box.size;
+  }
+
   Rect? _toLocal(Rect global) {
     final box = context.findRenderObject();
     if (box is! RenderBox || !box.attached || !box.hasSize) {
@@ -516,7 +529,10 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
                           });
 
                           controller.toggleFavoriteForBusiness(business.id);
-                          final success = await widget.onFavorite(business);
+                          final success = await widget.onFavorite(
+                            business,
+                            _sheetRect(),
+                          );
                           if (!success) {
                             controller.toggleFavoriteForBusiness(business.id);
                           }
@@ -718,6 +734,7 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
           child: IgnorePointer(
             ignoring: !interactive,
             child: DecoratedBox(
+              key: _frameBoxKey,
               decoration: BoxDecoration(
                 color: fillColor.withValues(alpha: chrome),
                 border: Border.all(
@@ -866,7 +883,10 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
                         });
 
                         controller.toggleFavorite();
-                        final success = await widget.onFavorite(business);
+                        final success = await widget.onFavorite(
+                          business,
+                          _sheetRect(),
+                        );
                         if (!success) {
                           controller.toggleFavorite();
                         }

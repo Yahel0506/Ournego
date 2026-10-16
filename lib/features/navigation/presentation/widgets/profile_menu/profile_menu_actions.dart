@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:ournego/core/location/open_app_location_settings.dart';
+import 'package:ournego/core/routing/container_transform_page.dart';
 import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
 import 'package:ournego/features/feedback/presentation/widgets/feedback_flow.dart';
@@ -33,7 +34,11 @@ Future<void> openProfileMenu(
 
   switch (action) {
     case ProfileMenuAction.logIn:
-      context.push(AuthRoutes.authSelection);
+      // The login page grows out of the menu item that was tapped.
+      context.push(
+        AuthRoutes.authSelection,
+        extra: ContainerTransformRouteExtra.from(handoff.data),
+      );
     case ProfileMenuAction.businessPanel:
       context.go(BusinessRoutes.panel);
     case ProfileMenuAction.locationPermissions:
