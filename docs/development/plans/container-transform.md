@@ -1,6 +1,6 @@
 # Container transform: plan de implementación
 
-Estado: olas 0 y 1 y la estética flat glass fusionadas; ola 2 en revisión (#110). Siguiente: ola 3.
+Estado: olas 0 y 1 y la estética flat glass fusionadas; ola 2 en revisión (#110); ola 3 implementada en `feat/container-transform-w3` (pendiente de verificar en teléfono y de PR). Siguiente: ola 4.
 Reconstruido el 15 oct 2026: el borrador original (`Claude outputs/CONTAINER_TRANSFORM_PLAN.md`, 13 oct) nunca se versionó y se perdió. Este documento conserva sus decisiones e incorpora los cambios de diseño aprobados después.
 
 Fuentes: la spec de container transform (v1.0, en adelante «la spec») y el análisis «Ournego: casos de Container Transform» (55 casos numerados 3.x a 9.x, que este plan cita por número). La implementación vigente está documentada en [`docs/development/design/motion/README.md`](../design/motion/README.md).
@@ -58,7 +58,7 @@ Carácter: calmado. El tamaño y la X nunca se pasan de su destino. La única ex
 | D28 | Nivel C por diseño | Hoja flotante, búsqueda, hojas inferiores y popovers sin blur | Vigente |
 | D29 | Cerrar → reabrir rápido | Se acepta que la reapertura espere al cierre (≈ 0.3 s) | Vigente |
 | D30 | Regreso de ventanas encadenadas | Nacen del ítem del menú y regresan al botón de perfil | Hecho (ola 2) |
-| D31 | Barra tras elegir un resultado | Conserva la consulta | Pendiente (ola 3) |
+| D31 | Barra tras elegir un resultado | Conserva la consulta | Hecho (ola 3) |
 | D32 | Fichas de la spec §13 | Una por preset en `docs/development/design/motion/` | La del preset `dialog` está hecha |
 
 ### 2.2 Cambios de diseño aprobados después (E1–E8)
@@ -173,6 +173,12 @@ Cada ola se ejecuta igual que la 2:
 7. Documentar en `docs/development/design/motion/README.md` (pieza nueva o ficha del preset) y marcar la ola en este plan.
 
 ### Ola 3: búsqueda in-place (4.1–4.4)
+
+**Estado:** implementada en `feat/container-transform-w3`, apilada sobre la #110 porque toca `map_screen.dart`. Pendiente: verificación en teléfono (no había dispositivo conectado al implementarla) y PR.
+
+**Lo construido:** `SearchMorphSurface` (`lib/features/map/presentation/widgets/search_morph_surface.dart`) con un `SpringClock(kSearchInPlaceSpring)` en `map_screen.dart`; el marco interpola de la barra (medida al abrir con `searchBarKey`) al panel, con relleno transparente → opaco en [0, 0.3], radio 30 → 24, y contenido a tamaño final centrado y recortado, con fundido en [0.35, 0.70]. La X cierra y borra la consulta al asentarse (`onSettled`); si el usuario vuelve durante el cierre, borra ya. Elegir un resultado conserva la consulta (D31) y oculta el panel. Filas con entrada escalonada de 40 ms (máximo 6) que se reproduce una vez por consulta; cambios de estado (vacío, cargando, sin resultados, resultados) con fundido de 120 ms.
+
+**Desviaciones:** (a) el panel es de altura completa, así que no hay animación de altura: la transición de estados es solo un fundido; (b) el origen de la hoja desde la fila (4.4) se pospone a la ola 4, porque `openBusinessSheet` todavía no acepta origen; hoy la búsqueda cierra el panel y la hoja aparece como siempre; (c) el `FocusNode` nunca cambia de árbol, así que el foco se conserva por construcción y lo prueba `map_search_panel_test.dart`.
 
 **Rama:** `feat/container-transform-w3`. **Preset:** `kSearchInPlaceSpring` (sin velo, nivel C).
 
