@@ -21,7 +21,12 @@ class ContainerTransformController {
     this.originSource,
     this.staticOrigin,
     this.returnSource,
+    this.rise = false,
   }) : origin = originSource?.measure() ?? staticOrigin;
+
+  /// Without an origin the window rises from below its own place (a sheet
+  /// docked to the bottom edge) instead of growing around its center.
+  final bool rise;
 
   /// The route's clock `p`, bounded to [0, 1] and driven by a spring.
   final Animation<double> animation;
@@ -323,11 +328,13 @@ class RenderContainerTransformDestination extends RenderProxyBox {
       fromRadius = origin.radius;
       fromColor = origin.color;
     } else {
-      from = Rect.fromCenter(
-        center: destination.center,
-        width: destination.width * 0.92,
-        height: destination.height * 0.92,
-      );
+      from = _controller.rise
+          ? destination.shift(Offset(0, destination.height))
+          : Rect.fromCenter(
+              center: destination.center,
+              width: destination.width * 0.92,
+              height: destination.height * 0.92,
+            );
       fromRadius = _radius;
       fromColor = _fill;
     }

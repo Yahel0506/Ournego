@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 import 'package:ournego/core/location/location_access_status.dart';
 import 'package:ournego/core/theme/tokens/ournego_spacing_tokens.dart';
-import 'package:ournego/core/theme/tokens/ournego_radius_tokens.dart';
+import 'package:ournego/shared/widgets/container_transform/show_ournego_window.dart';
 import 'package:ournego/shared/widgets/buttons/buttons.dart';
 import 'package:ournego/shared/widgets/nego/nego.dart';
 
@@ -23,17 +23,10 @@ Future<LocationAccessSheetAction?> showLocationAccessSheet(
   BuildContext context, {
   required LocationAccessStatus status,
 }) {
-  return showModalBottomSheet<LocationAccessSheetAction>(
+  return showOurnegoSheet<LocationAccessSheetAction>(
     context: context,
     // Above the map's bottom navigation, which would otherwise cover it.
     useRootNavigator: true,
-    isScrollControlled: true,
-    showDragHandle: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(
-        top: Radius.circular(OurnegoRadiusTokens.window),
-      ),
-    ),
     builder: (_) => LocationAccessSheet(status: status),
   );
 }
