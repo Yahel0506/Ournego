@@ -50,11 +50,16 @@ class ZonePickerSheet extends ConsumerStatefulWidget {
     required this.mapCenter,
     this.currentZone,
     this.debounce = const Duration(milliseconds: 400),
+    this.onResult,
   });
 
   final AppPosition mapCenter;
   final ManualZone? currentZone;
   final Duration debounce;
+
+  /// Called with the result instead of closing the route, when the sheet is
+  /// part of a flow that decides what happens next.
+  final ValueChanged<ZonePickerResult>? onResult;
 
   @override
   ConsumerState<ZonePickerSheet> createState() => _ZonePickerSheetState();
@@ -119,7 +124,16 @@ class _ZonePickerSheetState extends ConsumerState<ZonePickerSheet> {
       widget.mapCenter,
     );
     if (!mounted) return;
-    Navigator.of(context).pop(ZonePicked(zone));
+    _finish(ZonePicked(zone));
+  }
+
+  void _finish(ZonePickerResult result) {
+    final callback = widget.onResult;
+    if (callback != null) {
+      callback(result);
+    } else {
+      Navigator.of(context).pop(result);
+    }
   }
 
   @override
@@ -190,7 +204,7 @@ class _ZonePickerSheetState extends ConsumerState<ZonePickerSheet> {
                     title: Text(
                       'Volver a ${ReferenceLocation.defaultZone.label}',
                     ),
-                    onTap: () => Navigator.of(context).pop(const ZoneCleared()),
+                    onTap: () => _finish(const ZoneCleared()),
                   ),
                 const Divider(height: OurnegoSpacingTokens.md),
                 Flexible(child: _buildResults(context)),
@@ -258,7 +272,7 @@ class _ZonePickerSheetState extends ConsumerState<ZonePickerSheet> {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
-              onTap: () => Navigator.of(context).pop(ZonePicked(zone)),
+              onTap: () => _finish(ZonePicked(zone)),
             );
           },
         );

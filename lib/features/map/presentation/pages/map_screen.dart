@@ -35,6 +35,7 @@ import 'package:ournego/features/map/presentation/widgets/floating_sheet/models/
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/ournego_floating_sheet.dart';
 import 'package:ournego/features/map/presentation/widgets/map_canvas_widget.dart';
 import 'package:ournego/features/map/presentation/widgets/location_access_sheet_widget.dart';
+import 'package:ournego/features/map/presentation/widgets/location_flow_sheet_widget.dart';
 import 'package:ournego/features/map/presentation/widgets/map_controls_widget.dart';
 import 'package:ournego/features/map/presentation/widgets/map_location_banner_widget.dart';
 import 'package:ournego/features/map/presentation/widgets/map_search_overlay_widget.dart';
@@ -238,21 +239,32 @@ class _MapScreenState extends ConsumerState<MapScreen>
     }
 
     _isLocationModalOpen = true;
-    final action = await showLocationAccessSheet(context, status: status);
+    final result = await showLocationFlowSheet(
+      context,
+      status: status,
+      mapCenter: _mapCenterOrReference(),
+      currentZone: ref.read(mapProvider).asData?.value.manualZone,
+    );
     _isLocationModalOpen = false;
 
     if (!mounted) {
       return;
     }
 
-    switch (action) {
-      case LocationAccessSheetAction.allow:
-        await ref.read(mapProvider.notifier).requestPermission();
-      case LocationAccessSheetAction.chooseZone:
-        await _openZonePicker();
-      case LocationAccessSheetAction.openSettings:
-        await _openLocationSettings();
-      case LocationAccessSheetAction.continueWithoutLocation || null:
+    switch (result) {
+      case LocationFlowAction(:final action):
+        switch (action) {
+          case LocationAccessSheetAction.allow:
+            await ref.read(mapProvider.notifier).requestPermission();
+          case LocationAccessSheetAction.openSettings:
+            await _openLocationSettings();
+          case LocationAccessSheetAction.chooseZone ||
+              LocationAccessSheetAction.continueWithoutLocation:
+            break;
+        }
+      case LocationFlowZone(:final result):
+        await _applyZoneResult(result);
+      case null:
         break;
     }
   }
@@ -289,6 +301,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
       return;
     }
 
+    await _applyZoneResult(result);
+  }
+
+  Future<void> _applyZoneResult(ZonePickerResult result) async {
     final notifier = ref.read(mapProvider.notifier);
     switch (result) {
       case ZonePicked(:final zone):

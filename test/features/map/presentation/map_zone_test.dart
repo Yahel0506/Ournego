@@ -85,6 +85,27 @@ void main() {
     expect(find.byType(CircularProgressIndicator), findsNothing);
   });
 
+  testWidgets('choosing a zone turns the same sheet into the picker', (
+    tester,
+  ) async {
+    await _pumpMap(
+      tester,
+      repository: _blockedForGood(),
+      zones: FakeManualZoneRepository(),
+    );
+    const handle = Key('sheet-drag-handle');
+    expect(find.byKey(handle), findsOneWidget);
+
+    await tester.tap(find.text('Elegir mi zona'));
+    await tester.pump(const Duration(milliseconds: 60));
+    expect(find.byKey(handle), findsOneWidget, reason: 'not a second sheet');
+
+    await _settle(tester);
+    expect(find.byKey(handle), findsOneWidget);
+    expect(find.byKey(_pickerField), findsOneWidget);
+    expect(find.byKey(const Key('location-access-primary')), findsNothing);
+  });
+
   testWidgets('choosing a searched zone sets it, saves it and shows the chip', (
     tester,
   ) async {
