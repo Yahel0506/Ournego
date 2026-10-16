@@ -158,6 +158,37 @@ class ContainerTransformBlur extends StatelessWidget {
   }
 }
 
+/// Fades its child in over a late window of the window's clock `p`: for content
+/// that is noisy while the container still travels, such as a map's tiles. It
+/// does not scale or move. Outside a container-transform route it is plain.
+class ContainerTransformFadeIn extends StatelessWidget {
+  const ContainerTransformFadeIn({
+    super.key,
+    required this.child,
+    this.start = 0.5,
+    this.end = 0.9,
+  });
+
+  final Widget child;
+  final double start;
+  final double end;
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = ContainerTransformScope.maybeOf(context);
+    if (controller == null) return child;
+
+    return AnimatedBuilder(
+      animation: controller.animation,
+      child: child,
+      builder: (context, child) {
+        final opacity = seg(controller.animation.value, start, end);
+        return opacity >= 1 ? child! : Opacity(opacity: opacity, child: child);
+      },
+    );
+  }
+}
+
 class _DestinationRenderWidget extends SingleChildRenderObjectWidget {
   const _DestinationRenderWidget({
     required this.controller,

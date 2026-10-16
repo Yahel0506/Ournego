@@ -20,6 +20,7 @@ class OurnegoFormDialog extends StatelessWidget {
     required this.primaryAction,
     this.secondaryAction,
     this.isSaving = false,
+    this.errorText,
     this.maxWidth = 360,
     this.scrollable = true,
   });
@@ -29,6 +30,9 @@ class OurnegoFormDialog extends StatelessWidget {
   final OurnegoDialogAction primaryAction;
   final OurnegoDialogAction? secondaryAction;
   final bool isSaving;
+
+  /// Shown above the actions when a save failed, so what was typed is not lost.
+  final String? errorText;
   final double maxWidth;
 
   /// Wraps [child] in a scroll view. Turn it off when [child] has its own
@@ -66,6 +70,16 @@ class OurnegoFormDialog extends StatelessWidget {
                           ? SingleChildScrollView(child: child)
                           : child,
                     ),
+                    if (errorText != null) ...[
+                      const SizedBox(height: OurnegoSpacingTokens.xs),
+                      Text(
+                        errorText!,
+                        key: const Key('form-dialog-error'),
+                        style: OurnegoTextStyles.bodyCompact.copyWith(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: OurnegoSpacingTokens.md),
                     OverflowBar(
                       alignment: MainAxisAlignment.end,
