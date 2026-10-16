@@ -1,7 +1,19 @@
+import 'dart:ui' show Rect;
+
 import 'package:flutter/foundation.dart';
 
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/floating_sheet_state.dart';
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/models/sheet_business_data.dart';
+
+/// How the sheet appears when it was hidden. [origin] is where it grows from,
+/// in global coordinates; null means it rises from the bottom edge. [instant]
+/// places it without animation, e.g. when it is restored at launch.
+class SheetEntry {
+  const SheetEntry({this.origin, this.instant = false});
+
+  final Rect? origin;
+  final bool instant;
+}
 
 class FloatingSheetController extends ChangeNotifier {
   FloatingSheetState _state = FloatingSheetState.collapsed;
@@ -10,6 +22,11 @@ class FloatingSheetController extends ChangeNotifier {
   final List<SheetBusinessData> _minimizedBusinesses = [];
   bool _pendingClearActive = false;
   bool _pendingMinimizeToStack = false;
+  SheetEntry? _pendingEntry;
+
+  /// Progress of the sheet's entry (0 at its origin, 1 at rest). The map waits
+  /// for it to pass 0.4 before it pans to the business.
+  final ValueNotifier<double> entryProgress = ValueNotifier<double>(1);
 
   FloatingSheetState get state => _state;
   SheetBusinessData? get activeBusiness => _activeBusiness;
@@ -51,28 +68,34 @@ class FloatingSheetController extends ChangeNotifier {
     return true;
   }
 
-  void openBusiness(SheetBusinessData business) {
+  void openBusiness(SheetBusinessData business, {Rect? origin}) {
     _comparisonBusiness = null;
 
     final current = _activeBusiness;
     if (current != null && current.id != business.id) {
       _pushToMinimized(current);
     }
+    if (current == null) {
+      _startEntry(origin: origin);
+    }
 
     _activeBusiness = business;
     _pendingClearActive = false;
     _pendingMinimizeToStack = false;
-    _state = FloatingSheetState.minimized;
+    _state = FloatingSheetState.collapsed;
     notifyListeners();
+  }
 
-    Future<void>.delayed(const Duration(milliseconds: 40), () {
-      if (_activeBusiness?.id != business.id) {
-        return;
-      }
+  /// The entry the sheet should play when it appears, consumed once.
+  SheetEntry? takePendingEntry() {
+    final entry = _pendingEntry;
+    _pendingEntry = null;
+    return entry;
+  }
 
-      _state = FloatingSheetState.collapsed;
-      notifyListeners();
-    });
+  void _startEntry({Rect? origin, bool instant = false}) {
+    _pendingEntry = SheetEntry(origin: origin, instant: instant);
+    entryProgress.value = instant ? 1 : 0;
   }
 
   void closeActiveBusiness() {
@@ -121,7 +144,7 @@ class FloatingSheetController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void restoreFromMinimized(String businessId) {
+  void restoreFromMinimized(String businessId, {Rect? origin}) {
     final index = _minimizedBusinesses.indexWhere((b) => b.id == businessId);
     if (index < 0) {
       return;
@@ -132,6 +155,9 @@ class FloatingSheetController extends ChangeNotifier {
     if (current != null && current.id != selected.id) {
       _pushToMinimized(current);
     }
+    if (current == null) {
+      _startEntry(origin: origin);
+    }
 
     _activeBusiness = selected;
     _comparisonBusiness = null;
@@ -141,7 +167,7 @@ class FloatingSheetController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void onMinimizedBusinessTap(String businessId) {
+  void onMinimizedBusinessTap(String businessId, {Rect? origin}) {
     if (isComparisonMode) {
       return;
     }
@@ -151,7 +177,7 @@ class FloatingSheetController extends ChangeNotifier {
       return;
     }
 
-    restoreFromMinimized(businessId);
+    restoreFromMinimized(businessId, origin: origin);
   }
 
   void enterComparisonFromMinimized(String businessId) {
@@ -335,8 +361,15 @@ class FloatingSheetController extends ChangeNotifier {
       _state = FloatingSheetState.minimized;
     } else {
       _state = state;
+      _startEntry(instant: true);
     }
 
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    entryProgress.dispose();
+    super.dispose();
   }
 }

@@ -46,7 +46,12 @@ class SpringClock {
 
   /// Springs to [target] from the current value and velocity. Targets above
   /// 0.5 use the opening spring, the others the closing one.
-  void animateTo(double target) {
+  void animateTo(double target) =>
+      settleTo(target, velocity: _controller.velocity);
+
+  /// Springs to [target] starting at [velocity] (units of `p` per second), e.g.
+  /// the speed a finger left on a drag.
+  void settleTo(double target, {double velocity = 0}) {
     _target = target;
     final spring = target > 0.5 ? preset.open : preset.close;
     _controller.animateWith(
@@ -54,7 +59,7 @@ class SpringClock {
         spring,
         _controller.value,
         target,
-        _controller.velocity,
+        velocity,
         tolerance: kOurnegoSpringTolerance,
       ),
     );
@@ -70,18 +75,7 @@ class SpringClock {
   void release({required double velocity, double threshold = 0.5}) {
     // The value 0.1 s from now is a good guess of where the finger was heading.
     final projected = _controller.value + velocity * 0.1;
-    final target = projected >= threshold ? 1.0 : 0.0;
-    _target = target;
-    final spring = target > 0.5 ? preset.open : preset.close;
-    _controller.animateWith(
-      SpringSimulation(
-        spring,
-        _controller.value,
-        target,
-        velocity,
-        tolerance: kOurnegoSpringTolerance,
-      ),
-    );
+    settleTo(projected >= threshold ? 1.0 : 0.0, velocity: velocity);
   }
 
   /// Sets the value with no animation, e.g. when restoring from storage.

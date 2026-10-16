@@ -1,3 +1,5 @@
+import 'dart:ui' show Rect;
+
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -30,19 +32,50 @@ void open(FakeAsync async, FloatingSheetController c, SheetBusinessData b) {
 void main() {
   backTests();
   group('openBusiness', () {
-    test('starts minimized and settles to collapsed after 40 ms', () {
+    test('opens collapsed at once, with no delay', () {
       fakeAsync((async) {
         final c = FloatingSheetController();
         c.openBusiness(biz('a'));
 
         expect(c.activeBusiness?.id, 'a');
-        expect(c.state, FloatingSheetState.minimized);
-
-        async.elapse(const Duration(milliseconds: 39));
-        expect(c.state, FloatingSheetState.minimized);
-        async.elapse(const Duration(milliseconds: 2));
         expect(c.state, FloatingSheetState.collapsed);
+        expect(c.canHandleBack, isTrue);
       });
+    });
+
+    test('a new sheet carries its origin and starts its entry at 0', () {
+      final c = FloatingSheetController();
+      const origin = Rect.fromLTWH(10, 20, 30, 40);
+      c.openBusiness(biz('a'), origin: origin);
+
+      expect(c.entryProgress.value, 0);
+      final entry = c.takePendingEntry();
+      expect(entry?.origin, origin);
+      expect(entry?.instant, isFalse);
+      expect(c.takePendingEntry(), isNull, reason: 'consumed once');
+    });
+
+    test('replacing a business does not start a new entry', () {
+      final c = FloatingSheetController();
+      c.openBusiness(biz('a'));
+      c.takePendingEntry();
+      c.entryProgress.value = 1; // the sheet has arrived
+      c.openBusiness(biz('b'), origin: const Rect.fromLTWH(0, 0, 1, 1));
+
+      expect(c.takePendingEntry(), isNull);
+      expect(c.entryProgress.value, 1);
+    });
+
+    test('restoring the state at launch enters instantly', () {
+      final c = FloatingSheetController();
+      c.restoreState(
+        state: FloatingSheetState.expanded,
+        activeBusiness: biz('a'),
+        minimizedBusinesses: const [],
+      );
+
+      expect(c.takePendingEntry()?.instant, isTrue);
+      expect(c.entryProgress.value, 1);
     });
 
     test('a newer business wins over a pending collapse of the older one', () {
@@ -422,14 +455,14 @@ void backTests() {
       });
     });
 
-    test('is not handled without a business or while still opening', () {
+    test('is not handled without a business; a new sheet is collapsed', () {
       fakeAsync((async) {
         final c = FloatingSheetController();
         expect(c.handleBack(), isFalse);
 
         c.openBusiness(biz('a'));
-        expect(c.state, FloatingSheetState.minimized);
-        expect(c.canHandleBack, isFalse);
+        expect(c.state, FloatingSheetState.collapsed);
+        expect(c.canHandleBack, isTrue);
       });
     });
 
