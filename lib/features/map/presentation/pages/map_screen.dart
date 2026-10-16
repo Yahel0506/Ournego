@@ -39,6 +39,7 @@ import 'package:ournego/features/map/presentation/widgets/location_flow_sheet_wi
 import 'package:ournego/features/map/presentation/widgets/map_controls_widget.dart';
 import 'package:ournego/features/map/presentation/widgets/map_location_banner_widget.dart';
 import 'package:ournego/features/map/presentation/widgets/map_search_overlay_widget.dart';
+import 'package:ournego/features/map/presentation/widgets/map_top_strip_widget.dart';
 import 'package:ournego/features/map/presentation/widgets/search_morph_surface.dart';
 import 'package:ournego/features/map/presentation/widgets/top_navigation_bar_widget.dart';
 import 'package:ournego/features/map/presentation/widgets/zone_picker_sheet_widget.dart';
@@ -606,15 +607,17 @@ class _MapScreenState extends ConsumerState<MapScreen>
             },
             markerUiMapper: _businessMarkerUiMapper.call,
           ),
-          if (!_showSearchPanel &&
-              !showLocationBanner &&
-              !showZoneChip &&
-              isOwnerState.value == false)
-            Positioned(
-              top: topBarHeight + 8,
-              left: 16,
-              right: 16,
-              child: GestureDetector(
+          Positioned(
+            top: topBarHeight + 8,
+            left: 16,
+            right: 16,
+            child: MapTopStrip(
+              showRegister:
+                  !_showSearchPanel &&
+                  !showLocationBanner &&
+                  !showZoneChip &&
+                  isOwnerState.value == false,
+              register: GestureDetector(
                 onTap: _onRegisterBusinessTap,
                 child: OurnegoContentContainer(
                   hasBlur: true,
@@ -641,33 +644,25 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   ),
                 ),
               ),
-            ),
-          if (showLocationBanner || showZoneChip)
-            Positioned(
-              top: topBarHeight + 8,
-              left: 16,
-              right: 16,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (showLocationBanner)
-                    MapLocationBanner(
+              showBanner: showLocationBanner,
+              banner: showLocationBanner
+                  ? MapLocationBanner(
                       status: locationState!.status,
                       onAction: _onLocationBannerAction,
-                    ),
-                  if (showLocationBanner && showZoneChip)
-                    const SizedBox(height: 8),
-                  if (showZoneChip)
-                    OurnegoGlassChip(
+                    )
+                  : null,
+              showChip: showZoneChip,
+              chip: showZoneChip
+                  ? OurnegoGlassChip(
                       key: const Key('zone-chip'),
                       label: 'Zona: ${reference.label}',
                       actionLabel: 'Cambiar',
                       semanticLabel: 'Zona: ${reference.label}. Cambiar',
                       onPressed: _openZonePicker,
-                    ),
-                ],
-              ),
+                    )
+                  : null,
             ),
+          ),
           Positioned.fill(
             child: IgnorePointer(
               ignoring: !_showSearchPanel,
