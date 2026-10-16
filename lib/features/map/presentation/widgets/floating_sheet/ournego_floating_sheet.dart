@@ -9,6 +9,7 @@ import 'package:ournego/core/theme/tokens/ournego_semantic_tokens.dart';
 import 'package:ournego/core/theme/tokens/ournego_spacing_tokens.dart';
 import 'package:ournego/features/map/presentation/providers/map_providers.dart';
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/components/business_hours_compact_card.dart';
+import 'package:ournego/features/map/presentation/widgets/floating_sheet/components/minimized_stack.dart';
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/components/minimized_stack_icon.dart';
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/components/sheet_header.dart';
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/floating_sheet_controller.dart';
@@ -61,10 +62,7 @@ const Key frameKey = ValueKey('floatingSheetFrame');
 class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
     with TickerProviderStateMixin {
   static const double _stackLeft = 12;
-
-  /// Vertical distance between two stacked icons: 48 dp plus 8 dp of padding.
-  static const double _stackStep = 56;
-  static const double _stackIconSize = 48;
+  static const double _stackIconSize = MinimizedStack.iconSize;
 
   bool _isFavoriteUpdating = false;
 
@@ -144,6 +142,7 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
     if (active == null) {
       _shownId = null;
       _entryOrigin = null;
+      _expand.jumpTo(0);
       return;
     }
 
@@ -221,14 +220,18 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
     }
   }
 
-  /// The local rectangle of [index] in the stack, converted to global.
-  Rect? _stackIconRectGlobal(int index) {
-    final local = Rect.fromLTWH(
+  /// The rectangle of stack slot [index] in local coordinates.
+  Rect _slotRect(int index) {
+    final offset = MinimizedStack.slotOffset(
       _stackLeft,
-      widget.sideStackTop + index * _stackStep,
-      _stackIconSize,
-      _stackIconSize,
+      widget.sideStackTop,
+      index,
     );
+    return offset & const Size.square(_stackIconSize);
+  }
+
+  Rect? _stackIconRectGlobal(int index) {
+    final local = _slotRect(index);
     final box = context.findRenderObject();
     if (box is! RenderBox || !box.attached) {
       return null;
@@ -272,14 +275,23 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
   Widget _buildScrim(FloatingSheetController controller) {
     return Positioned.fill(
       child: AnimatedBuilder(
-        animation: _expand.animation,
+        animation: Listenable.merge([
+          _expand.animation,
+          _entry.animation,
+          _minimize.animation,
+        ]),
         builder: (context, _) {
           final isComparing = controller.isComparisonMode;
           final blocks =
               isComparing || controller.state == FloatingSheetState.expanded;
           final alpha = isComparing
               ? kComparisonScrimAlpha
-              : kSheetExpandSpring.scrimAlpha * _expand.value.clamp(0.0, 1.0);
+              : kSheetExpandSpring.scrimAlpha *
+                    _expand.value.clamp(0.0, 1.0) *
+                    // The dimming leaves with the sheet when it minimizes or
+                    // closes, even from the expanded state.
+                    (1 - _segment(_minimize.value, 0, 0.6)) *
+                    _segment(_entry.value, 0, 0.3);
           return IgnorePointer(
             ignoring: !blocks,
             child: GestureDetector(
@@ -295,41 +307,23 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
   }
 
   Widget _buildMinimizedStack(FloatingSheetController controller) {
-    // The business that is becoming an icon joins the stack when it arrives.
-    final pendingId = controller.pendingMinimizeToStack
+    // The business that is becoming an icon is already in the list, in its
+    // final slot, but is only drawn once the sheet has arrived there.
+    final hiddenId = controller.pendingMinimizeToStack
         ? controller.activeBusiness?.id
         : null;
-    final stacked = controller.minimizedBusinesses
-        .where((business) => business.id != pendingId)
-        .toList();
-
-    return Positioned(
-      left: _stackLeft,
-      top: widget.sideStackTop,
-      child: AnimatedOpacity(
-        duration: kSheetTransitionDuration,
-        curve: kEaseOutExpo,
-        opacity: stacked.isEmpty ? 0 : 1,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (var index = 0; index < stacked.length; index++)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: MinimizedStackIcon(
-                  business: stacked[index],
-                  onTap: () {
-                    controller.onMinimizedBusinessTap(
-                      stacked[index].id,
-                      origin: _stackIconRectGlobal(index),
-                    );
-                  },
-                  onLongPress: () =>
-                      controller.removeFromMinimized(stacked[index].id),
-                ),
-              ),
-          ],
+    return Positioned.fill(
+      child: MinimizedStack(
+        businesses: controller.minimizedBusinesses,
+        left: _stackLeft,
+        top: widget.sideStackTop,
+        hiddenId: hiddenId,
+        restoringId: controller.activeBusiness?.id,
+        onTap: (business, index) => controller.onMinimizedBusinessTap(
+          business.id,
+          origin: _stackIconRectGlobal(index),
         ),
+        onLongPress: (business) => controller.removeFromMinimized(business.id),
       ),
     );
   }
@@ -542,12 +536,10 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
     final opened = origin == null
         ? resting.shift(Offset(0, (1 - po) * (stack.height - resting.top)))
         : Rect.lerp(origin, resting, po)!;
-    final iconRect = Rect.fromLTWH(
-      _stackLeft,
-      widget.sideStackTop,
-      _stackIconSize,
-      _stackIconSize,
+    final slot = controller.minimizedBusinesses.indexWhere(
+      (b) => b.id == business.id,
     );
+    final iconRect = _slotRect(slot < 0 ? 0 : slot);
     final frame = Rect.lerp(opened, iconRect, pm)!;
     final radius = BorderRadius.circular(
       _lerpDouble(
@@ -561,6 +553,9 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
     // edge slides up in full.
     final shown = controller.isComparisonMode ? 0.0 : 1.0;
     final fade = (origin == null ? 1.0 : _segment(po, 0, 0.3)) * shown;
+    // On arrival the frame is replaced by the stack's own icon, which draws
+    // its own fill and border, so the frame's give way to it.
+    final chrome = fade * (1 - _segment(pm, 0.6, 1));
     final contentAlpha =
         _segment(
           po,
@@ -591,15 +586,15 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
           ignoring: !interactive,
           child: DecoratedBox(
             decoration: BoxDecoration(
-              color: colorScheme.surface.withValues(alpha: fade),
+              color: colorScheme.surface.withValues(alpha: chrome),
               border: Border.all(
-                color: colorScheme.outline.withValues(alpha: 0.3 * fade),
+                color: colorScheme.outline.withValues(alpha: 0.3 * chrome),
                 width: 1,
               ),
               borderRadius: radius,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.35 * fade),
+                  color: Colors.black.withValues(alpha: 0.35 * chrome),
                   blurRadius: 24,
                   spreadRadius: -4,
                   offset: const Offset(0, 8),

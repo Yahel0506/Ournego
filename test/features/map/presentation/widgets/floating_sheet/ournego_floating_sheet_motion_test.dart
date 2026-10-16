@@ -67,12 +67,27 @@ Future<FloatingSheetController> _pumpSheet(WidgetTester tester) async {
   return controller;
 }
 
-int _iconsOf(String id) => find
-    .byWidgetPredicate(
-      (widget) => widget is MinimizedStackIcon && widget.business.id == id,
-    )
-    .evaluate()
-    .length;
+/// Copies of the icon of [id] that can be seen: the stack holds its slot with
+/// an invisible copy while the sheet is still on its way.
+int _iconsOf(String id) {
+  var visible = 0;
+  final icons = find.byWidgetPredicate(
+    (widget) => widget is MinimizedStackIcon && widget.business.id == id,
+  );
+  for (final element in icons.evaluate()) {
+    var seen = true;
+    element.visitAncestorElements((ancestor) {
+      final widget = ancestor.widget;
+      if (widget is Opacity && widget.opacity == 0) {
+        seen = false;
+        return false;
+      }
+      return true;
+    });
+    if (seen) visible++;
+  }
+  return visible;
+}
 
 void main() {
   group('entry', () {
@@ -149,6 +164,102 @@ void main() {
         expect(controller.activeBusiness, isNull);
       },
     );
+  });
+
+  group('stack', () {
+    double iconTop(WidgetTester tester, String id) => tester
+        .getTopLeft(
+          find.byWidgetPredicate(
+            (w) => w is MinimizedStackIcon && w.business.id == id,
+          ),
+        )
+        .dy;
+
+    testWidgets('a new icon takes the slot under the stack, no one moves', (
+      tester,
+    ) async {
+      final controller = await _pumpSheet(tester);
+      for (final id in ['a', 'b', 'c']) {
+        controller.openBusiness(_biz(id));
+      }
+      await tester.pumpAndSettle();
+      final aTop = iconTop(tester, 'a');
+      final bTop = iconTop(tester, 'b');
+      expect(bTop - aTop, 56);
+
+      controller.minimizeActiveBusiness();
+      for (var i = 0; i < 40; i++) {
+        await tester.pump(const Duration(milliseconds: 16));
+        expect(iconTop(tester, 'a'), aTop);
+        expect(iconTop(tester, 'b'), bTop);
+      }
+      await tester.pumpAndSettle();
+      expect(iconTop(tester, 'c'), aTop + 112);
+    });
+
+    testWidgets('a fifth icon pushes the oldest out and the rest move up', (
+      tester,
+    ) async {
+      final controller = await _pumpSheet(tester);
+      for (final id in ['a', 'b', 'c', 'd', 'e']) {
+        controller.openBusiness(_biz(id));
+      }
+      await tester.pumpAndSettle();
+      final top = iconTop(tester, 'a');
+
+      controller.minimizeActiveBusiness();
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byWidgetPredicate(
+          (w) => w is MinimizedStackIcon && w.business.id == 'a',
+        ),
+        findsNothing,
+      );
+      expect(iconTop(tester, 'b'), top);
+      expect(iconTop(tester, 'c'), top + 56);
+      expect(iconTop(tester, 'd'), top + 112);
+      expect(iconTop(tester, 'e'), top + 168);
+    });
+  });
+
+  group('scrim', () {
+    double scrimAlpha(WidgetTester tester) {
+      final box = tester.widget<ColoredBox>(
+        find.descendant(
+          of: find.byKey(const ValueKey('floatingSheetScrim')),
+          matching: find.byType(ColoredBox),
+        ),
+      );
+      return box.color.a;
+    }
+
+    testWidgets('minimizing from expanded clears it', (tester) async {
+      final controller = await _pumpSheet(tester);
+      controller.openBusiness(_biz('a'));
+      await tester.pumpAndSettle();
+      controller.toggleExpandedCollapsed();
+      await tester.pumpAndSettle();
+      expect(scrimAlpha(tester), closeTo(0.4, 0.01));
+
+      controller.minimizeActiveBusiness();
+      await tester.pumpAndSettle();
+      expect(controller.activeBusiness, isNull);
+      expect(scrimAlpha(tester), 0);
+    });
+
+    testWidgets('closing from expanded clears it', (tester) async {
+      final controller = await _pumpSheet(tester);
+      controller.openBusiness(_biz('a'));
+      await tester.pumpAndSettle();
+      controller.toggleExpandedCollapsed();
+      await tester.pumpAndSettle();
+
+      controller.closeActiveBusiness();
+      await tester.pumpAndSettle();
+      expect(controller.activeBusiness, isNull);
+      expect(scrimAlpha(tester), 0);
+    });
   });
 
   group('expansion', () {

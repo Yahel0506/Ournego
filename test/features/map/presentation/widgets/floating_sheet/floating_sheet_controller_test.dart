@@ -178,14 +178,14 @@ void main() {
   });
 
   group('minimized stack', () {
-    test('keeps the 4 most recent, newest first', () {
+    test('keeps the 4 most recent, oldest first', () {
       fakeAsync((async) {
         final c = FloatingSheetController();
         for (final id in ['a', 'b', 'c', 'd', 'e', 'f']) {
           open(async, c, biz(id));
         }
         expect(c.activeBusiness?.id, 'f');
-        expect(c.minimizedBusinesses.map((b) => b.id), ['e', 'd', 'c', 'b']);
+        expect(c.minimizedBusinesses.map((b) => b.id), ['b', 'c', 'd', 'e']);
       });
     });
 
@@ -401,7 +401,7 @@ void main() {
 
       expect(c.state, FloatingSheetState.expanded);
       expect(c.activeBusiness?.id, 'a');
-      expect(c.minimizedBusinesses.map((b) => b.id), ['b', 'c', 'd', 'e']);
+      expect(c.minimizedBusinesses.map((b) => b.id), ['d', 'e', 'f', 'g']);
       expect(c.pendingClearActive, isFalse);
     });
 

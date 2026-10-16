@@ -335,10 +335,10 @@ class FloatingSheetController extends ChangeNotifier {
 
   void _pushToMinimized(SheetBusinessData business) {
     _minimizedBusinesses.removeWhere((b) => b.id == business.id);
-    _minimizedBusinesses.insert(0, business);
+    _minimizedBusinesses.add(business);
 
     if (_minimizedBusinesses.length > 4) {
-      _minimizedBusinesses.removeLast();
+      _minimizedBusinesses.removeAt(0);
     }
   }
 
@@ -352,7 +352,11 @@ class FloatingSheetController extends ChangeNotifier {
     _comparisonBusiness = comparisonBusiness;
     _minimizedBusinesses
       ..clear()
-      ..addAll(minimizedBusinesses.take(4));
+      ..addAll(
+        minimizedBusinesses.skip(
+          minimizedBusinesses.length > 4 ? minimizedBusinesses.length - 4 : 0,
+        ),
+      );
 
     _pendingClearActive = false;
     _pendingMinimizeToStack = false;
