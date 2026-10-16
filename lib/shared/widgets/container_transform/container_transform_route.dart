@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
+import 'package:flutter/services.dart';
 
 import 'package:ournego/core/motion/ournego_motion_level.dart';
 import 'package:ournego/core/ournego_motion.dart';
@@ -179,12 +180,75 @@ class ContainerTransformRoute<T> extends PopupRoute<T> {
     Animation<double> secondaryAnimation,
     Widget child,
   ) {
-    return _FallbackFade(
-      controller: _transform!,
-      animation: animation,
-      child: child,
+    return _BackGestureObserver(
+      route: this,
+      child: _FallbackFade(
+        controller: _transform!,
+        animation: animation,
+        child: child,
+      ),
     );
   }
+}
+
+/// Lets Android's predictive back drive the window: while the finger swipes,
+/// the window's progress `p` follows it (so it shrinks back towards where it
+/// came from), and when it is let go the window either closes or springs open
+/// again with its own spring. The route does the rest (see
+/// [TransitionRoute.handleStartBackGesture]); this only forwards the events,
+/// the way Material's predictive back transitions do.
+class _BackGestureObserver extends StatefulWidget {
+  const _BackGestureObserver({required this.route, required this.child});
+
+  final ContainerTransformRoute<dynamic> route;
+  final Widget child;
+
+  @override
+  State<_BackGestureObserver> createState() => _BackGestureObserverState();
+}
+
+class _BackGestureObserverState extends State<_BackGestureObserver>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  bool handleStartBackGesture(PredictiveBackEvent backEvent) {
+    final route = widget.route;
+    // A back button press is not a gesture: it pops the usual way.
+    if (backEvent.isButtonEvent ||
+        !route.isCurrent ||
+        !route.popGestureEnabled) {
+      return false;
+    }
+    route.handleStartBackGesture(progress: 1 - backEvent.progress);
+    return true;
+  }
+
+  @override
+  void handleUpdateBackGestureProgress(PredictiveBackEvent backEvent) {
+    widget.route.handleUpdateBackGestureProgress(
+      progress: 1 - backEvent.progress,
+    );
+  }
+
+  @override
+  void handleCancelBackGesture() => widget.route.handleCancelBackGesture();
+
+  @override
+  void handleCommitBackGesture() => widget.route.handleCommitBackGesture();
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 /// A window that has no [ContainerTransformDestination] (for example a plain

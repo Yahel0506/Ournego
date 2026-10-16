@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:ournego/core/routing/container_transform_page.dart';
 import 'package:ournego/shared/widgets/container_transform/container_transform_destination.dart';
 import 'package:ournego/shared/widgets/container_transform/container_transform_origin.dart';
+import 'package:ournego/shared/widgets/container_transform/container_transform_shared_element.dart';
 
 const _origin = ContainerTransformOriginData(
   rect: Rect.fromLTWH(40, 600, 300, 60),
@@ -34,7 +36,23 @@ GoRouter _router() => GoRouter(
           return ContainerTransformPage<void>(
             key: state.pageKey,
             origin: extra.origin,
-            child: const Scaffold(body: Center(child: Text('next'))),
+            child: Scaffold(
+              body: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ContainerTransformSharedElement(
+                      from: extra.sharedFrom,
+                      child: const SizedBox.square(
+                        dimension: 50,
+                        child: ColoredBox(key: Key('nego'), color: Colors.teal),
+                      ),
+                    ),
+                    const Text('next'),
+                  ],
+                ),
+              ),
+            ),
           );
         }
         return MaterialPage<void>(
@@ -112,6 +130,92 @@ void main() {
 
     expect(find.byType(ContainerTransformDestination), findsNothing);
     expect(find.text('next'), findsOneWidget);
+  });
+
+  testWidgets('a shared element flies from where it was to its place', (
+    tester,
+  ) async {
+    final router = await _pump(tester);
+    const from = Rect.fromLTWH(20, 650, 50, 50);
+    router.push(
+      '/next',
+      extra: const ContainerTransformRouteExtra(_origin, sharedFrom: from),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 16));
+
+    // The real one waits, invisible; the flying copy is near where it was.
+    final copies = find.byKey(const Key('nego'));
+    expect(copies, findsNWidgets(2));
+    final flying = tester.getCenter(copies.last);
+    expect((flying - from.center).distance, lessThan(120));
+
+    await tester.pumpAndSettle();
+    expect(copies, findsOneWidget);
+    final rest = tester.getCenter(copies);
+    expect((rest.dx - 200).abs(), lessThan(1));
+  });
+
+  testWidgets('without a place to come from it is just the child', (
+    tester,
+  ) async {
+    final router = await _pump(tester);
+    router.push('/next', extra: const ContainerTransformRouteExtra(_origin));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 16));
+    expect(find.byKey(const Key('nego')), findsOneWidget);
+    await tester.pumpAndSettle();
+  });
+
+  group('predictive back', () {
+    /// Sends what Android's back gesture sends to the framework.
+    Future<void> send(WidgetTester tester, String method, [double? progress]) {
+      final call = MethodCall(method, <String, Object?>{
+        'touchOffset': <double>[10, 400],
+        'progress': progress ?? 0.0,
+        'swipeEdge': 0,
+      });
+      return tester.binding.defaultBinaryMessenger.handlePlatformMessage(
+        SystemChannels.backGesture.name,
+        SystemChannels.backGesture.codec.encodeMethodCall(call),
+        (_) {},
+      );
+    }
+
+    testWidgets('the swipe drives the page and letting go commits it', (
+      tester,
+    ) async {
+      final router = await _pump(tester);
+      router.push('/next', extra: const ContainerTransformRouteExtra(_origin));
+      await tester.pumpAndSettle();
+      final open = _painted(tester).height;
+      await send(tester, 'startBackGesture');
+      await send(tester, 'updateBackGestureProgress', 0.5);
+      await tester.pump();
+      final mid = _painted(tester).height;
+      expect(mid, lessThan(open));
+      expect(mid, greaterThan(100));
+
+      await send(tester, 'commitBackGesture');
+      await tester.pumpAndSettle();
+      expect(find.text('next'), findsNothing);
+      expect(find.text('home'), findsOneWidget);
+    });
+
+    testWidgets('cancelling springs the page back open', (tester) async {
+      final router = await _pump(tester);
+      router.push('/next', extra: const ContainerTransformRouteExtra(_origin));
+      await tester.pumpAndSettle();
+
+      await send(tester, 'startBackGesture');
+      await send(tester, 'updateBackGestureProgress', 0.4);
+      await tester.pump();
+      await send(tester, 'cancelBackGesture');
+      await tester.pumpAndSettle();
+
+      expect(find.text('next'), findsOneWidget);
+      expect(_painted(tester).height, closeTo(800, 1));
+    });
   });
 
   testWidgets('measure takes the rect of the element tapped', (tester) async {

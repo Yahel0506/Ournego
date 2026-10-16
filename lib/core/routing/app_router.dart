@@ -69,7 +69,9 @@ GoRouter createAppRouter({
             return ContainerTransformPage<void>(
               key: state.pageKey,
               origin: source.origin,
-              child: const AuthSelectionScreen(),
+              child: AuthSelectionScreen(
+                isFromOnboarding: source.fromOnboarding,
+              ),
             );
           }
           if (source != AuthSelectionRouteSource.onboarding) {
@@ -244,7 +246,7 @@ GoRouter createAppRouter({
             return ContainerTransformPage<void>(
               key: state.pageKey,
               origin: extra.origin,
-              child: const BusinessFormScreen(),
+              child: BusinessFormScreen(sharedFrom: extra.sharedFrom),
             );
           }
           return MaterialPage<void>(

@@ -11,9 +11,21 @@ import 'package:ournego/shared/widgets/container_transform/container_transform_r
 /// [ContainerTransformPage], and any other navigation gets a standard page.
 @immutable
 class ContainerTransformRouteExtra {
-  const ContainerTransformRouteExtra(this.origin);
+  const ContainerTransformRouteExtra(
+    this.origin, {
+    this.sharedFrom,
+    this.fromOnboarding = false,
+  });
 
   final ContainerTransformOriginData origin;
+
+  /// Where an element that also exists in the new page (the mascot) was, in
+  /// global coordinates, so it can fly to its place there.
+  final Rect? sharedFrom;
+
+  /// The page was reached by finishing the onboarding, which adds the "guest"
+  /// access to the login page.
+  final bool fromOnboarding;
 
   /// Measures the element behind [context] right now, so the page grows out of
   /// it. Call it from the tap handler, not from `build`.
@@ -21,12 +33,16 @@ class ContainerTransformRouteExtra {
     BuildContext context, {
     required double radius,
     required Color color,
+    Rect? sharedFrom,
+    bool fromOnboarding = false,
   }) => ContainerTransformRouteExtra(
     ContainerTransformOriginData(
       rect: globalRectOf(context),
       radius: radius,
       color: color,
     ),
+    sharedFrom: sharedFrom,
+    fromOnboarding: fromOnboarding,
   );
 
   /// The extra for an origin that was measured elsewhere (a menu item, a

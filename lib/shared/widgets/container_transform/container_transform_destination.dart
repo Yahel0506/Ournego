@@ -47,6 +47,11 @@ class ContainerTransformController {
   /// a little around its own center.
   ContainerTransformOriginData? origin;
 
+  /// Where the destination paints its content relative to its final place, as
+  /// of the last frame (zero at rest). Shared elements subtract it to find where
+  /// they will end up.
+  Offset contentOffset = Offset.zero;
+
   /// Whether a [ContainerTransformDestination] is on screen. A window without
   /// one still gets a plain fade.
   bool hasDestination = false;
@@ -322,6 +327,7 @@ class RenderContainerTransformDestination extends RenderProxyBox {
   void paint(PaintingContext context, Offset offset) {
     final child = this.child;
     if (child == null) return;
+    _controller.contentOffset = _contentOffset;
 
     final p = _controller.animation.value;
     final topLeft = localToGlobal(Offset.zero);

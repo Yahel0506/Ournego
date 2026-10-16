@@ -76,6 +76,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
   late final SpringClock _searchPanelClock;
   final _searchMorphKey = GlobalKey();
   final _registerCardKey = GlobalKey(debugLabel: 'registerCard');
+  final _registerAvatarKey = GlobalKey(debugLabel: 'registerAvatar');
 
   /// Where the search bar sits, measured each time the panel opens.
   Rect? _searchBarRect;
@@ -363,12 +364,17 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
       // The next page grows out of the register card.
       final cardContext = _registerCardKey.currentContext;
+      final avatarContext = _registerAvatarKey.currentContext;
       final from = cardContext == null
           ? null
           : ContainerTransformRouteExtra.measure(
               cardContext,
               radius: 20,
               color: Theme.of(context).colorScheme.surface,
+              // The mascot of the card flies to the form's header.
+              sharedFrom: isLogged && avatarContext != null
+                  ? globalRectOf(avatarContext)
+                  : null,
             );
       if (isLogged) {
         context.push(BusinessRoutes.form, extra: from);
@@ -638,7 +644,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   borderRadius: 20,
                   child: Row(
                     children: [
-                      const NegoAvatar(
+                      NegoAvatar(
+                        key: _registerAvatarKey,
                         size: 36,
                         mood: NegoMood.excited,
                         interactive: false,
@@ -840,7 +847,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
     );
   }
 
-  Future<bool> _onFavorite(SheetBusinessData business) async {
+  Future<bool> _onFavorite(SheetBusinessData business, Rect? origin) async {
     if (business.id.isEmpty) {
       return false;
     }
@@ -855,7 +862,19 @@ class _MapScreenState extends ConsumerState<MapScreen>
       (failure) {
         if (failure is AuthenticationRequiredFailure) {
           if (context.mounted) {
-            context.push(AuthRoutes.authSelection);
+            // The login page grows out of the sheet whose heart was tapped.
+            context.push(
+              AuthRoutes.authSelection,
+              extra: origin == null
+                  ? null
+                  : ContainerTransformRouteExtra(
+                      ContainerTransformOriginData(
+                        rect: origin,
+                        radius: OurnegoRadiusTokens.window,
+                        color: Theme.of(context).colorScheme.surface,
+                      ),
+                    ),
+            );
           }
           return false;
         }

@@ -54,7 +54,7 @@ Future<FloatingSheetController> _pumpSheet(WidgetTester tester) async {
             bottomOffset: _bottomOffset,
             sideStackTop: 100,
             maxWidth: double.infinity,
-            onFavorite: (_) async => true,
+            onFavorite: (_, _) async => true,
             onContact: (_, _) async {},
             onCatalog: (_) {},
             onReviews: (_) {},

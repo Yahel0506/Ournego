@@ -22,7 +22,9 @@ import 'package:ournego/features/business/presentation/pages/components/business
 import 'package:ournego/features/feedback/presentation/widgets/feedback_flow.dart';
 import 'package:ournego/shared/widgets/animated_background.dart';
 import 'package:ournego/shared/widgets/buttons/buttons.dart';
+import 'package:ournego/shared/widgets/container_transform/container_transform_shared_element.dart';
 import 'package:ournego/shared/widgets/information_card_widget.dart';
+import 'package:ournego/shared/widgets/nego/nego.dart';
 import 'package:ournego/shared/widgets/ournego_alert_dialog.dart';
 import 'package:ournego/shared/widgets/ournego_inputs.dart';
 import 'package:ournego/shared/widgets/ournego_snackbars.dart';
@@ -43,7 +45,10 @@ final _businessCurrentLocationProvider = FutureProvider<AppPosition>((
 });
 
 class BusinessFormScreen extends ConsumerStatefulWidget {
-  const BusinessFormScreen({super.key});
+  const BusinessFormScreen({super.key, this.sharedFrom});
+
+  /// Where the mascot was in the page that opened this one, so it can fly here.
+  final Rect? sharedFrom;
 
   @override
   ConsumerState<BusinessFormScreen> createState() => _BusinessFormScreenState();
@@ -370,6 +375,18 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
                 children: [
                   Divider(),
                   SizedBox(height: 24),
+                  // The mascot of the register card or the start button lands here.
+                  Center(
+                    child: ContainerTransformSharedElement(
+                      from: widget.sharedFrom,
+                      child: const NegoAvatar(
+                        size: 72,
+                        mood: NegoMood.happy,
+                        interactive: false,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 12),
                   Text(
                     'Registra tu negocio',
                     style: OurnegoTextStyles.header,
