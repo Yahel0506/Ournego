@@ -1,7 +1,56 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/floating_sheet_state.dart';
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/models/sheet_business_data.dart';
+
+/// Where the sheet grows from and goes back to.
+///
+/// [rect] is in global coordinates. [color], [foregroundColor], [icon] and
+/// [radius] describe what the origin looks like (a marker), so the sheet can
+/// start looking like it. [resolve] measures the origin again when the sheet
+/// closes; when it is null or returns null (the origin is gone or off screen),
+/// the sheet leaves downwards instead of heading to an empty spot.
+@immutable
+class SheetOrigin {
+  const SheetOrigin({
+    required this.rect,
+    this.radius,
+    this.color,
+    this.foregroundColor,
+    this.icon,
+    this.resolve,
+    this.isStackIcon = false,
+  });
+
+  /// The origin is an icon of the minimized stack.
+  final bool isStackIcon;
+  final Rect rect;
+  final double? radius;
+  final Color? color;
+  final Color? foregroundColor;
+  final IconData? icon;
+  final Rect? Function()? resolve;
+
+  SheetOrigin withRect(Rect rect) => SheetOrigin(
+    rect: rect,
+    radius: radius,
+    color: color,
+    foregroundColor: foregroundColor,
+    icon: icon,
+    resolve: resolve,
+    isStackIcon: isStackIcon,
+  );
+}
+
+/// How the sheet appears when it was hidden. [origin] is where it grows from;
+/// null means it rises from the bottom edge. [instant] places it without
+/// animation, e.g. when it is restored at launch.
+class SheetEntry {
+  const SheetEntry({this.origin, this.instant = false});
+
+  final SheetOrigin? origin;
+  final bool instant;
+}
 
 class FloatingSheetController extends ChangeNotifier {
   FloatingSheetState _state = FloatingSheetState.collapsed;
@@ -10,6 +59,11 @@ class FloatingSheetController extends ChangeNotifier {
   final List<SheetBusinessData> _minimizedBusinesses = [];
   bool _pendingClearActive = false;
   bool _pendingMinimizeToStack = false;
+  SheetEntry? _pendingEntry;
+
+  /// Progress of the sheet's entry (0 at its origin, 1 at rest). The map waits
+  /// for it to pass 0.4 before it pans to the business.
+  final ValueNotifier<double> entryProgress = ValueNotifier<double>(1);
 
   FloatingSheetState get state => _state;
   SheetBusinessData? get activeBusiness => _activeBusiness;
@@ -51,28 +105,34 @@ class FloatingSheetController extends ChangeNotifier {
     return true;
   }
 
-  void openBusiness(SheetBusinessData business) {
+  void openBusiness(SheetBusinessData business, {SheetOrigin? origin}) {
     _comparisonBusiness = null;
 
     final current = _activeBusiness;
     if (current != null && current.id != business.id) {
       _pushToMinimized(current);
     }
+    if (current == null) {
+      _startEntry(origin: origin);
+    }
 
     _activeBusiness = business;
     _pendingClearActive = false;
     _pendingMinimizeToStack = false;
-    _state = FloatingSheetState.minimized;
+    _state = FloatingSheetState.collapsed;
     notifyListeners();
+  }
 
-    Future<void>.delayed(const Duration(milliseconds: 40), () {
-      if (_activeBusiness?.id != business.id) {
-        return;
-      }
+  /// The entry the sheet should play when it appears, consumed once.
+  SheetEntry? takePendingEntry() {
+    final entry = _pendingEntry;
+    _pendingEntry = null;
+    return entry;
+  }
 
-      _state = FloatingSheetState.collapsed;
-      notifyListeners();
-    });
+  void _startEntry({SheetOrigin? origin, bool instant = false}) {
+    _pendingEntry = SheetEntry(origin: origin, instant: instant);
+    entryProgress.value = instant ? 1 : 0;
   }
 
   void closeActiveBusiness() {
@@ -121,7 +181,7 @@ class FloatingSheetController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void restoreFromMinimized(String businessId) {
+  void restoreFromMinimized(String businessId, {SheetOrigin? origin}) {
     final index = _minimizedBusinesses.indexWhere((b) => b.id == businessId);
     if (index < 0) {
       return;
@@ -132,6 +192,9 @@ class FloatingSheetController extends ChangeNotifier {
     if (current != null && current.id != selected.id) {
       _pushToMinimized(current);
     }
+    if (current == null) {
+      _startEntry(origin: origin);
+    }
 
     _activeBusiness = selected;
     _comparisonBusiness = null;
@@ -141,7 +204,7 @@ class FloatingSheetController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void onMinimizedBusinessTap(String businessId) {
+  void onMinimizedBusinessTap(String businessId, {SheetOrigin? origin}) {
     if (isComparisonMode) {
       return;
     }
@@ -151,7 +214,7 @@ class FloatingSheetController extends ChangeNotifier {
       return;
     }
 
-    restoreFromMinimized(businessId);
+    restoreFromMinimized(businessId, origin: origin);
   }
 
   void enterComparisonFromMinimized(String businessId) {
@@ -309,10 +372,10 @@ class FloatingSheetController extends ChangeNotifier {
 
   void _pushToMinimized(SheetBusinessData business) {
     _minimizedBusinesses.removeWhere((b) => b.id == business.id);
-    _minimizedBusinesses.insert(0, business);
+    _minimizedBusinesses.add(business);
 
     if (_minimizedBusinesses.length > 4) {
-      _minimizedBusinesses.removeLast();
+      _minimizedBusinesses.removeAt(0);
     }
   }
 
@@ -326,7 +389,11 @@ class FloatingSheetController extends ChangeNotifier {
     _comparisonBusiness = comparisonBusiness;
     _minimizedBusinesses
       ..clear()
-      ..addAll(minimizedBusinesses.take(4));
+      ..addAll(
+        minimizedBusinesses.skip(
+          minimizedBusinesses.length > 4 ? minimizedBusinesses.length - 4 : 0,
+        ),
+      );
 
     _pendingClearActive = false;
     _pendingMinimizeToStack = false;
@@ -335,8 +402,15 @@ class FloatingSheetController extends ChangeNotifier {
       _state = FloatingSheetState.minimized;
     } else {
       _state = state;
+      _startEntry(instant: true);
     }
 
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    entryProgress.dispose();
+    super.dispose();
   }
 }

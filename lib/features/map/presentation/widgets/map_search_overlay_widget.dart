@@ -11,6 +11,7 @@ import 'package:ournego/features/map/presentation/controllers/search_businesses_
 import 'package:ournego/features/map/presentation/mappers/business_marker_ui_mapper.dart';
 import 'package:ournego/features/map/presentation/models/map_search_models.dart';
 import 'package:ournego/shared/widgets/buttons/buttons.dart';
+import 'package:ournego/shared/widgets/container_transform/container_transform_origin.dart';
 import 'package:ournego/shared/widgets/ournego_content_container.dart';
 
 /// The panel's content. Its frame and position belong to `SearchMorphSurface`,
@@ -31,7 +32,9 @@ class MapSearchOverlayWidget extends StatelessWidget {
   final ValueChanged<bool> onOpenNowChanged;
   final ValueChanged<BusinessType?> onCategoryChanged;
   final ValueChanged<double?> onDistanceChanged;
-  final ValueChanged<Business> onBusinessSelected;
+
+  /// [origin] is the tapped row's rectangle in global coordinates.
+  final void Function(Business business, Rect origin) onBusinessSelected;
 
   const MapSearchOverlayWidget({
     super.key,
@@ -289,24 +292,26 @@ class MapSearchOverlayWidget extends StatelessWidget {
         ? ''
         : ' · ${(result.distanceMeters! / 1000).toStringAsFixed(1)} km';
 
-    return ListTile(
-      dense: true,
-      title: Text(
-        business.name,
-        style: OurnegoTextStyles.body.copyWith(fontWeight: FontWeight.w600),
+    return Builder(
+      builder: (rowContext) => ListTile(
+        dense: true,
+        title: Text(
+          business.name,
+          style: OurnegoTextStyles.body.copyWith(fontWeight: FontWeight.w600),
+        ),
+        subtitle: Text(
+          '${businessTypeLabel(business.type)} · $openLabel$distanceLabel',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: OurnegoTextStyles.body.copyWith(fontSize: 12),
+        ),
+        trailing: Icon(
+          Icons.arrow_forward_ios_rounded,
+          size: 14,
+          color: colorScheme.onSurface.withValues(alpha: 0.55),
+        ),
+        onTap: () => onBusinessSelected(business, globalRectOf(rowContext)),
       ),
-      subtitle: Text(
-        '${businessTypeLabel(business.type)} · $openLabel$distanceLabel',
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: OurnegoTextStyles.body.copyWith(fontSize: 12),
-      ),
-      trailing: Icon(
-        Icons.arrow_forward_ios_rounded,
-        size: 14,
-        color: colorScheme.onSurface.withValues(alpha: 0.55),
-      ),
-      onTap: () => onBusinessSelected(business),
     );
   }
 }

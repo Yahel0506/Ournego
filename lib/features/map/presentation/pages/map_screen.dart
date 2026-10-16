@@ -14,6 +14,7 @@ import 'package:ournego/core/ournego_motion.dart';
 import 'package:ournego/core/mapbox_config.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/core/routing/route_names.dart';
+import 'package:ournego/core/theme/tokens/ournego_radius_tokens.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
 import 'package:ournego/features/business/presentation/providers/business_providers.dart';
 import 'package:ournego/features/feedback/presentation/widgets/feedback_flow.dart';
@@ -577,8 +578,12 @@ class _MapScreenState extends ConsumerState<MapScreen>
               checkMinZoom(zoom);
               await _persistMapAndSheetState();
             },
-            onBusinessTap: (business) {
-              _viewController.openBusinessSheet(business, source: 'map');
+            onBusinessTap: (business, origin) {
+              _viewController.openBusinessSheet(
+                business,
+                source: 'map',
+                origin: _markerOrigin(business, origin),
+              );
             },
             onMapTap: () {
               if (_isSearchPanelVisible) _dismissSearchPanel();
@@ -691,11 +696,16 @@ class _MapScreenState extends ConsumerState<MapScreen>
                       );
                     });
                   },
-                  onBusinessSelected: (business) {
+                  onBusinessSelected: (business, origin) {
                     // The query stays in the bar (D31).
                     _viewController.openBusinessSheet(
                       business,
                       source: 'search',
+                      // The panel is closing too: nothing to go back to.
+                      origin: SheetOrigin(
+                        rect: origin,
+                        radius: OurnegoRadiusTokens.innerCard,
+                      ),
                     );
                     _dismissSearchPanel();
                   },
@@ -985,6 +995,47 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
   /// Where the panel sits at `p = 1`: under the bar, between the screen
   /// edges, above the sheet's footprint.
+  /// The sheet grows from the tapped marker and goes back to it, as long as it
+  /// is still on screen when the sheet closes. The marker is measured again
+  /// from its coordinates, since the camera moves after it opens.
+  SheetOrigin _markerOrigin(Business business, Rect tapped) {
+    final point = LatLng(business.latitude, business.longitude);
+    final mapToGlobal =
+        tapped.center -
+        _animatedMapController.mapController.camera.latLngToScreenOffset(point);
+    final marker = _businessMarkerUiMapper(business);
+    return SheetOrigin(
+      rect: tapped,
+      radius: tapped.shortestSide / 2,
+      color: marker.backgroundColor,
+      foregroundColor: marker.foregroundColor,
+      icon: marker.icon,
+      resolve: () {
+        if (!mounted) return null;
+        final center =
+            _animatedMapController.mapController.camera.latLngToScreenOffset(
+              point,
+            ) +
+            mapToGlobal;
+        final size = MediaQuery.sizeOf(context);
+        // Clear of the top bar and the bottom navigation.
+        final visible = Rect.fromLTRB(
+          8,
+          _topNavigationHeight + 8,
+          size.width - 8,
+          size.height - 110,
+        );
+        return visible.contains(center)
+            ? Rect.fromCenter(
+                center: center,
+                width: tapped.width,
+                height: tapped.height,
+              )
+            : null;
+      },
+    );
+  }
+
   Rect _searchPanelRect(Size size) {
     final padding = MediaQuery.paddingOf(context);
     return Rect.fromLTRB(

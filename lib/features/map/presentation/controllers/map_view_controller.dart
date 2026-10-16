@@ -107,10 +107,15 @@ class MapViewController {
     );
   }
 
+  /// The camera pans once the sheet is about to be on screen, so the pan does
+  /// not start while the sheet is still at its origin (the marker or the row).
+  VoidCallback? _cameraListener;
+
   void openBusinessSheet(
     Business business, {
     bool animateToBusiness = true,
     String source = 'map',
+    SheetOrigin? origin,
   }) {
     if (floatingSheetController.isComparisonMode) {
       return;
@@ -119,16 +124,46 @@ class MapViewController {
     final isFavorite = isFavoriteSnapshot(business.id);
     floatingSheetController.openBusiness(
       SheetBusinessData.fromBusiness(business, isFavorite: isFavorite),
+      origin: origin,
     );
 
     if (animateToBusiness) {
-      animatedMapController.animateTo(
-        dest: LatLng(business.latitude, business.longitude),
-        zoom: 18,
-      );
+      _panWhenSheetEnters(LatLng(business.latitude, business.longitude));
     }
 
     trackBusinessVisit(businessId: business.id, source: source);
+  }
+
+  static const double _panAfterEntry = 0.4;
+
+  void _panWhenSheetEnters(LatLng destination) {
+    final progress = floatingSheetController.entryProgress;
+    _cancelPendingPan();
+
+    void pan() {
+      _cancelPendingPan();
+      animatedMapController.animateTo(dest: destination, zoom: 18);
+    }
+
+    if (progress.value >= _panAfterEntry) {
+      pan();
+      return;
+    }
+    _cameraListener = () {
+      if (progress.value >= _panAfterEntry) {
+        pan();
+      }
+    };
+    progress.addListener(_cameraListener!);
+  }
+
+  void _cancelPendingPan() {
+    final listener = _cameraListener;
+    if (listener == null) {
+      return;
+    }
+    floatingSheetController.entryProgress.removeListener(listener);
+    _cameraListener = null;
   }
 
   Future<void> resolveDeepLinkBusiness() async {

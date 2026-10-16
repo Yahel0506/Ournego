@@ -138,13 +138,7 @@ class ContainerTransformBlur extends StatelessWidget {
         // stretch, slowly at first and faster toward the end (the spring's tail
         // is slow, so a linear fade would look sharp well before the container
         // stops), and is 0 exactly when the animation ends (p = 1).
-        final cleared = seg(
-          controller.animation.value,
-          preset.blurClearStart,
-          1,
-          Curves.easeInQuad,
-        );
-        final sigma = preset.maxItemBlur * (1 - cleared);
+        final sigma = transitBlurSigma(controller.animation.value, preset);
         return ImageFiltered(
           enabled: sigma > 0.1,
           imageFilter: ui.ImageFilter.blur(

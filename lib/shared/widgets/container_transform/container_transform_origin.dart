@@ -152,3 +152,10 @@ class _ContainerTransformTriggerState extends State<ContainerTransformTrigger> {
     );
   }
 }
+
+/// The rectangle of the render object that [context] belongs to, in global
+/// coordinates. Used to start a window from the element that was tapped.
+Rect globalRectOf(BuildContext context) {
+  final box = context.findRenderObject() as RenderBox;
+  return box.localToGlobal(Offset.zero) & box.size;
+}
