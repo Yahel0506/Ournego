@@ -19,8 +19,11 @@ class SheetOrigin {
     this.foregroundColor,
     this.icon,
     this.resolve,
+    this.isStackIcon = false,
   });
 
+  /// The origin is an icon of the minimized stack.
+  final bool isStackIcon;
   final Rect rect;
   final double? radius;
   final Color? color;
@@ -35,6 +38,7 @@ class SheetOrigin {
     foregroundColor: foregroundColor,
     icon: icon,
     resolve: resolve,
+    isStackIcon: isStackIcon,
   );
 }
 

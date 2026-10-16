@@ -22,7 +22,8 @@ class SpringClock {
     _controller.addStatusListener(_onStatus);
   }
 
-  final OurnegoSpringPreset preset;
+  /// Can be swapped between movements, e.g. a slower spring for one origin.
+  OurnegoSpringPreset preset;
   final AnimationController _controller;
   double _target;
 

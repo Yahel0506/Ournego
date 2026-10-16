@@ -180,6 +180,9 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
       final entry = controller.takePendingEntry();
       instant = instant || (entry?.instant ?? false);
       _entryOrigin = entry?.origin;
+      _entry.preset = (_entryOrigin?.isStackIcon ?? false)
+          ? kRestoreSpring
+          : kFloatingSheetSpring;
       _entry.jumpTo(instant ? 1 : 0);
       _minimize.jumpTo(0);
       _expand.jumpTo(controller.state == FloatingSheetState.expanded ? 1 : 0);
@@ -301,7 +304,11 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
     final rect = _stackIconRectGlobal(index);
     return rect == null
         ? null
-        : SheetOrigin(rect: rect, radius: OurnegoRadiusTokens.innerCard);
+        : SheetOrigin(
+            rect: rect,
+            radius: OurnegoRadiusTokens.innerCard,
+            isStackIcon: true,
+          );
   }
 
   Rect? _stackIconRectGlobal(int index) {

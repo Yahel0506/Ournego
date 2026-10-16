@@ -185,6 +185,20 @@ const OurnegoSpringPreset kFloatingSheetSpring = OurnegoSpringPreset(
   verticalPath: kWindowVerticalPath,
 );
 
+/// Stacked icon growing back into the floating sheet: slower than a marker's
+/// opening, so the way from the icon can be followed.
+const OurnegoSpringPreset kRestoreSpring = OurnegoSpringPreset(
+  openStiffness: 170,
+  openDamping: 0.90,
+  closeStiffness: 230,
+  closeDamping: 1,
+  contentStart: 0.10,
+  contentEnd: 0.35,
+  maxItemBlur: 12,
+  blurClearStart: 0.62,
+  verticalPath: kWindowVerticalPath,
+);
+
 /// Collapsed to expanded floating sheet; tied to the drag gesture.
 const OurnegoSpringPreset kSheetExpandSpring = OurnegoSpringPreset(
   openStiffness: 380,
@@ -199,9 +213,9 @@ const double kComparisonScrimAlpha = 0.50;
 
 /// Floating sheet to the 48x48 icon of the minimized stack, and back.
 const OurnegoSpringPreset kMinimizeSpring = OurnegoSpringPreset(
-  openStiffness: 380,
+  openStiffness: 210,
   openDamping: 0.90,
-  closeStiffness: 450,
+  closeStiffness: 260,
   closeDamping: 1,
   contentStart: 0.60,
   contentEnd: 1.0,
