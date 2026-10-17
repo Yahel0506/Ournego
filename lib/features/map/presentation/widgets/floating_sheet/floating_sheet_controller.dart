@@ -52,6 +52,31 @@ class SheetEntry {
   final bool instant;
 }
 
+/// How a business leaves the comparison of two sheets. The "primary" card is
+/// the one that was already open (below), the "secondary" the one that came
+/// from the stack (above).
+enum ComparisonExitKind {
+  minimizePrimary,
+  closePrimary,
+  minimizeSecondary,
+  closeSecondary;
+
+  /// Whether the card that stays was the secondary one, so it has to travel
+  /// from the top slot to the sheet's place.
+  bool get leavesPrimary => this == minimizePrimary || this == closePrimary;
+
+  /// Whether the leaving card goes to the stack (and is not just closed).
+  bool get toStack => this == minimizePrimary || this == minimizeSecondary;
+}
+
+/// A business leaving the comparison, for the sheet to animate.
+class ComparisonExit {
+  const ComparisonExit(this.kind, this.leaving);
+
+  final ComparisonExitKind kind;
+  final SheetBusinessData leaving;
+}
+
 class FloatingSheetController extends ChangeNotifier {
   FloatingSheetState _state = FloatingSheetState.collapsed;
   SheetBusinessData? _activeBusiness;
@@ -60,6 +85,9 @@ class FloatingSheetController extends ChangeNotifier {
   bool _pendingClearActive = false;
   bool _pendingMinimizeToStack = false;
   SheetEntry? _pendingEntry;
+  SheetOrigin? _pendingComparisonEntry;
+  bool _hasPendingComparisonEntry = false;
+  ComparisonExit? _pendingComparisonExit;
 
   /// Progress of the sheet's entry (0 at its origin, 1 at rest). The map waits
   /// for it to pass 0.4 before it pans to the business.
@@ -124,6 +152,25 @@ class FloatingSheetController extends ChangeNotifier {
   }
 
   /// The entry the sheet should play when it appears, consumed once.
+  /// Set when a business joins the comparison: where it comes from (the stack
+  /// icon that was tapped), or null. Consumed once by the sheet.
+  ({bool entered, SheetOrigin? origin}) takePendingComparisonEntry() {
+    final result = (
+      entered: _hasPendingComparisonEntry,
+      origin: _pendingComparisonEntry,
+    );
+    _hasPendingComparisonEntry = false;
+    _pendingComparisonEntry = null;
+    return result;
+  }
+
+  /// Set when a business leaves the comparison. Consumed once by the sheet.
+  ComparisonExit? takePendingComparisonExit() {
+    final exit = _pendingComparisonExit;
+    _pendingComparisonExit = null;
+    return exit;
+  }
+
   SheetEntry? takePendingEntry() {
     final entry = _pendingEntry;
     _pendingEntry = null;
@@ -210,14 +257,14 @@ class FloatingSheetController extends ChangeNotifier {
     }
 
     if (_activeBusiness != null && _state == FloatingSheetState.collapsed) {
-      enterComparisonFromMinimized(businessId);
+      enterComparisonFromMinimized(businessId, origin: origin);
       return;
     }
 
     restoreFromMinimized(businessId, origin: origin);
   }
 
-  void enterComparisonFromMinimized(String businessId) {
+  void enterComparisonFromMinimized(String businessId, {SheetOrigin? origin}) {
     final current = _activeBusiness;
     if (current == null || _state != FloatingSheetState.collapsed) {
       return;
@@ -229,6 +276,8 @@ class FloatingSheetController extends ChangeNotifier {
     }
 
     _comparisonBusiness = _minimizedBusinesses.removeAt(index);
+    _hasPendingComparisonEntry = true;
+    _pendingComparisonEntry = origin;
     notifyListeners();
   }
 
@@ -237,6 +286,10 @@ class FloatingSheetController extends ChangeNotifier {
       return;
     }
 
+    _pendingComparisonExit = ComparisonExit(
+      ComparisonExitKind.closePrimary,
+      _activeBusiness!,
+    );
     _activeBusiness = _comparisonBusiness;
     _comparisonBusiness = null;
     _state = FloatingSheetState.collapsed;
@@ -248,6 +301,10 @@ class FloatingSheetController extends ChangeNotifier {
       return;
     }
 
+    _pendingComparisonExit = ComparisonExit(
+      ComparisonExitKind.closeSecondary,
+      _comparisonBusiness!,
+    );
     _comparisonBusiness = null;
     _state = FloatingSheetState.collapsed;
     notifyListeners();
@@ -261,6 +318,10 @@ class FloatingSheetController extends ChangeNotifier {
     }
 
     _pushToMinimized(_activeBusiness!);
+    _pendingComparisonExit = ComparisonExit(
+      ComparisonExitKind.minimizePrimary,
+      _activeBusiness!,
+    );
     _activeBusiness = _comparisonBusiness;
     _comparisonBusiness = null;
     _state = FloatingSheetState.collapsed;
@@ -273,6 +334,10 @@ class FloatingSheetController extends ChangeNotifier {
     }
 
     _pushToMinimized(_comparisonBusiness!);
+    _pendingComparisonExit = ComparisonExit(
+      ComparisonExitKind.minimizeSecondary,
+      _comparisonBusiness!,
+    );
     _comparisonBusiness = null;
     _state = FloatingSheetState.collapsed;
     notifyListeners();
