@@ -506,4 +506,67 @@ void main() {
       },
     );
   });
+
+  group('comparison', () {
+    Finder second() => find.byKey(secondaryFrameKey);
+
+    Future<FloatingSheetController> compare(WidgetTester tester) async {
+      final controller = await _pumpSheet(tester);
+      controller.openBusiness(_biz('a'));
+      await tester.pumpAndSettle();
+      controller.minimizeActiveBusiness();
+      await tester.pumpAndSettle();
+      controller.openBusiness(_biz('b'));
+      await tester.pumpAndSettle();
+      controller.onMinimizedBusinessTap('a');
+      await tester.pump();
+      return controller;
+    }
+
+    testWidgets('entering grows the second card out of the stack icon', (
+      tester,
+    ) async {
+      final controller = await compare(tester);
+      expect(controller.isComparisonMode, isTrue);
+      await tester.pump(const Duration(milliseconds: 48));
+
+      final early = tester.getRect(second());
+      expect(early.width, lessThan(300));
+
+      await tester.pumpAndSettle();
+      final top = tester.getRect(second());
+      final bottom = tester.getRect(_frame);
+      expect(top.width, closeTo(bottom.width, 1));
+      expect(top.bottom, lessThan(bottom.top + 1));
+      expect(bottom.height, lessThan(_expanded));
+    });
+
+    for (final exit in <String, void Function(FloatingSheetController)>{
+      'closing the first': (c) => c.closePrimaryInComparison(),
+      'closing the second': (c) => c.closeSecondaryInComparison(),
+      'minimizing the first': (c) => c.minimizePrimaryInComparison(),
+      'minimizing the second': (c) => c.minimizeSecondaryInComparison(),
+    }.entries) {
+      testWidgets('${exit.key} animates and leaves one sheet', (tester) async {
+        final controller = await compare(tester);
+        await tester.pumpAndSettle();
+
+        exit.value(controller);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 48));
+        // Mid-way the leaving card is still on screen.
+        expect(second(), findsOneWidget);
+
+        await tester.pumpAndSettle();
+        expect(controller.isComparisonMode, isFalse);
+        expect(second(), findsNothing);
+        expect(_frame, findsOneWidget);
+        // The survivor rests where the controller left it.
+        final rest = controller.state == FloatingSheetState.expanded
+            ? _expanded
+            : _collapsed;
+        expect(tester.getRect(_frame).height, closeTo(rest, 2));
+      });
+    }
+  });
 }

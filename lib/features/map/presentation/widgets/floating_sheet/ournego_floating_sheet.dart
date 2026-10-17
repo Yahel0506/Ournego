@@ -63,6 +63,13 @@ class OurnegoFloatingSheet extends StatefulWidget {
 /// The sheet's frame, found by tests to measure it.
 const Key frameKey = ValueKey('floatingSheetFrame');
 
+/// Whose buttons a card has: the lone sheet's, or those of one of the two cards
+/// of the comparison.
+enum _CardRole { single, primary, secondary }
+
+/// The second card's frame, found by tests to measure it.
+const Key secondaryFrameKey = ValueKey('floatingSheetSecondaryFrame');
+
 class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
     with TickerProviderStateMixin {
   static const double _stackLeft = 12;
@@ -86,6 +93,23 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
   SheetOrigin? _entryOrigin;
 
   bool _dragging = false;
+
+  /// Comparison of two sheets: 0 is a single sheet, 1 the two cards stacked.
+  /// The sheet's card moves to the lower half, the second one grows out of the
+  /// stack icon into the upper half, and the same clock plays every way out.
+  late final SpringClock _compare;
+
+  static const double _compareGap = 10;
+
+  /// Where the second card came from (the stack icon that was tapped).
+  SheetOrigin? _secondaryOrigin;
+
+  /// The card that is leaving the comparison, while the clock goes back to 0.
+  ComparisonExit? _leaving;
+
+  /// After the first card leaves, the one that stays was the upper one: it
+  /// starts in the upper slot and travels down to the sheet's place.
+  bool _staysFromTop = false;
 
   /// Dismissal by dragging down: 0 at rest, 1 when the sheet has been pushed
   /// down by [_dismissRange] and shrunk. It is the first phase of every close.
@@ -119,6 +143,11 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
     _minimize = SpringClock(vsync: this, preset: kMinimizeSpring)
       ..onSettled = _onMinimizeSettled;
     _dismiss = SpringClock(vsync: this, preset: kSheetExpandSpring);
+    _compare = SpringClock(
+      vsync: this,
+      preset: kSheetExpandSpring,
+      initial: controller.isComparisonMode ? 1 : 0,
+    )..onSettled = _onCompareSettled;
     _shownId = controller.activeBusiness?.id;
     _entry.animation.addListener(_publishEntryProgress);
     _dismiss.animation.addListener(_onDismissTick);
@@ -141,6 +170,7 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
     widget.controller.removeListener(_onControllerChanged);
     _entry.animation.removeListener(_publishEntryProgress);
     _dismiss.animation.removeListener(_onDismissTick);
+    _compare.dispose();
     _dismiss.dispose();
     _entry.dispose();
     _expand.dispose();
@@ -189,6 +219,8 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
     }
     _shownId = active.id;
 
+    _syncComparison(controller, instant);
+
     final closing =
         controller.pendingClearActive && !controller.pendingMinimizeToStack;
     if (closing) {
@@ -223,6 +255,33 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
         instant,
       );
     }
+  }
+
+  /// Plays the comparison: a business joining it (from the stack icon that was
+  /// tapped) or one of the four ways of leaving it.
+  void _syncComparison(FloatingSheetController controller, bool instant) {
+    final entered = controller.takePendingComparisonEntry();
+    if (entered.entered) {
+      _secondaryOrigin = entered.origin;
+      _leaving = null;
+      _staysFromTop = false;
+    }
+    final exit = controller.takePendingComparisonExit();
+    if (exit != null) {
+      _leaving = exit;
+      _staysFromTop = exit.kind.leavesPrimary;
+    }
+    _move(_compare, controller.isComparisonMode ? 1 : 0, instant);
+  }
+
+  /// The comparison is over (or settled): what was leaving is gone.
+  void _onCompareSettled(double target) {
+    if (target > 0.5 || !mounted) return;
+    setState(() {
+      _leaving = null;
+      _staysFromTop = false;
+      _secondaryOrigin = null;
+    });
   }
 
   void _onDismissTick() {
@@ -332,21 +391,13 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
   Widget build(BuildContext context) {
     final controller = widget.controller;
     final activeBusiness = controller.activeBusiness;
-    final comparisonBusiness = controller.comparisonBusiness;
-    final isComparisonMode = controller.isComparisonMode;
 
     return Stack(
       fit: StackFit.expand,
       children: [
         _buildScrim(controller),
-        if (!isComparisonMode) _buildMinimizedStack(controller),
+        _buildMinimizedStack(controller),
         if (activeBusiness != null) _buildSheetLayer(controller),
-        if (activeBusiness != null && comparisonBusiness != null)
-          _buildComparisonSheets(
-            primaryBusiness: activeBusiness,
-            secondaryBusiness: comparisonBusiness,
-            controller: controller,
-          ),
       ],
     );
   }
@@ -360,19 +411,25 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
           _expand.animation,
           _entry.animation,
           _minimize.animation,
+          _compare.animation,
         ]),
         builder: (context, _) {
           final isComparing = controller.isComparisonMode;
           final blocks =
               isComparing || controller.state == FloatingSheetState.expanded;
-          final alpha = isComparing
-              ? kComparisonScrimAlpha
-              : kSheetExpandSpring.scrimAlpha *
-                    _expand.value.clamp(0.0, 1.0) *
-                    // The dimming leaves with the sheet when it minimizes or
-                    // closes, even from the expanded state.
-                    (1 - _segment(_minimize.value, 0, 0.6)) *
-                    _segment(_entry.value, 0, 0.3);
+          final expandAlpha =
+              kSheetExpandSpring.scrimAlpha *
+              _expand.value.clamp(0.0, 1.0) *
+              // The dimming leaves with the sheet when it minimizes or
+              // closes, even from the expanded state.
+              (1 - _segment(_minimize.value, 0, 0.6)) *
+              _segment(_entry.value, 0, 0.3);
+          // The comparison dims the map as the cards take their places, and
+          // clears as they leave.
+          final alpha = math.max(
+            expandAlpha,
+            kComparisonScrimAlpha * _compare.value.clamp(0.0, 1.0),
+          );
           return IgnorePointer(
             ignoring: !blocks,
             child: GestureDetector(
@@ -390,169 +447,34 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
   Widget _buildMinimizedStack(FloatingSheetController controller) {
     // The business that is becoming an icon is already in the list, in its
     // final slot, but is only drawn once the sheet has arrived there.
+    final leaving = _leaving;
     final hiddenId = controller.pendingMinimizeToStack
         ? controller.activeBusiness?.id
-        : null;
+        : (leaving != null && leaving.kind.toStack ? leaving.leaving.id : null);
     return Positioned.fill(
-      child: MinimizedStack(
-        businesses: controller.minimizedBusinesses,
-        left: _stackLeft,
-        top: widget.sideStackTop,
-        hiddenId: hiddenId,
-        restoringId: controller.activeBusiness?.id,
-        onTap: (business, index) => controller.onMinimizedBusinessTap(
-          business.id,
-          origin: _stackOrigin(index),
-        ),
-        onLongPress: (business) => controller.removeFromMinimized(business.id),
-      ),
-    );
-  }
-
-  Widget _buildComparisonSheets({
-    required SheetBusinessData primaryBusiness,
-    required SheetBusinessData secondaryBusiness,
-    required FloatingSheetController controller,
-  }) {
-    final gap = 10.0;
-    final compareHeight = (widget.expandedHeight - gap) / 2;
-    final topBottom = widget.bottomOffset + compareHeight + gap;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final availableWidth = screenWidth - 24;
-    final sheetWidth = availableWidth > widget.maxWidth
-        ? widget.maxWidth
-        : availableWidth;
-    final centeredLeft = (screenWidth - sheetWidth) / 2;
-
-    return AnimatedSwitcher(
-      duration: kSheetTransitionDuration,
-      switchInCurve: kEaseOutExpo,
-      switchOutCurve: kEaseOutExpo,
-      transitionBuilder: (child, animation) {
-        final scale = Tween<double>(begin: 0.96, end: 1).animate(animation);
-        return FadeTransition(
-          opacity: animation,
-          child: ScaleTransition(scale: scale, child: child),
-        );
-      },
-      child: Stack(
-        key: ValueKey<String>(
-          'compare-${primaryBusiness.id}-${secondaryBusiness.id}',
-        ),
-        children: [
-          Positioned(
-            left: centeredLeft,
-            width: sheetWidth,
-            bottom: widget.bottomOffset,
-            child: _buildComparisonCard(
-              business: primaryBusiness,
-              controller: controller,
-              height: compareHeight,
-              isPrimary: true,
-            ),
+      child: AnimatedBuilder(
+        animation: _compare.animation,
+        builder: (context, child) {
+          // The icons give way to the two cards, and come back as they leave.
+          final pc = _compare.value.clamp(0.0, 1.0);
+          final cardsOut = controller.isComparisonMode || pc > 0.05;
+          return IgnorePointer(
+            ignoring: cardsOut,
+            child: Opacity(opacity: 1 - _segment(pc, 0, 0.5), child: child),
+          );
+        },
+        child: MinimizedStack(
+          businesses: controller.minimizedBusinesses,
+          left: _stackLeft,
+          top: widget.sideStackTop,
+          hiddenId: hiddenId,
+          restoringId: controller.activeBusiness?.id,
+          onTap: (business, index) => controller.onMinimizedBusinessTap(
+            business.id,
+            origin: _stackOrigin(index),
           ),
-          Positioned(
-            left: centeredLeft,
-            width: sheetWidth,
-            bottom: topBottom,
-            child: _buildComparisonCard(
-              business: secondaryBusiness,
-              controller: controller,
-              height: compareHeight,
-              isPrimary: false,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildComparisonCard({
-    required SheetBusinessData business,
-    required FloatingSheetController controller,
-    required double height,
-    required bool isPrimary,
-  }) {
-    return AnimatedContainer(
-      duration: kSheetTransitionDuration,
-      curve: kEaseOutExpo,
-      height: height,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
-          width: 1,
-        ),
-        borderRadius: BorderRadius.circular(OurnegoRadiusTokens.window),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.35),
-            blurRadius: 24,
-            spreadRadius: -4,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-        child: Column(
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _TypeRatingBadgeRow(
-                  type: business.type,
-                  rating: business.rating,
-                ),
-                const Spacer(),
-                _SheetControls(
-                  onShare: () => widget.onShare(business),
-                  isFavorite: business.isFavorite,
-                  onFavoriteToggle: _isFavoriteUpdating
-                      ? null
-                      : () async {
-                          setState(() {
-                            _isFavoriteUpdating = true;
-                          });
-
-                          controller.toggleFavoriteForBusiness(business.id);
-                          final success = await widget.onFavorite(business);
-                          if (!success) {
-                            controller.toggleFavoriteForBusiness(business.id);
-                          }
-
-                          if (!mounted) return;
-                          setState(() {
-                            _isFavoriteUpdating = false;
-                          });
-                        },
-                  onMinimize: isPrimary
-                      ? controller.minimizePrimaryInComparison
-                      : controller.minimizeSecondaryInComparison,
-                  lastIcon: Icons.close_rounded,
-                  lastLabel: 'Cerrar',
-                  onLast: isPrimary
-                      ? controller.closePrimaryInComparison
-                      : controller.closeSecondaryInComparison,
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: SheetHeader(name: business.name, isExpanded: true),
-            ),
-            const SizedBox(height: 12),
-            Expanded(
-              child: _ExpandedContent(
-                business: business,
-                onContact: (origin) => widget.onContact(business, origin),
-                onCatalog: () => widget.onCatalog(business),
-                onReviews: () => widget.onReviews(business),
-                onShare: () => widget.onShare(business),
-              ),
-            ),
-          ],
+          onLongPress: (business) =>
+              controller.removeFromMinimized(business.id),
         ),
       ),
     );
@@ -568,6 +490,7 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
           _expand.animation,
           _minimize.animation,
           _dismiss.animation,
+          _compare.animation,
         ]),
         builder: (context, _) {
           final business = controller.activeBusiness;
@@ -579,6 +502,9 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
               fit: StackFit.expand,
               children: [
                 _buildFrame(controller, business, constraints.biggest),
+                // The other card of the comparison: coming in from the stack,
+                // or leaving it.
+                _buildSecondaryFrame(controller, constraints.biggest),
               ],
             ),
           );
@@ -605,6 +531,20 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
     );
   }
 
+  /// The slot of one of the two cards of the comparison: the lower one is
+  /// where the sheet's card goes, the upper one where the second card sits.
+  Rect _compareRect(Size stack, {required bool top}) {
+    final base = _restingRect(stack, 0);
+    final height = (widget.expandedHeight - _compareGap) / 2;
+    final bottom = widget.bottomOffset + (top ? height + _compareGap : 0);
+    return Rect.fromLTWH(
+      base.left,
+      stack.height - bottom - height,
+      base.width,
+      height,
+    );
+  }
+
   Widget _buildFrame(
     FloatingSheetController controller,
     SheetBusinessData business,
@@ -613,7 +553,14 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
     final po = _entry.value.clamp(0.0, 1.0);
     final pe = _expand.value.clamp(0.0, 1.0);
     final pm = _minimize.value.clamp(0.0, 1.0);
-    final resting = _restingRect(stack, pe);
+    final pc = _compare.value.clamp(0.0, 1.0);
+    // Comparing, the card sits in its half; if the other one left, this one was
+    // the upper card and travels down to the sheet's place.
+    final resting = Rect.lerp(
+      _restingRect(stack, pe),
+      _compareRect(stack, top: _staysFromTop),
+      pc,
+    )!;
     final entryOrigin = _entryOrigin;
     final origin = entryOrigin == null ? null : _toLocal(entryOrigin.rect);
     // The same smooth curve as the windows: a marker or row leans into the
@@ -647,7 +594,7 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
 
     // A sheet from a marker appears as the marker grows; one from the bottom
     // edge slides up in full.
-    final shown = controller.isComparisonMode ? 0.0 : 1.0;
+    const shown = 1.0;
     // From a marker the frame is first the marker itself (its circle, color and
     // border) and settles into the sheet's surface over the first 30 %.
     final markerColor = origin == null ? null : entryOrigin?.color;
@@ -685,9 +632,10 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
         : 0.0;
     final iconBlur = blurOn ? transitBlurSigma(pm, kMinimizeSpring) : 0.0;
     final interactive =
-        shown == 1 &&
         po > 0.5 &&
         pm < 0.5 &&
+        // The cards wait until they are in place to take touches.
+        (pc < 0.02 || pc > 0.98) &&
         !controller.pendingClearActive &&
         !controller.pendingMinimizeToStack;
 
@@ -778,6 +726,10 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
                               business: business,
                               controller: controller,
                               pe: pe,
+                              compare: pc,
+                              role: controller.isComparisonMode
+                                  ? _CardRole.primary
+                                  : _CardRole.single,
                             ),
                           ),
                         ),
@@ -837,18 +789,32 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
 
   /// The content of the sheet. The collapsed actions leave during the first
   /// 30 % of the expansion and the expanded content arrives over 35–75 %.
+  ///
+  /// In the comparison ([compare] towards 1) the card shows its expanded
+  /// content in half the height, and its buttons are those of its [role].
   Widget _buildSheetCard({
     required SheetBusinessData business,
     required FloatingSheetController controller,
     required double pe,
+    required _CardRole role,
+    double compare = 0,
   }) {
-    final isExpanded = controller.state == FloatingSheetState.expanded;
+    final isExpanded =
+        role != _CardRole.single ||
+        controller.state == FloatingSheetState.expanded;
+    // The comparison shows the expanded content, as the expansion does.
+    pe = math.max(pe, compare);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
       child: Column(
         children: [
-          _AnimatedDragHandle(isExpanded: isExpanded),
+          // The handle is for the single sheet; it fades as the comparison
+          // takes over but keeps its space, so nothing shifts.
+          Opacity(
+            opacity: 1 - compare,
+            child: _AnimatedDragHandle(isExpanded: isExpanded),
+          ),
           const SizedBox(height: 8),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -865,10 +831,10 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
                           _isFavoriteUpdating = true;
                         });
 
-                        controller.toggleFavorite();
+                        controller.toggleFavoriteForBusiness(business.id);
                         final success = await widget.onFavorite(business);
                         if (!success) {
-                          controller.toggleFavorite();
+                          controller.toggleFavoriteForBusiness(business.id);
                         }
 
                         if (!mounted) return;
@@ -876,12 +842,27 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
                           _isFavoriteUpdating = false;
                         });
                       },
-                onMinimize: controller.minimizeActiveBusiness,
-                lastIcon: isExpanded
+                onMinimize: switch (role) {
+                  _CardRole.single => controller.minimizeActiveBusiness,
+                  _CardRole.primary => controller.minimizePrimaryInComparison,
+                  _CardRole.secondary =>
+                    controller.minimizeSecondaryInComparison,
+                },
+                lastIcon: role != _CardRole.single
+                    ? Icons.close_rounded
+                    : isExpanded
                     ? Icons.keyboard_arrow_down_rounded
                     : Icons.open_in_full_rounded,
-                lastLabel: isExpanded ? 'Contraer' : 'Expandir',
-                onLast: controller.toggleExpandedCollapsed,
+                lastLabel: role != _CardRole.single
+                    ? 'Cerrar'
+                    : isExpanded
+                    ? 'Contraer'
+                    : 'Expandir',
+                onLast: switch (role) {
+                  _CardRole.single => controller.toggleExpandedCollapsed,
+                  _CardRole.primary => controller.closePrimaryInComparison,
+                  _CardRole.secondary => controller.closeSecondaryInComparison,
+                },
               ),
             ],
           ),
@@ -938,6 +919,158 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// The other card of the comparison. Coming in, it grows out of the stack icon
+  /// that was tapped into the upper slot; going out it returns to the stack
+  /// (minimized) or just closes in place, and the card that stays travels to
+  /// the sheet's place (see [_buildFrame]).
+  Widget _buildSecondaryFrame(FloatingSheetController controller, Size stack) {
+    final live = controller.comparisonBusiness;
+    final leaving = _leaving;
+    final business = live ?? leaving?.leaving;
+    if (business == null) {
+      return const SizedBox.shrink();
+    }
+
+    final pc = _compare.value.clamp(0.0, 1.0);
+    final fromStack = live != null || (leaving?.kind.toStack ?? false);
+    // The leaving card was the lower one when the first card left.
+    final top = live != null || !(leaving?.kind.leavesPrimary ?? false);
+    final target = _compareRect(stack, top: top);
+    final Rect from;
+    if (live != null) {
+      final origin = _secondaryOrigin == null
+          ? null
+          : _toLocal(_secondaryOrigin!.rect);
+      from = origin ?? _slotRect(0);
+    } else if (fromStack) {
+      final slot = controller.minimizedBusinesses.indexWhere(
+        (b) => b.id == business.id,
+      );
+      from = _slotRect(slot < 0 ? controller.minimizedBusinesses.length : slot);
+    } else {
+      // Closed: it does not go anywhere, it just lets go of its place.
+      from = Rect.fromCenter(
+        center: target.center,
+        width: target.width * 0.92,
+        height: target.height * 0.92,
+      );
+    }
+    final frame = _along(
+      from,
+      target,
+      pc,
+      fromStack ? kMinimizeSpring.verticalPath : null,
+    );
+    final radius = BorderRadius.circular(
+      fromStack
+          ? _lerpDouble(
+              OurnegoRadiusTokens.innerCard,
+              OurnegoRadiusTokens.window,
+              _segment(pc, 0, 1) * (2 - _segment(pc, 0, 1)),
+            )
+          : OurnegoRadiusTokens.window,
+    );
+
+    // A card from the stack is first the icon (which draws its own fill and
+    // border) and melts into the sheet's face; one that closes fades out.
+    final chrome = fromStack
+        ? 1 - _segment(1 - pc, 0.6, 1)
+        : _segment(pc, 0, 0.6);
+    final contentAlpha = fromStack
+        ? _segment(
+            pc,
+            kFloatingSheetSpring.contentStart,
+            kFloatingSheetSpring.contentEnd,
+          )
+        : _segment(pc, 0.2, 1);
+    final iconAlpha = fromStack ? 1 - _segment(pc, 0, 0.25) : 0.0;
+    final blurOn =
+        OurnegoMotion.resolveLevel(context, wantsBlur: true) ==
+        OurnegoMotionLevel.b;
+    final contentBlur = blurOn
+        ? transitBlurSigma(pc, kFloatingSheetSpring)
+        : 0.0;
+    final iconBlur = blurOn
+        ? kFloatingSheetSpring.maxItemBlur * _segment(pc, 0, 0.1)
+        : 0.0;
+    final interactive = live != null && pc > 0.98;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Positioned.fromRect(
+      rect: frame,
+      child: IgnorePointer(
+        ignoring: !interactive,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: colorScheme.surface.withValues(alpha: chrome),
+            border: Border.all(
+              color: colorScheme.outline.withValues(alpha: 0.3 * chrome),
+            ),
+            borderRadius: radius,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.35 * chrome),
+                blurRadius: 24,
+                spreadRadius: -4,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            key: secondaryFrameKey,
+            borderRadius: radius,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                OverflowBox(
+                  alignment: Alignment.center,
+                  minWidth: target.width,
+                  maxWidth: target.width,
+                  minHeight: target.height,
+                  maxHeight: target.height,
+                  child: SizedBox(
+                    width: target.width,
+                    height: target.height,
+                    child: _blurred(
+                      contentBlur,
+                      Opacity(
+                        opacity: contentAlpha,
+                        child: _buildSheetCard(
+                          business: business,
+                          controller: controller,
+                          pe: 1,
+                          compare: 1,
+                          role: top ? _CardRole.secondary : _CardRole.primary,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                if (iconAlpha > 0)
+                  Center(
+                    child: _blurred(
+                      iconBlur,
+                      Opacity(
+                        opacity: iconAlpha,
+                        child: SizedBox.square(
+                          dimension: _stackIconSize,
+                          child: MinimizedStackIcon(
+                            business: business,
+                            onTap: () {},
+                            onLongPress: () {},
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
