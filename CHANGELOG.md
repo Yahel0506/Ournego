@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.1](https://github.com/Yahel0506/Ournego/compare/ournego-v0.3.0...ournego-v0.3.1) (2026-10-17)
+
+
+### Bug Fixes
+
+* **map:** animate entering and leaving business comparison ([d42c9c5](https://github.com/Yahel0506/Ournego/commit/d42c9c5f7cd705ad1088f3f21e4885a5de692e69))
+* **map:** animate entering and leaving business comparison ([ae2a037](https://github.com/Yahel0506/Ournego/commit/ae2a0376c3cbcca2b2bb3fe4ab95894d2d9eedb5))
+
 ## [0.3.0](https://github.com/Yahel0506/Ournego/compare/ournego-v0.2.0...ournego-v0.3.0) (2026-10-16)
 
 
