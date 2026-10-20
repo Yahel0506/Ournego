@@ -40,6 +40,7 @@ language plpgsql
 security definer
 set search_path = ''
 as $$
+#variable_conflict use_column
 declare
   uid uuid := auth.uid();
   user_email text;
@@ -95,9 +96,9 @@ begin
     update public.businesses b
     set is_active = false
     where b.owner_id = uid and b.is_active
-    returning b.id
+    returning b.business_id
   )
-  select coalesce(array_agg(h.id), '{}') into hidden from hidden_now h;
+  select coalesce(array_agg(h.business_id), '{}') into hidden from hidden_now h;
 
   if cardinality(hidden) > 0 then
     update public.account_deletion_requests r

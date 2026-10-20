@@ -19,12 +19,12 @@ do $$
 declare
   ids uuid[];
 begin
-  select array_agg(id) into ids from (select id from public.businesses limit 2) s;
+  select array_agg(business_id) into ids from (select business_id from public.businesses limit 2) s;
   if cardinality(ids) < 2 then
     raise notice 'SKIP business checks: need at least 2 businesses in the database';
   else
-    update public.businesses set owner_id = '00000000-0000-0000-0000-00000000000a', is_active = true where id = ids[1];
-    update public.businesses set owner_id = '00000000-0000-0000-0000-00000000000a', is_active = false where id = ids[2];
+    update public.businesses set owner_id = '00000000-0000-0000-0000-00000000000a', is_active = true where business_id = ids[1];
+    update public.businesses set owner_id = '00000000-0000-0000-0000-00000000000a', is_active = false where business_id = ids[2];
   end if;
 end $$;
 
