@@ -1,0 +1,14 @@
+<!-- Supabase Auth > Email Templates > Magic Link (OUR-151).
+     One template serves both emails. The deletion email is the one whose
+     redirect is the confirm page (plan D4); Go template `eq` on .RedirectTo
+     is supported by Supabase. Verify .RedirectTo matches exactly what
+     ournego-web passes as emailRedirectTo (adjust the host if needed). -->
+{{ if eq .RedirectTo "https://www.ournego.com/auth/callback?next=/delete-account/confirm" }}
+<h2>Confirma la eliminación de tu cuenta de Ournego</h2>
+<p>Recibimos una solicitud para eliminar tu cuenta. Abre el enlace para continuar y confirma en la página. Tu cuenta se conservará 30 días por si cambias de opinión.</p>
+<p><a href="{{ .ConfirmationURL }}">Continuar con la eliminación</a></p>
+<p>Si no fuiste tú, ignora este correo: no se eliminará nada.</p>
+{{ else }}
+<h2>Inicia sesión en Ournego</h2>
+<p><a href="{{ .ConfirmationURL }}">Inicia sesión</a></p>
+{{ end }}
