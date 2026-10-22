@@ -142,8 +142,7 @@ final getBusinessPanelMetricsUsecaseProvider =
 final isOwnerProvider = FutureProvider<bool>((ref) async {
   // Watching the user id re-runs the check on every login/logout, so a stale
   // value from a previous (or anonymous) session is never reused.
-  final userId = ref.watch(currentUserIdProvider);
-  if (userId == null) return false;
+  ref.watch(currentUserIdProvider);
   final usecase = ref.watch(checkIfOwnerUsecaseProvider);
   final result = await usecase();
   // Failures must surface: treating them as "not owner" shows the wrong screen.
@@ -154,8 +153,7 @@ final ownedBusinessProvider = FutureProvider<OwnedBusinessProfile?>((
   ref,
 ) async {
   // Same as [isOwnerProvider]: refetch when the signed-in user changes.
-  final userId = ref.watch(currentUserIdProvider);
-  if (userId == null) return null;
+  ref.watch(currentUserIdProvider);
   final usecase = ref.watch(getOwnedBusinessUsecaseProvider);
   final result = await usecase();
   return result.fold((failure) => throw failure, (business) => business);

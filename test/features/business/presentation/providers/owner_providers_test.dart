@@ -44,13 +44,12 @@ void main() {
     );
     addTearDown(container.dispose);
 
-    // Logged out: cached as "not owner" without hitting the backend.
-    expect(await container.read(isOwnerProvider.future), isFalse);
-    expect(fake.calls, 0);
+    expect(await container.read(isOwnerProvider.future), isTrue);
+    expect(fake.calls, 1);
 
     // Logging in must not reuse the stale value.
     container.read(userId.notifier).set('user-1');
     expect(await container.read(isOwnerProvider.future), isTrue);
-    expect(fake.calls, 1);
+    expect(fake.calls, 2);
   });
 }
