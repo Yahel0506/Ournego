@@ -158,6 +158,7 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
                       (_) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           OurnegoSnackbars.info(
+                            context,
                             'Correo de verificacion reenviado.',
                           ),
                         );

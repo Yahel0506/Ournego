@@ -49,11 +49,14 @@ class _BusinessPanelDashboardWidgetState
       ref.invalidate(isOwnerProvider);
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(OurnegoSnackbars.info('Cambios guardados.'));
+      ).showSnackBar(OurnegoSnackbars.info(context, 'Cambios guardados.'));
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        OurnegoSnackbars.info('No se pudo guardar. Intenta nuevamente.'),
+        OurnegoSnackbars.info(
+          context,
+          'No se pudo guardar. Intenta nuevamente.',
+        ),
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -399,6 +402,7 @@ class _BusinessPanelDashboardWidgetState
                               onTap: () {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   OurnegoSnackbars.info(
+                                    context,
                                     'Mi centro se habilitara en la siguiente fase.',
                                   ),
                                 );
@@ -410,6 +414,7 @@ class _BusinessPanelDashboardWidgetState
                               onPlaceholderTap: () {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   OurnegoSnackbars.info(
+                                    context,
                                     'Esta accion estara disponible pronto.',
                                   ),
                                 );

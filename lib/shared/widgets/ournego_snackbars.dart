@@ -34,11 +34,9 @@ class OurnegoSnackbars {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(
+              child: _SnackbarMessage(
                 message,
-                style: OurnegoTextStyles.bodyCompact.copyWith(
-                  color: Colors.black,
-                ),
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             if (hasAction) ...[
@@ -61,7 +59,7 @@ class OurnegoSnackbars {
     );
   }
 
-  static SnackBar info(String message) {
+  static SnackBar info(BuildContext context, String message) {
     return SnackBar(
       behavior: SnackBarBehavior.floating,
       elevation: 0,
@@ -74,11 +72,9 @@ class OurnegoSnackbars {
             Icon(Icons.info_outline_rounded, color: OurnegoColorTokens.info),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(
+              child: _SnackbarMessage(
                 message,
-                style: OurnegoTextStyles.bodyCompact.copyWith(
-                  color: Colors.black,
-                ),
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ],
@@ -87,7 +83,7 @@ class OurnegoSnackbars {
     );
   }
 
-  static SnackBar success(String message) {
+  static SnackBar success(BuildContext context, String message) {
     return SnackBar(
       elevation: 0,
       behavior: SnackBarBehavior.floating,
@@ -103,11 +99,9 @@ class OurnegoSnackbars {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(
+              child: _SnackbarMessage(
                 message,
-                style: OurnegoTextStyles.bodyCompact.copyWith(
-                  color: Colors.black,
-                ),
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ],
@@ -116,7 +110,7 @@ class OurnegoSnackbars {
     );
   }
 
-  static SnackBar warning(String message) {
+  static SnackBar warning(BuildContext context, String message) {
     return SnackBar(
       behavior: SnackBarBehavior.floating,
       backgroundColor: Colors.transparent,
@@ -131,16 +125,32 @@ class OurnegoSnackbars {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(
+              child: _SnackbarMessage(
                 message,
-                style: OurnegoTextStyles.bodyCompact.copyWith(
-                  color: Colors.black,
-                ),
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Message text. [color] must come from the theme of the caller's context:
+/// the [SnackBar] wraps its content in an inverted theme, so reading
+/// `Theme.of` in here would return the inverse (dark on dark) colors.
+class _SnackbarMessage extends StatelessWidget {
+  const _SnackbarMessage(this.message, {required this.color});
+
+  final String message;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      message,
+      style: OurnegoTextStyles.bodyCompact.copyWith(color: color),
     );
   }
 }

@@ -39,9 +39,9 @@ Future<void> openProfileMenu(
     case ProfileMenuAction.locationPermissions:
       final opened = await openAppLocationSettings();
       if (!opened && context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(OurnegoSnackbars.info(webLocationPermissionHelp));
+        ScaffoldMessenger.of(context).showSnackBar(
+          OurnegoSnackbars.info(context, webLocationPermissionHelp),
+        );
       }
     case ProfileMenuAction.reportProblem:
       // Grows out of the tapped item and, once the item is gone, goes back to

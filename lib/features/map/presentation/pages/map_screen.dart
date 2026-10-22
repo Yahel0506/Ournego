@@ -317,7 +317,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
     if (!opened && mounted) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(OurnegoSnackbars.info(webLocationPermissionHelp));
+      ).showSnackBar(OurnegoSnackbars.info(context, webLocationPermissionHelp));
     }
   }
 
@@ -378,7 +378,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
       onMissingBusiness: () {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          OurnegoSnackbars.info('No encontramos el negocio solicitado'),
+          OurnegoSnackbars.info(
+            context,
+            'No encontramos el negocio solicitado',
+          ),
         );
       },
       trackBusinessVisit: ({required businessId, required source}) async {
@@ -437,7 +440,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(OurnegoSnackbars.info(next.errorMessage!));
+          ).showSnackBar(OurnegoSnackbars.info(context, next.errorMessage!));
           return;
         }
 
@@ -445,7 +448,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
           if (next.isListening) {
             ScaffoldMessenger.of(context).hideCurrentSnackBar();
             ScaffoldMessenger.of(context).showSnackBar(
-              OurnegoSnackbars.info('Escuchando... habla para buscar.'),
+              OurnegoSnackbars.info(
+                context,
+                'Escuchando... habla para buscar.',
+              ),
             );
           } else {
             ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -839,7 +845,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            OurnegoSnackbars.info('No se pudo actualizar favorito'),
+            OurnegoSnackbars.info(context, 'No se pudo actualizar favorito'),
           );
         }
         return false;
@@ -873,6 +879,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
   void _onCatalog(SheetBusinessData business) {
     ScaffoldMessenger.of(context).showSnackBar(
       OurnegoSnackbars.info(
+        context,
         'Catálogo de ${business.name} próximamente disponible',
       ),
     );
@@ -881,6 +888,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
   void _onReviews(SheetBusinessData business) {
     ScaffoldMessenger.of(context).showSnackBar(
       OurnegoSnackbars.info(
+        context,
         'Reseñas de ${business.name} próximamente disponibles',
       ),
     );
@@ -938,6 +946,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
     if (status == LocationAccessStatus.unavailable) {
       ScaffoldMessenger.of(context).showSnackBar(
         OurnegoSnackbars.info(
+          context,
           'No pudimos obtener tu ubicación. Inténtalo de nuevo.',
         ),
       );
