@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:ournego/core/geocoding/geocoding_providers.dart';
+import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
 import 'package:ournego/features/business/data/datasources/business_supabase_datasource.dart';
 import 'package:ournego/features/business/data/repositories/business_repository_impl.dart';
 import 'package:ournego/features/business/domain/entities/owned_business_profile.dart';
@@ -139,6 +140,9 @@ final getBusinessPanelMetricsUsecaseProvider =
     });
 
 final isOwnerProvider = FutureProvider<bool>((ref) async {
+  // Watching the user id re-runs the check on every login/logout, so a stale
+  // value from a previous (or anonymous) session is never reused.
+  ref.watch(currentUserIdProvider);
   final usecase = ref.watch(checkIfOwnerUsecaseProvider);
   final result = await usecase();
   // Failures must surface: treating them as "not owner" shows the wrong screen.
@@ -148,6 +152,8 @@ final isOwnerProvider = FutureProvider<bool>((ref) async {
 final ownedBusinessProvider = FutureProvider<OwnedBusinessProfile?>((
   ref,
 ) async {
+  // Same as [isOwnerProvider]: refetch when the signed-in user changes.
+  ref.watch(currentUserIdProvider);
   final usecase = ref.watch(getOwnedBusinessUsecaseProvider);
   final result = await usecase();
   return result.fold((failure) => throw failure, (business) => business);
