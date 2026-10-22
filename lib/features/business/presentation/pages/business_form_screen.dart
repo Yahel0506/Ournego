@@ -308,6 +308,7 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
             WidgetsBinding.instance.addPostFrameCallback((_) {
               ScaffoldMessenger.of(context).showSnackBar(
                 OurnegoSnackbars.info(
+                  context,
                   'Error al obtener la ubicación actual. Por favor selecciona la ubicación manualmente.',
                 ),
               );
@@ -645,6 +646,7 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
                             if (!mounted) return Future<void>.value();
                             ScaffoldMessenger.of(context).showSnackBar(
                               OurnegoSnackbars.info(
+                                context,
                                 'Negocio registrado exitosamente.',
                               ),
                             );
@@ -851,6 +853,7 @@ class BusinessAddressInput extends StatelessWidget {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             ScaffoldMessenger.of(context).showSnackBar(
               OurnegoSnackbars.info(
+                context,
                 failure is AuthenticationRequiredFailure
                     ? 'Inicia sesion para usar sugerencias de direccion.'
                     : 'No se pudieron cargar sugerencias de direccion.',
