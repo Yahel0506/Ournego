@@ -74,7 +74,7 @@ flutter_launcher_icons:
   remove_alpha_ios: true
   adaptive_icon_background: "#FFFFFF"
   adaptive_icon_foreground: assets/app_icon.png
-  adaptive_icon_foreground_inset: 25
+  adaptive_icon_foreground_inset: 17
   adaptive_icon_monochrome: assets/app_icon.png
   web:
     generate: true
