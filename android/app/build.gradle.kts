@@ -9,8 +9,6 @@ plugins {
 }
 
 dependencies {
-    implementation(platform("com.google.firebase:firebase-bom:34.6.0"))
-    implementation("com.google.firebase:firebase-analytics")
     // Runs each Patrol test in its own instrumentation process.
     androidTestUtil("androidx.test:orchestrator:1.5.1")
 }

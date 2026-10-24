@@ -16,6 +16,6 @@ Como objetivo inicial, se establece un resultado esperado de aproximadamente 10 
 
 ### 3. Recorridos esenciales para la salida piloto.
 Se establecen los siguientes recorridos esenciales para cada tipo de usuario:
-- Consumidor: abre la app en la interfaz del mapa, explora negocios de manera visual en este, selecciona uno de ellos, revisa su información y reporta un dato incorrecto si lo encuentra.
+- Consumidor: abre la app en la interfaz del mapa, explora negocios de manera visual en este, busca un negocio por texto o por voz, selecciona uno de ellos, revisa su información y reporta un dato incorrecto si lo encuentra.
 - Negocio: abre la app en la interfaz de registro, ingresa los datos de su negocio, sube imágenes y videos, revisa la información ingresada, completa el registro, recibe una aprobación o rechazo de su registro y puede corregir la ficha.
 - Revisor: abre la app en la interfaz de revisión, revisa los negocios registrados, aprueba o rechaza los registros, y puede enviar comentarios a los negocios para que corrijan su información.
