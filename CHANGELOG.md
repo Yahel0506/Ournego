@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.4.0](https://github.com/Yahel0506/Ournego/compare/ournego-v0.3.0...ournego-v0.4.0) (2026-10-24)
+
+
+### Features
+
+* **android:** enlarge launcher logo and add debug icon variant (OUR-156) ([b6e67ab](https://github.com/Yahel0506/Ournego/commit/b6e67ab07c5db1c0706bf4a16e7bb9339be035aa))
+* **android:** enlarge launcher logo and add debug icon variant (OUR-156) ([99e3c63](https://github.com/Yahel0506/Ournego/commit/99e3c63d7d2167c9feadc9fd5d847c3c585497d5))
+* **auth:** add request-deletion-link function with uniform response ([bb12fc9](https://github.com/Yahel0506/Ournego/commit/bb12fc9e010d5d4de872d3dedd71ee3416f3d921))
+* **auth:** add request-deletion-link function with uniform response ([26bef9f](https://github.com/Yahel0506/Ournego/commit/26bef9fd86b07a09c0204081268b8cfe0be432d6))
+* **db:** add account deletion requests table with RLS ([6d225df](https://github.com/Yahel0506/Ournego/commit/6d225df8cf2ffdf326f6b6553d08b4e662945684))
+* **db:** add account deletion requests table with RLS ([df5f78f](https://github.com/Yahel0506/Ournego/commit/df5f78fdd66e697568242cef92f09e6635fbde6c))
+* **db:** add request_account_deletion RPC and email template ([40c6f33](https://github.com/Yahel0506/Ournego/commit/40c6f3379eb986af6d22fe6ebd0b19ae6d6b97e1))
+* **db:** add request_account_deletion RPC and email template ([4435d2e](https://github.com/Yahel0506/Ournego/commit/4435d2e0b3c22d2721addb3803556f1917d80c02))
+* **privacy:** add data inventory, keep voice search and drop firebase analytics ([ac3f831](https://github.com/Yahel0506/Ournego/commit/ac3f831d93d25f31aa2a7380a497d7a38e0dd373))
+* **privacy:** add data inventory, keep voice search and drop firebase analytics ([80b2777](https://github.com/Yahel0506/Ournego/commit/80b27771d6355925fd5b451534fa149999ef3913))
+
+
+### Bug Fixes
+
+* **business:** keep owner lookup for guests while refetching on user change ([1e4337c](https://github.com/Yahel0506/Ournego/commit/1e4337c582293d3727269f04b42ab95d07ca98ca))
+* **business:** refetch owner state when the signed-in user changes ([e9cf8ae](https://github.com/Yahel0506/Ournego/commit/e9cf8ae2f75c06737c3e1abef1188d0c4dbe888a))
+* **business:** refetch owner state when the signed-in user changes ([a144c6a](https://github.com/Yahel0506/Ournego/commit/a144c6ae38912b5d097fdf50980f77772807a58d))
+* **db:** use business_id and column precedence in deletion RPC ([b40628f](https://github.com/Yahel0506/Ournego/commit/b40628fa8f48c7824f7ba336a4a7c7c35c6f1353))
+* **map:** animate entering and leaving business comparison ([d42c9c5](https://github.com/Yahel0506/Ournego/commit/d42c9c5f7cd705ad1088f3f21e4885a5de692e69))
+* **map:** animate entering and leaving business comparison ([ae2a037](https://github.com/Yahel0506/Ournego/commit/ae2a0376c3cbcca2b2bb3fe4ab95894d2d9eedb5))
+* **ui:** use theme text color in snackbars for dark mode contrast ([6effbff](https://github.com/Yahel0506/Ournego/commit/6effbffc8abc076e2394ac33488f552e38a448dd))
+* **ui:** use theme text color in snackbars for dark mode contrast ([a0ebb18](https://github.com/Yahel0506/Ournego/commit/a0ebb18695dd0591e719457d2fce74cc4cad700d))
+
 ## [0.3.0](https://github.com/Yahel0506/Ournego/compare/ournego-v0.2.0...ournego-v0.3.0) (2026-10-16)
 
 
