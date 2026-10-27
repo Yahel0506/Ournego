@@ -215,6 +215,18 @@ class AuthRepositoryImpl implements AuthRepository {
       return Left(_failureFor(e));
     }
   }
+
+  @override
+  Future<Either<Failure, bool>> cancelMyDeletion() async {
+    try {
+      return Right(await authDatasource.cancelMyDeletion());
+    } on NoAuthenticatedUserException {
+      return Left(AuthenticationRequiredFailure());
+    } catch (e) {
+      debugPrint('Error in cancelMyDeletion: $e');
+      return Left(_failureFor(e));
+    }
+  }
 }
 
 /// Maps an error thrown while signing in with Google to a domain [Failure].

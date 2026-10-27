@@ -45,6 +45,12 @@ Nota: los adjuntos de feedback no llevan el id de usuario en el nombre (`feedbac
 - Formatos verificados: avatar `profile_pictures/<uid><ext>`; `businesses.images` es `text[]` de URL públicas de `businesses_pictures/<business>/<archivo>`; `feedback.attachment` es la URL pública completa.
 - Pruebas: `docs/sql/tests/2026-10-26_delete_user_data_test.sql`.
 
+## Estado de OUR-154 (app, cancelar al iniciar sesión)
+
+- `accountRestoreProvider` (`lib/features/auth/presentation/providers/account_restore_providers.dart`) llama a `cancel_my_deletion()` en `signedIn` (correo o Google), `initialSession` (sesión restaurada al abrir la app) y `tokenRefreshed`, una vez por usuario y arranque. No bloquea el inicio de sesión: si falla (sin red, token vencido) solo se registra y se reintenta en el siguiente evento de auth o en el siguiente arranque. Un `signedOut` reinicia la comprobación, porque la solicitud web revoca las sesiones y la persona vuelve a entrar en el mismo arranque.
+- Convivencia con la guarda de perfil: `AccountRestoredListener` muestra el aviso con `showOurnegoDialog` solo cuando el router sale de las rutas de auth y de onboarding, así la redirección al mapa o a completar perfil no lo cierra.
+- Contrato que la app espera de OUR-153: `cancel_my_deletion()` sin argumentos, ejecutable por `authenticated`, que devuelve `boolean` (`true` solo si canceló una solicitud `scheduled` en plazo; `false` si no había nada que cancelar o el plazo ya pasó). Cualquier otro valor se trata como `false`; un error se reintenta. Hasta que OUR-153 se despliegue, la llamada falla (función inexistente) sin efecto visible.
+
 ## Qué se retiene
 
 | Dato | Plazo | Motivo |
