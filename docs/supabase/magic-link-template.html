@@ -1,7 +1,7 @@
-<!-- Supabase Auth > Emails > Magic link or OTP (OUR-151). Copy of what is saved in the dashboard.
+<!-- Supabase Auth > Emails > Magic link or OTP (OUR-151, OUR-158). Copy of what is saved in the dashboard.
      One template serves both emails: the deletion one is picked when .RedirectTo is exactly
      the confirm page ournego-web passes as emailRedirectTo (plan D4). The subject uses the same condition:
-     {{ if eq .RedirectTo "https://www.ournego.com/auth/callback?next=/delete-account/confirm" }}Confirma la eliminación de tu cuenta de Ournego{{ else }}Acceso rápido{{ end }} -->
+     {{ if eq .RedirectTo "https://www.ournego.com/auth/callback?next=/delete-account/confirm" }}Confirma o cancela la eliminación de tu cuenta de Ournego{{ else }}Acceso rápido{{ end }} -->
 <!DOCTYPE html>
 <html>
 <head>
@@ -23,13 +23,13 @@
 
 <tr>
 <td style="text-align:center; font-size:22px; font-weight:bold; color:#111827; padding-top:20px;">
-{{ if eq .RedirectTo "https://www.ournego.com/auth/callback?next=/delete-account/confirm" }}Confirma la eliminación de tu cuenta{{ else }}Acceso rápido{{ end }}
+{{ if eq .RedirectTo "https://www.ournego.com/auth/callback?next=/delete-account/confirm" }}Eliminación de tu cuenta{{ else }}Acceso rápido{{ end }}
 </td>
 </tr>
 
 <tr>
 <td style="text-align:center; color:#4b5563; padding:16px 0;">
-{{ if eq .RedirectTo "https://www.ournego.com/auth/callback?next=/delete-account/confirm" }}Recibimos una solicitud para eliminar tu cuenta de Ournego. Abre el enlace y confirma en la página. Tu cuenta se conservará 30 días por si cambias de opinión. Si no fuiste tú, ignora este correo: no se eliminará nada.{{ else }}Usa este enlace para entrar sin contraseña. Es rápido, seguro y solo funciona una vez.{{ end }}
+{{ if eq .RedirectTo "https://www.ournego.com/auth/callback?next=/delete-account/confirm" }}Recibimos una solicitud sobre la eliminación de tu cuenta de Ournego. Abre el enlace y, en la página, confirma la eliminación o cancela una que ya hayas programado. Si confirmas, tu cuenta se conservará 30 días por si cambias de opinión. Si no fuiste tú, ignora este correo: no se eliminará nada.{{ else }}Usa este enlace para entrar sin contraseña. Es rápido, seguro y solo funciona una vez.{{ end }}
 </td>
 </tr>
 
@@ -37,7 +37,7 @@
 <td align="center">
 <a href="{{ if eq .RedirectTo "https://www.ournego.com/auth/callback?next=/delete-account/confirm" }}https://www.ournego.com/auth/callback?token_hash={{ .TokenHash }}&type=magiclink&next=/delete-account/confirm{{ else }}https://www.ournego.com/auth/callback?token_hash={{ .TokenHash }}&type=magiclink{{ end }}"
 style="display:inline-block; white-space:nowrap; background:#055f46; color:#ffffff; text-decoration:none; padding:14px 28px; border-radius:10px; font-weight:bold;">
-{{ if eq .RedirectTo "https://www.ournego.com/auth/callback?next=/delete-account/confirm" }}Confirmar eliminación{{ else }}Entrar a Ournego{{ end }}
+{{ if eq .RedirectTo "https://www.ournego.com/auth/callback?next=/delete-account/confirm" }}Confirmar o cancelar{{ else }}Entrar a Ournego{{ end }}
 </a>
 </td>
 </tr>
