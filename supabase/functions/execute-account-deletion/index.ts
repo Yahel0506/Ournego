@@ -2,10 +2,14 @@
 //
 // Order: Storage files -> delete_user_data(uid) -> auth.admin.deleteUser ->
 // request marked `completed`. Every step is idempotent, so a request left in
-// `failed` (or interrupted midway) can be retried safely. Called by the job of
-// OUR-153 (pg_cron + pg_net) with the service role key; never from a client.
+// `failed` (or interrupted midway) can be retried safely. A `scheduled` request
+// runs only once execute_after has passed, so it cannot race a cancellation.
 //
-// POST { "request_id": "<uuid>" }
+// Deployed with verify_jwt = false (pg_net sends no JWT); the function does its
+// own check and accepts either:
+//   - the one-time token of public.dispatch_due_account_deletions() (OUR-153,
+//     run by pg_cron): POST { "request_id": "<uuid>", "dispatch_token": "<hex>" }
+//   - the service role key as Bearer, for a manual run: POST { "request_id" }
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
@@ -44,13 +48,13 @@ Deno.serve(async (req: Request) => {
     /^Bearer\s+/i,
     "",
   );
-  if (!bearer || !safeEqual(bearer, serviceKey)) {
-    return json(401, { error: "unauthorized" });
-  }
 
   let requestId: string | undefined;
+  let dispatchToken: string | undefined;
   try {
-    requestId = (await req.json()).request_id;
+    const body = await req.json();
+    requestId = body.request_id;
+    dispatchToken = body.dispatch_token;
   } catch (_) {
     // handled below
   }
@@ -62,9 +66,21 @@ Deno.serve(async (req: Request) => {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
+  if (!bearer || !safeEqual(bearer, serviceKey)) {
+    if (typeof dispatchToken !== "string" || !dispatchToken) {
+      return json(401, { error: "unauthorized" });
+    }
+    const { data: valid, error: tokenError } = await admin.rpc(
+      "consume_account_deletion_dispatch",
+      { p_request_id: requestId, p_token: dispatchToken },
+    );
+    if (tokenError) return json(500, { error: "token_check_failed" });
+    if (valid !== true) return json(401, { error: "unauthorized" });
+  }
+
   const { data: request, error: loadError } = await admin
     .from("account_deletion_requests")
-    .select("id, user_id, status")
+    .select("id, user_id, status, execute_after")
     .eq("id", requestId)
     .maybeSingle();
   if (loadError) return json(500, { error: "load_failed" });
@@ -74,6 +90,12 @@ Deno.serve(async (req: Request) => {
   }
   if (request.status !== "scheduled" && request.status !== "failed") {
     return json(409, { error: "not_executable", status: request.status });
+  }
+  if (
+    request.status === "scheduled" &&
+    (!request.execute_after || new Date(request.execute_after) > new Date())
+  ) {
+    return json(409, { error: "not_due", execute_after: request.execute_after });
   }
 
   const markFailed = async () => {

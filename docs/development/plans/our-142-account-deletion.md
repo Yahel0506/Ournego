@@ -41,9 +41,21 @@ Nota: los adjuntos de feedback no llevan el id de usuario en el nombre (`feedbac
 ## Estado de OUR-152 (138c, ejecución)
 
 - `docs/sql/2026-10-26_delete_user_data.sql`: `delete_user_data(uid)` (transaccional, idempotente) y `account_deletion_storage_paths(uid)`. Solo `service_role`.
-- `supabase/functions/execute-account-deletion/`: Edge Function (`verify_jwt = true`, además exige la clave de servicio). Orden: archivos de Storage, `delete_user_data`, `auth.admin.deleteUser`, `completed`. Si algo falla queda en `failed` y se puede reintentar. Entrada: `POST {"request_id": "<uuid>"}`; la llamará el trabajo de OUR-153.
+- `supabase/functions/execute-account-deletion/`: Edge Function (desde OUR-153 con `verify_jwt = false`; hace su propia comprobación: token de un solo uso del trabajo programado o clave de servicio). Orden: archivos de Storage, `delete_user_data`, `auth.admin.deleteUser`, `completed`. Si algo falla queda en `failed` y se puede reintentar. Entrada: `POST {"request_id": "<uuid>"}`; la llamará el trabajo de OUR-153.
 - Formatos verificados: avatar `profile_pictures/<uid><ext>`; `businesses.images` es `text[]` de URL públicas de `businesses_pictures/<business>/<archivo>`; `feedback.attachment` es la URL pública completa.
 - Pruebas: `docs/sql/tests/2026-10-26_delete_user_data_test.sql`.
+
+## Estado de OUR-153 (138d, cancelación y trabajo programado)
+
+- `docs/sql/2026-10-27_cancel_and_schedule_account_deletion.sql`, aplicada en el proyecto `Ournego`. Habilita `pg_cron` y `pg_net`.
+- `cancel_my_deletion()` (usuario autenticado): cancela la solicitud `scheduled` (o `pending`) mientras `execute_after` no haya pasado, restaura solo los negocios que ocultó la solicitud y que siguen siendo del usuario, y devuelve `true` si cambió algo. Fuera de plazo devuelve `false` y no toca nada. Es la RPC que usan la web (OUR-158) y la app (OUR-154).
+- Trabajo `execute-due-account-deletions` cada 15 minutos: `dispatch_due_account_deletions()` envía con `pg_net` las solicitudes vencidas y reintenta las `failed` (otra vez a la hora, máximo 5 envíos; después quedan en `failed` para revisarlas a mano). Lotes de 20.
+- Autenticación del trabajo sin guardar la clave de servicio en la base: cada envío lleva un token aleatorio de un solo uso; la tabla `account_deletion_dispatches` (sin acceso desde la API) guarda su hash y la Edge Function lo consume con `consume_account_deletion_dispatch()` (válido 15 minutos). La clave de servicio sigue sirviendo para ejecutar a mano.
+- La Edge Function ya no ejecuta una solicitud `scheduled` antes de `execute_after` (responde `409 not_due`), así que no puede adelantarse a una cancelación.
+- Trabajo `purge-expired-account-deletion-requests` diario (03:17 UTC): aplica la retención de 12 meses de OUR-138.
+- Configuración única por proyecto: secreto de Vault `project_url` (`select vault.create_secret('https://<ref>.supabase.co', 'project_url')`), ya creado en `Ournego`.
+- Plazo configurable para probar sin esperar 30 días (afecta a las solicitudes nuevas): `update public.account_deletion_settings set grace_period = '5 minutes';` y volver con `... = '30 days'`. Sustituye al `alter database ... set app.account_deletion_grace_period` de OUR-151, que Supabase no permite (`permission denied to set parameter`); ese parámetro solo sigue valiendo dentro de una sesión (`set_config`, lo usan las pruebas). Para ejecutar sin esperar al siguiente cuarto de hora: `select public.dispatch_due_account_deletions();`. La respuesta de cada envío queda en `net._http_response` (id en `account_deletion_dispatches.net_request_id`).
+- Pruebas: `docs/sql/tests/2026-10-27_cancel_and_schedule_account_deletion_test.sql` (cancelación en plazo, cancelación tardía rechazada, envío al vencer, reintento, límite de intentos, token de un solo uso). Verificado además de extremo a extremo con una solicitud sin usuario: el trabajo la envió, la función respondió 200 y quedó `completed`.
 
 ## Qué se retiene
 
@@ -83,7 +95,7 @@ OUR-138a  tabla de solicitudes + RLS ───┬──► OUR-137  página web 
    - **Issue nuevo `[Cuenta] Cancelar la eliminación al iniciar sesión y avisar`** (2 pts, hijo de OUR-108): tras iniciar sesión (correo o Google), llama a `cancel_my_deletion()`; si cancela algo, muestra un aviso con `showOurnegoDialog`. Debe cubrir también la sesión restaurada al abrir la app. Hay que decidir cómo convive con la guarda de perfil de `app_router.dart`.
 7. **OUR-139**: prueba de extremo a extremo (solicitar, verificar, cancelar por enlace, cancelar al iniciar sesión, vencer el plazo, ejecutar) y evidencia de retenciones. El plazo debe ser configurable para poder probarlo sin esperar 30 días.
 
-`pg_cron`, `pg_net` y `pgmq` están disponibles en el proyecto pero ninguna está instalada; habilitar `pg_cron` forma parte de 138d.
+`pg_cron` y `pg_net` se habilitaron en OUR-153 (138d); `pgmq` sigue sin instalar.
 
 ## OUR-137 en `ournego-web`
 
