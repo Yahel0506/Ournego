@@ -38,6 +38,13 @@ Hoy: 34 usuarios, 7 negocios, 0 reseñas. Sin triggers en `public`. Sin Edge Fun
 
 Nota: los adjuntos de feedback no llevan el id de usuario en el nombre (`feedback_<timestamp>_<hash>.png`); hay que resolverlos desde `feedback.attachment`. Verificar en OUR-138c el formato real de `users.avatar_url` y `businesses.images` antes de borrar por ruta.
 
+## Estado de OUR-152 (138c, ejecución)
+
+- `docs/sql/2026-10-26_delete_user_data.sql`: `delete_user_data(uid)` (transaccional, idempotente) y `account_deletion_storage_paths(uid)`. Solo `service_role`.
+- `supabase/functions/execute-account-deletion/`: Edge Function (`verify_jwt = true`, además exige la clave de servicio). Orden: archivos de Storage, `delete_user_data`, `auth.admin.deleteUser`, `completed`. Si algo falla queda en `failed` y se puede reintentar. Entrada: `POST {"request_id": "<uuid>"}`; la llamará el trabajo de OUR-153.
+- Formatos verificados: avatar `profile_pictures/<uid><ext>`; `businesses.images` es `text[]` de URL públicas de `businesses_pictures/<business>/<archivo>`; `feedback.attachment` es la URL pública completa.
+- Pruebas: `docs/sql/tests/2026-10-26_delete_user_data_test.sql`.
+
 ## Qué se retiene
 
 | Dato | Plazo | Motivo |
