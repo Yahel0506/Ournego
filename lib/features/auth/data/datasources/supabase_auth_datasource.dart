@@ -176,6 +176,16 @@ class SupabaseAuthDatasource {
     }, onConflict: 'id');
   }
 
+  /// Cancels the current user's scheduled account deletion through the
+  /// `cancel_my_deletion()` RPC (OUR-153). Returns `true` only when a
+  /// deletion was actually cancelled; `false` when there was nothing to
+  /// cancel or the grace period had already passed.
+  Future<bool> cancelMyDeletion() async {
+    _requireUserId();
+    final result = await _supabase.rpc<dynamic>('cancel_my_deletion');
+    return result == true;
+  }
+
   /// Signs out the current user.
   Future<void> logOut() async {
     _userInitiatedSignOut = true;

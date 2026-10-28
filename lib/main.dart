@@ -22,6 +22,7 @@ import 'package:ournego/core/routing/app_router.dart';
 import 'package:ournego/core/startup/ournego_splash_animation.dart';
 import 'package:ournego/core/startup/startup_controller.dart';
 import 'package:ournego/core/startup/startup_gate.dart';
+import 'package:ournego/features/auth/presentation/widgets/account_restored_listener.dart';
 import 'package:ournego/features/auth/presentation/widgets/session_expired_listener.dart';
 import 'package:ournego/features/onboarding/data/datasources/local_onboarding_datasource.dart';
 import 'package:ournego/shared/widgets/ournego_offline_banner.dart';
@@ -104,7 +105,11 @@ class _MyAppState extends State<MyApp> {
         final content = OurnegoOfflineBanner(
           child: SessionExpiredListener(
             navigatorKey: _navigatorKey,
-            child: child ?? const SizedBox.shrink(),
+            child: AccountRestoredListener(
+              router: _router,
+              navigatorKey: _navigatorKey,
+              child: child ?? const SizedBox.shrink(),
+            ),
           ),
         );
         if (!kDebugMode) return content;

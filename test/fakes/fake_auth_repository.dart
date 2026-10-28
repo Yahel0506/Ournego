@@ -150,4 +150,10 @@ class FakeAuthRepository implements AuthRepository {
     onLogout?.call();
     return const Right(null);
   }
+
+  @override
+  Future<Either<Failure, bool>> cancelMyDeletion() async {
+    if (forceNoConnection) return Left(NetworkFailure());
+    return const Right(false);
+  }
 }

@@ -7,6 +7,7 @@ import 'package:ournego/features/auth/data/datasources/supabase_auth_datasource.
 import 'package:ournego/features/auth/data/repositories/supabase_auth_repository_impl.dart';
 import 'package:ournego/features/auth/domain/entities/app_user.dart';
 import 'package:ournego/features/auth/domain/repositories/auth_repository.dart';
+import 'package:ournego/features/auth/domain/usecases/cancel_my_deletion_usecase.dart';
 import 'package:ournego/features/auth/domain/usecases/email_verification_usecase.dart';
 import 'package:ournego/features/auth/domain/usecases/get_profile_usecase.dart';
 import 'package:ournego/features/auth/domain/usecases/has_profile_usecase.dart';
@@ -106,6 +107,14 @@ final emailVerificationUsecaseProvider = Provider<EmailVerificationUsecase>((
 ) {
   final repository = ref.watch(authRepositoryProvider);
   return EmailVerificationUsecase(repository: repository);
+});
+
+/// Usecase for cancelling a scheduled account deletion on sign-in.
+final cancelMyDeletionUsecaseProvider = Provider<CancelMyDeletionUsecase>((
+  ref,
+) {
+  final repository = ref.watch(authRepositoryProvider);
+  return CancelMyDeletionUsecase(repository: repository);
 });
 
 // |---------------------------------| \\

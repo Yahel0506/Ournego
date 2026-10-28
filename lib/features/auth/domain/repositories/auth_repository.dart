@@ -44,4 +44,9 @@ abstract class AuthRepository {
   Future<Either<Failure, bool>> checkHasProfile();
 
   Future<Either<Failure, void>> logOut();
+
+  /// Cancels the signed-in user's scheduled account deletion, if any.
+  /// Right(true) when a deletion was cancelled (the businesses it hid are
+  /// visible again), Right(false) when there was nothing to cancel.
+  Future<Either<Failure, bool>> cancelMyDeletion();
 }
