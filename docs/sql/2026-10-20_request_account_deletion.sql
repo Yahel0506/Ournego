@@ -11,8 +11,9 @@ alter table public.account_deletion_requests
   add column if not exists hidden_business_ids uuid[] not null default '{}';
 
 -- Grace period (D5). Configurable without a deploy so the end-to-end test can
--- use minutes instead of 30 days:
---   alter database postgres set app.account_deletion_grace_period = '5 minutes';
+-- use minutes instead of 30 days. Supabase rejects ALTER DATABASE ... SET for
+-- this parameter, so OUR-153 (2026-10-27_cancel_and_schedule_account_deletion.sql)
+-- replaces this function to read public.account_deletion_settings.
 -- Unset or invalid values fall back to 30 days. Not callable from the API: the
 -- RPC takes no period argument, otherwise a client could pick its own.
 create or replace function public.account_deletion_grace_period()
