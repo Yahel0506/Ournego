@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:ournego/core/location/open_app_location_settings.dart';
 import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
+import 'package:ournego/features/auth/presentation/widgets/edit_profile_dialog_widget.dart';
 import 'package:ournego/features/feedback/presentation/widgets/feedback_flow.dart';
 import 'package:ournego/features/navigation/presentation/widgets/profile_menu/profile_menu_dialog_widget.dart';
 import 'package:ournego/shared/widgets/container_transform/container_transform_origin.dart';
@@ -34,6 +35,17 @@ Future<void> openProfileMenu(
   switch (action) {
     case ProfileMenuAction.logIn:
       context.push(AuthRoutes.authSelection);
+    case ProfileMenuAction.editProfile:
+      final message = await showEditProfileDialog(
+        context,
+        from: handoff.data,
+        returnTo: trigger,
+      );
+      if (message != null && context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(OurnegoSnackbars.success(context, message));
+      }
     case ProfileMenuAction.businessPanel:
       context.go(BusinessRoutes.panel);
     case ProfileMenuAction.locationPermissions:

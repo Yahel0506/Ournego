@@ -33,7 +33,10 @@ class TopNavigationBarWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isLogged = ref.watch(authSessionStatusProvider);
     final asyncUser = isLogged ? ref.watch(profileStreamProvider) : null;
-    final imageUrl = asyncUser?.value?.profilePicture ?? '';
+    final imageUrl = versionedAvatarUrl(
+      asyncUser?.value?.profilePicture ?? '',
+      ref.watch(profileAvatarVersionProvider),
+    );
     final colorScheme = Theme.of(context).colorScheme;
 
     return Padding(

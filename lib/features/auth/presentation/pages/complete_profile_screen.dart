@@ -1,12 +1,8 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ournego/core/network/connectivity_providers.dart';
 import 'package:ournego/core/theme/tokens/ournego_semantic_tokens.dart';
-import 'package:image_cropper/image_cropper.dart';
-import 'package:image_picker/image_picker.dart';
 
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/core/routing/route_names.dart';
@@ -24,46 +20,6 @@ class CompleteProfileScreen extends ConsumerWidget {
 
   final TextEditingController _nameController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  final _picker = ImagePicker();
-
-  Future<String?> pickImage() async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-
-    if (pickedFile != null) {
-      return pickedFile.path;
-    } else {
-      return null;
-    }
-  }
-
-  Future<String?> cropImage() async {
-    final path = await pickImage();
-
-    if (path != null) {
-      final croppedFile = await ImageCropper().cropImage(
-        sourcePath: path,
-        uiSettings: [
-          AndroidUiSettings(
-            lockAspectRatio: true,
-            initAspectRatio: CropAspectRatioPreset.square,
-            hideBottomControls: true,
-            toolbarColor: Colors.black,
-            toolbarWidgetColor: Colors.white,
-            toolbarTitle: '',
-            backgroundColor: Colors.black,
-          ),
-          IOSUiSettings(aspectRatioLockEnabled: true),
-        ],
-      );
-      if (croppedFile != null) {
-        return croppedFile.path;
-      } else {
-        return null;
-      }
-    } else {
-      return null;
-    }
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -127,10 +83,11 @@ class CompleteProfileScreen extends ConsumerWidget {
                           icon: Icons.edit_rounded,
                           semanticLabel: 'Cambiar foto de perfil',
                           onPressed: () async {
-                            final path = await cropImage();
+                            final profilePicture = await ref
+                                .read(profilePhotoPickerProvider)
+                                .pickSquarePhoto();
 
-                            if (path != null) {
-                              final profilePicture = File(path);
+                            if (profilePicture != null) {
                               UpdateProfileUsecase(
                                 repository: repository,
                               ).updateProfilePicture(profilePicture);

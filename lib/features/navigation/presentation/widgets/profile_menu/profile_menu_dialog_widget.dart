@@ -17,6 +17,7 @@ import 'package:ournego/shared/widgets/ournego_dialog_surface.dart';
 /// the caller performs the action with its own, still-mounted context.
 enum ProfileMenuAction {
   logIn,
+  editProfile,
   businessPanel,
   locationPermissions,
   reportProblem,
@@ -61,6 +62,7 @@ class _ProfileMenuDialogWidgetState
     final colorScheme = Theme.of(context).colorScheme;
     final showsBusinessEntry =
         isLogged && origin != ProfileMenuOrigin.businessPanel;
+    final avatarVersion = ref.watch(profileAvatarVersionProvider);
 
     void select(ProfileMenuAction action) {
       // While the menu closes it still receives touches; a second one must not
@@ -90,7 +92,10 @@ class _ProfileMenuDialogWidgetState
                       isLogged: isLogged,
                       name: user?.name,
                       email: user?.email,
-                      imageUrl: user?.profilePicture,
+                      imageUrl: versionedAvatarUrl(
+                        user?.profilePicture ?? '',
+                        avatarVersion,
+                      ),
                     ),
                     if (!isLogged) ...[
                       const SizedBox(height: OurnegoSpacingTokens.sm),
@@ -106,18 +111,25 @@ class _ProfileMenuDialogWidgetState
                         ],
                       ),
                     ],
-                    if (showsBusinessEntry) ...[
+                    if (isLogged) ...[
                       const _SectionLabel('Cuenta'),
                       _MenuGroup(
                         handoff: widget.handoff,
                         items: [
                           _MenuItem(
-                            key: const ValueKey('profileMenuBusinessButton'),
-                            icon: Icons.storefront_rounded,
-                            label: 'Mi negocio',
-                            onTap: () =>
-                                select(ProfileMenuAction.businessPanel),
+                            key: const ValueKey('profileMenuEditProfileButton'),
+                            icon: Icons.edit_outlined,
+                            label: 'Editar perfil',
+                            onTap: () => select(ProfileMenuAction.editProfile),
                           ),
+                          if (showsBusinessEntry)
+                            _MenuItem(
+                              key: const ValueKey('profileMenuBusinessButton'),
+                              icon: Icons.storefront_rounded,
+                              label: 'Mi negocio',
+                              onTap: () =>
+                                  select(ProfileMenuAction.businessPanel),
+                            ),
                         ],
                       ),
                     ],

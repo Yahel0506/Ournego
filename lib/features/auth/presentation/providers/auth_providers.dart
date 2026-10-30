@@ -17,6 +17,7 @@ import 'package:ournego/features/auth/domain/usecases/send_password_reset_email_
 import 'package:ournego/features/auth/domain/usecases/sign_in_with_google_usecase.dart';
 import 'package:ournego/features/auth/domain/usecases/sign_up_with_email_usecase.dart';
 import 'package:ournego/features/auth/domain/usecases/update_profile_usecase.dart';
+import 'package:ournego/features/auth/presentation/services/profile_photo_picker.dart';
 
 // |---------------------------------| \\
 // |------- LAYER 1: DATASOURCES ---| \\
@@ -35,6 +36,11 @@ final authScreenTextProvider = Provider<LocalAuthScreenTextDatasource>((ref) {
 /// Provides error messages for auth failures.
 final authErrorMessagesProvider = Provider<LocalErrorMessagesDatasource>((ref) {
   return LocalErrorMessagesDatasource();
+});
+
+/// Gallery picker + square cropper for the profile photo.
+final profilePhotoPickerProvider = Provider<ProfilePhotoPicker>((ref) {
+  return GalleryProfilePhotoPicker();
 });
 
 // |---------------------------------| \\
@@ -184,3 +190,25 @@ final emailVerificationStatusProvider = StreamProvider<bool>((ref) {
   final usecase = ref.watch(emailVerificationUsecaseProvider);
   return usecase.watchVerificationStatus();
 });
+
+/// Bumped each time the profile photo is replaced.
+///
+/// The photo keeps the same storage path, so the profile row (and its stream)
+/// does not change; the version in the image URL makes every avatar reload.
+class ProfileAvatarVersionNotifier extends Notifier<int> {
+  @override
+  int build() => 0;
+
+  void bump() => state = DateTime.now().millisecondsSinceEpoch;
+}
+
+final profileAvatarVersionProvider =
+    NotifierProvider<ProfileAvatarVersionNotifier, int>(
+      ProfileAvatarVersionNotifier.new,
+    );
+
+/// [url] with the current avatar version, so a replaced photo shows at once.
+String versionedAvatarUrl(String url, int version) {
+  if (url.isEmpty || version == 0) return url;
+  return '$url?v=$version';
+}
