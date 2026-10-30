@@ -21,6 +21,7 @@ enum ProfileMenuAction {
   locationPermissions,
   reportProblem,
   debugPanel,
+  deleteAccount,
   logOut,
 }
 
@@ -152,6 +153,16 @@ class _ProfileMenuDialogWidgetState
                       _MenuGroup(
                         handoff: widget.handoff,
                         items: [
+                          _MenuItem(
+                            key: const ValueKey(
+                              'profileMenuDeleteAccountButton',
+                            ),
+                            icon: Icons.delete_forever_outlined,
+                            label: 'Eliminar cuenta',
+                            color: colorScheme.error,
+                            onTap: () =>
+                                select(ProfileMenuAction.deleteAccount),
+                          ),
                           _MenuItem(
                             key: const ValueKey('profileMenuLogoutButton'),
                             icon: Icons.logout_rounded,

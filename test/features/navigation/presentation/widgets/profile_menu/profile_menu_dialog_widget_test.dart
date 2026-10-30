@@ -46,6 +46,16 @@ void main() {
     return result;
   }
 
+  testWidgets('logged-in user can choose delete account', (tester) async {
+    final result = await openAndTap(
+      tester,
+      isLogged: true,
+      target: const ValueKey('profileMenuDeleteAccountButton'),
+    );
+
+    expect(result, ProfileMenuAction.deleteAccount);
+  });
+
   testWidgets('logged-in user can choose log out', (tester) async {
     final result = await openAndTap(
       tester,

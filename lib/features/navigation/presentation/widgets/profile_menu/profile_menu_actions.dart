@@ -6,6 +6,7 @@ import 'package:ournego/core/location/open_app_location_settings.dart';
 import 'package:ournego/core/routing/route_names.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
 import 'package:ournego/features/feedback/presentation/widgets/feedback_flow.dart';
+import 'package:ournego/features/navigation/presentation/widgets/profile_menu/delete_account_flow.dart';
 import 'package:ournego/features/navigation/presentation/widgets/profile_menu/profile_menu_dialog_widget.dart';
 import 'package:ournego/shared/widgets/container_transform/container_transform_origin.dart';
 import 'package:ournego/shared/widgets/ournego_alert_dialog.dart';
@@ -54,6 +55,12 @@ Future<void> openProfileMenu(
       );
     case ProfileMenuAction.debugPanel:
       context.go(DebuggingRoutes.debugPanel);
+    case ProfileMenuAction.deleteAccount:
+      await openDeleteAccountDialog(
+        context,
+        from: handoff.data,
+        returnTo: trigger,
+      );
     case ProfileMenuAction.logOut:
       await _confirmLogOut(context, ref, from: handoff.data, returnTo: trigger);
   }
