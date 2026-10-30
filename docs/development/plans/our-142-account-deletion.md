@@ -63,7 +63,7 @@ Nota: los adjuntos de feedback no llevan el id de usuario en el nombre (`feedbac
 |---|---|---|
 | Todos los datos de la cuenta (perfil, negocios ocultos, reseñas, feedback, interacciones, archivos) | 30 días desde la verificación | Periodo de gracia para recuperar la cuenta (D5) |
 | Registro de la solicitud (hash del correo, fechas, estado) | 12 meses | Demostrar el cumplimiento ante Google Play o ante la persona |
-| Copias de seguridad de Supabase | Según el plan contratado (confirmar) | Recuperación ante desastre; no se editan |
+| Copias de seguridad de Supabase | Plan Free: ninguna; máximo declarado 30 días (ver OUR-139) | Recuperación ante desastre; no se editan |
 | Registros de envío de Supabase Auth y del SMTP configurado | Según el proveedor | Entrega del código de verificación |
 
 Todo lo demás se elimina. Estos textos deben coincidir con la política de privacidad (criterio de OUR-137).
@@ -150,5 +150,9 @@ Los tres criterios actuales se mantienen. Se añade un cuarto, que falta hoy:
 - ~~**P6.**~~ Resuelta: la página vive en `ournego-web` (Next.js).
 - ~~**P7.**~~ Resuelta: el proyecto tiene SMTP propio, así que no hay límite de envío del SMTP predeterminado.
 - ~~**P8.**~~ Resuelta: ruta `/delete-account` y OUR-137 incluye la sección nueva de la política de privacidad.
-- **P4 (abierta).** No hay plazo definido para las copias de seguridad. Hay que consultar qué retención da el plan de Supabase contratado y decidir qué se declara. Se resuelve antes de publicar la política (OUR-137) y se registra en OUR-139 como retención documentada.
+- ~~**P4.**~~ Resuelta: el plan es Free y no hay copias de plataforma; la política declara 30 días como máximo (cota válida en todos los planes). Detalle y prueba de extremo a extremo en `our-139-account-deletion-e2e.md`.
 - ~~**P5.**~~ Resuelta: OUR-108 sin estimación (ver "Estimaciones").
+
+## Estado de OUR-139
+
+Probada de extremo a extremo el 2026-10-30: ver `our-139-account-deletion-e2e.md` (resultados, hallazgos y verificaciones manuales pendientes). Añade `docs/sql/2026-10-30_clear_hidden_business_ids_on_completion.sql`.
