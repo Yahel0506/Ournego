@@ -329,7 +329,10 @@ class _BusinessPanelDashboardWidgetState
   Widget build(BuildContext context) {
     final isLogged = ref.watch(authSessionStatusProvider);
     final profileAsync = isLogged ? ref.watch(profileStreamProvider) : null;
-    final profileImageUrl = profileAsync?.value?.profilePicture ?? '';
+    final profileImageUrl = versionedAvatarUrl(
+      profileAsync?.value?.profilePicture ?? '',
+      ref.watch(profileAvatarVersionProvider),
+    );
     final bottomSafeArea = MediaQuery.of(context).padding.bottom;
     final ownedBusinessAsync = ref.watch(ownedBusinessProvider);
 

@@ -66,6 +66,16 @@ void main() {
     expect(result, ProfileMenuAction.logOut);
   });
 
+  testWidgets('logged-in user can choose edit profile', (tester) async {
+    final result = await openAndTap(
+      tester,
+      isLogged: true,
+      target: const ValueKey('profileMenuEditProfileButton'),
+    );
+
+    expect(result, ProfileMenuAction.editProfile);
+  });
+
   testWidgets('logged-in menu shows profile header and account section', (
     tester,
   ) async {
@@ -156,8 +166,11 @@ void main() {
       find.byKey(const ValueKey('profileMenuBusinessButton')),
       findsNothing,
     );
-    // The section would be empty without that entry.
-    expect(find.text('CUENTA'), findsNothing);
+    // The account section stays, with only the edit-profile entry.
+    expect(
+      find.byKey(const ValueKey('profileMenuEditProfileButton')),
+      findsOneWidget,
+    );
     // Everything else stays.
     expect(
       find.byKey(const ValueKey('profileMenuLogoutButton')),
