@@ -49,6 +49,16 @@ class FakeBusinessRepository implements BusinessRepository {
     return const Right(null);
   }
 
+  final List<String> submittedForReview = [];
+
+  @override
+  Future<Either<Failure, void>> submitBusinessForReview({
+    required String businessId,
+  }) async {
+    submittedForReview.add(businessId);
+    return const Right(null);
+  }
+
   @override
   Future<Either<Failure, void>> upsertBusinessName({
     required String businessId,

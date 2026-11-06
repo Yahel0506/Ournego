@@ -647,7 +647,8 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
                             ScaffoldMessenger.of(context).showSnackBar(
                               OurnegoSnackbars.info(
                                 context,
-                                'Negocio registrado exitosamente.',
+                                'Solicitud enviada. Revisaremos tu negocio antes de publicarlo; '
+                                'puedes ver el estado en tu panel.',
                               ),
                             );
                             ref.invalidate(isOwnerProvider);

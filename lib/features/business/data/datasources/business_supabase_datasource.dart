@@ -12,6 +12,9 @@ class BusinessSupabaseDatasource {
   Future<void> _runProtectedWrite(Future<void> Function() action) async {
     try {
       await action();
+    } on BusinessRegistrationValidationException {
+      // Raised by the action itself (for example a stale review request).
+      rethrow;
     } on TimeoutException {
       throw BusinessRegistrationNetworkException();
     } on SocketException {
@@ -153,6 +156,23 @@ class BusinessSupabaseDatasource {
     } catch (_) {
       throw BusinessRegistrationUnknownException();
     }
+  }
+
+  /// Moves a rejected or withdrawn listing back to `pending`. The status
+  /// filter makes a stale request (already pending or approved) fail instead of
+  /// silently doing nothing; the server (RLS + trigger) still has the final say.
+  Future<void> submitBusinessForReview({required String businessId}) async {
+    await _runProtectedWrite(() async {
+      final updated = await _supabase
+          .from('businesses')
+          .update({'status': 'pending'})
+          .eq('business_id', businessId)
+          .inFilter('status', ['rejected', 'withdrawn'])
+          .select('business_id');
+      if (updated.isEmpty) {
+        throw BusinessRegistrationValidationException();
+      }
+    });
   }
 
   Future<void> upsertBusinessName({
