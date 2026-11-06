@@ -93,16 +93,16 @@ do $$ begin
       where business_id = '00000000-0000-0000-0000-0000000111b6') <> 'pending' then
     raise exception 'FAIL: new listing is not pending';
   end if;
-  -- cannot self-approve or re-open
+  -- cannot self-approve or self-reject (re-opening is allowed since OUR-112)
   begin
     update public.businesses set status = 'approved'
       where business_id = '00000000-0000-0000-0000-0000000111b2';
     raise exception 'FAIL: owner approved own listing';
   exception when insufficient_privilege then null; end;
   begin
-    update public.businesses set status = 'pending'
+    update public.businesses set status = 'approved'
       where business_id = '00000000-0000-0000-0000-0000000111b3';
-    raise exception 'FAIL: owner re-opened a rejected listing';
+    raise exception 'FAIL: owner approved a rejected listing';
   exception when insufficient_privilege then null; end;
   -- can edit other fields and withdraw
   update public.businesses set name = 'approved edited'

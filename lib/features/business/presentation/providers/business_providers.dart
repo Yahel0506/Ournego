@@ -15,6 +15,7 @@ import 'package:ournego/features/business/domain/usecases/get_owned_business_use
 import 'package:ournego/features/business/domain/usecases/get_business_panel_metrics_usecase.dart';
 import 'package:ournego/features/business/domain/usecases/insert_business_image_usecase.dart';
 import 'package:ournego/features/business/domain/usecases/register_business_usecase.dart';
+import 'package:ournego/features/business/domain/usecases/submit_business_for_review_usecase.dart';
 import 'package:ournego/features/business/domain/usecases/upsert_business_category_usecase.dart';
 import 'package:ournego/features/business/domain/usecases/upsert_business_description_usecase.dart';
 import 'package:ournego/features/business/domain/usecases/upsert_business_hours_usecase.dart';
@@ -62,6 +63,12 @@ final registerBusinessUsecaseProvider = Provider<RegisterBusinessUsecase>((
   final repository = ref.watch(businessRepositoryProvider);
   return RegisterBusinessUsecase(repository: repository);
 });
+
+final submitBusinessForReviewUsecaseProvider =
+    Provider<SubmitBusinessForReviewUsecase>((ref) {
+      final repository = ref.watch(businessRepositoryProvider);
+      return SubmitBusinessForReviewUsecase(repository: repository);
+    });
 
 final upsertBusinessNameUsecaseProvider = Provider<UpsertBusinessNameUsecase>((
   ref,

@@ -6,6 +6,7 @@ import 'package:ournego/core/theme/tokens/ournego_spacing_tokens.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
 import 'package:ournego/features/business/domain/entities/app_schedule.dart';
 import 'package:ournego/features/business/domain/entities/business_image_data.dart';
+import 'package:ournego/features/business/domain/entities/business_review_status.dart';
 import 'package:ournego/features/business/domain/entities/owned_business_profile.dart';
 import 'package:ournego/features/business/presentation/pages/components/business_hours_picker.dart';
 import 'package:ournego/features/business/presentation/providers/business_providers.dart';
@@ -14,6 +15,7 @@ import 'package:ournego/features/business/presentation/widgets/business_panel/bu
 import 'package:ournego/features/business/presentation/widgets/business_panel/business_panel_labels.dart';
 import 'package:ournego/features/business/presentation/widgets/business_panel/business_panel_locked_center_card.dart';
 import 'package:ournego/features/business/presentation/widgets/business_panel/business_panel_quick_actions.dart';
+import 'package:ournego/features/business/presentation/widgets/business_panel/business_panel_review_status_card.dart';
 import 'package:ournego/features/business/presentation/widgets/business_panel/business_panel_states.dart';
 import 'package:ournego/features/business/presentation/widgets/business_panel/dialogs/location_editor_dialog.dart';
 import 'package:ournego/features/business/presentation/widgets/business_panel/models/location_editor_result.dart';
@@ -38,7 +40,15 @@ class _BusinessPanelDashboardWidgetState
   bool _isSaving = false;
   final ImagePicker _imagePicker = ImagePicker();
 
-  Future<void> _runMutation(Future<void> Function() action) async {
+  /// Runs a save. [business] and [changesPublicData] let the confirmation say
+  /// when the edit sends a published listing back to review (OUR-112): the
+  /// server does it for name, description, category, address and
+  /// photos, not for phone or hours.
+  Future<void> _runMutation(
+    Future<void> Function() action, {
+    OwnedBusinessProfile? business,
+    bool changesPublicData = false,
+  }) async {
     if (_isSaving) return;
 
     setState(() => _isSaving = true);
@@ -47,9 +57,18 @@ class _BusinessPanelDashboardWidgetState
       if (!mounted) return;
       ref.invalidate(ownedBusinessProvider);
       ref.invalidate(isOwnerProvider);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(OurnegoSnackbars.info(context, 'Cambios guardados.'));
+      final backToReview =
+          changesPublicData &&
+          business?.reviewStatus == BusinessReviewStatus.approved;
+      ScaffoldMessenger.of(context).showSnackBar(
+        OurnegoSnackbars.info(
+          context,
+          backToReview
+              ? 'Cambios guardados. Tu negocio volvió a revisión y se '
+                    'publicará de nuevo cuando sea aprobado.'
+              : 'Cambios guardados.',
+        ),
+      );
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -123,34 +142,38 @@ class _BusinessPanelDashboardWidgetState
     );
 
     if (didConfirm != true) return;
-    await _runMutation(() async {
-      final upsertName = ref.read(upsertBusinessNameUsecaseProvider);
-      final upsertDescription = ref.read(
-        upsertBusinessDescriptionUsecaseProvider,
-      );
-      final upsertCategory = ref.read(upsertBusinessCategoryUsecaseProvider);
+    await _runMutation(
+      () async {
+        final upsertName = ref.read(upsertBusinessNameUsecaseProvider);
+        final upsertDescription = ref.read(
+          upsertBusinessDescriptionUsecaseProvider,
+        );
+        final upsertCategory = ref.read(upsertBusinessCategoryUsecaseProvider);
 
-      final name = nameController.text.trim();
-      final description = descriptionController.text.trim();
-      if (name.isNotEmpty && name != business.name) {
-        final result = await upsertName(businessId: business.id, name: name);
-        if (result.isLeft()) throw Exception('upsert name failed');
-      }
-      if (description != business.description) {
-        final result = await upsertDescription(
-          businessId: business.id,
-          description: description,
-        );
-        if (result.isLeft()) throw Exception('upsert description failed');
-      }
-      if (category != business.category) {
-        final result = await upsertCategory(
-          businessId: business.id,
-          category: category,
-        );
-        if (result.isLeft()) throw Exception('upsert category failed');
-      }
-    });
+        final name = nameController.text.trim();
+        final description = descriptionController.text.trim();
+        if (name.isNotEmpty && name != business.name) {
+          final result = await upsertName(businessId: business.id, name: name);
+          if (result.isLeft()) throw Exception('upsert name failed');
+        }
+        if (description != business.description) {
+          final result = await upsertDescription(
+            businessId: business.id,
+            description: description,
+          );
+          if (result.isLeft()) throw Exception('upsert description failed');
+        }
+        if (category != business.category) {
+          final result = await upsertCategory(
+            businessId: business.id,
+            category: category,
+          );
+          if (result.isLeft()) throw Exception('upsert category failed');
+        }
+      },
+      business: business,
+      changesPublicData: true,
+    );
   }
 
   Future<void> _editLocation(OwnedBusinessProfile business) async {
@@ -166,24 +189,28 @@ class _BusinessPanelDashboardWidgetState
     );
     if (result == null) return;
 
-    await _runMutation(() async {
-      final nextAddress = result.address.trim();
-      final changed =
-          nextAddress != business.address ||
-          result.latitude != business.latitude ||
-          result.longitude != business.longitude;
-      if (!changed || nextAddress.isEmpty) {
-        return;
-      }
-      final upsertLocation = ref.read(upsertBusinessLocationUsecaseProvider);
-      final updateResult = await upsertLocation(
-        businessId: business.id,
-        address: nextAddress,
-        latitude: result.latitude,
-        longitude: result.longitude,
-      );
-      if (updateResult.isLeft()) throw Exception('upsert location failed');
-    });
+    await _runMutation(
+      () async {
+        final nextAddress = result.address.trim();
+        final changed =
+            nextAddress != business.address ||
+            result.latitude != business.latitude ||
+            result.longitude != business.longitude;
+        if (!changed || nextAddress.isEmpty) {
+          return;
+        }
+        final upsertLocation = ref.read(upsertBusinessLocationUsecaseProvider);
+        final updateResult = await upsertLocation(
+          businessId: business.id,
+          address: nextAddress,
+          latitude: result.latitude,
+          longitude: result.longitude,
+        );
+        if (updateResult.isLeft()) throw Exception('upsert location failed');
+      },
+      business: business,
+      changesPublicData: true,
+    );
   }
 
   Future<void> _editPhone(
@@ -216,26 +243,30 @@ class _BusinessPanelDashboardWidgetState
     );
     if (didConfirm != true) return;
 
-    await _runMutation(() async {
-      final nextPhone = controller.text.trim();
-      if (nextPhone == (business.phoneNumber ?? '')) return;
-      if (nextPhone.isEmpty) {
-        final deleteUsecase = ref.read(
-          deleteBusinessPhoneNumberUsecaseProvider,
-        );
-        final result = await deleteUsecase(businessId: business.id);
-        if (result.isLeft()) throw Exception('delete phone failed');
-      } else {
-        final upsertUsecase = ref.read(
-          upsertBusinessPhoneNumberUsecaseProvider,
-        );
-        final result = await upsertUsecase(
-          businessId: business.id,
-          phoneNumber: nextPhone,
-        );
-        if (result.isLeft()) throw Exception('upsert phone failed');
-      }
-    });
+    await _runMutation(
+      () async {
+        final nextPhone = controller.text.trim();
+        if (nextPhone == (business.phoneNumber ?? '')) return;
+        if (nextPhone.isEmpty) {
+          final deleteUsecase = ref.read(
+            deleteBusinessPhoneNumberUsecaseProvider,
+          );
+          final result = await deleteUsecase(businessId: business.id);
+          if (result.isLeft()) throw Exception('delete phone failed');
+        } else {
+          final upsertUsecase = ref.read(
+            upsertBusinessPhoneNumberUsecaseProvider,
+          );
+          final result = await upsertUsecase(
+            businessId: business.id,
+            phoneNumber: nextPhone,
+          );
+          if (result.isLeft()) throw Exception('upsert phone failed');
+        }
+      },
+      business: business,
+      changesPublicData: false,
+    );
   }
 
   Future<void> _editHours(
@@ -297,32 +328,80 @@ class _BusinessPanelDashboardWidgetState
     final bytes = await pickedImage.readAsBytes();
     if (bytes.isEmpty) return;
 
-    await _runMutation(() async {
-      final insertUsecase = ref.read(insertBusinessImageUsecaseProvider);
-      final result = await insertUsecase(
-        businessId: business.id,
-        image: BusinessImageData(
-          bytes: bytes,
-          fileName: pickedImage.name,
-          mimeType: pickedImage.mimeType,
-        ),
-      );
-      if (result.isLeft()) throw Exception('insert image failed');
-    });
+    await _runMutation(
+      () async {
+        final insertUsecase = ref.read(insertBusinessImageUsecaseProvider);
+        final result = await insertUsecase(
+          businessId: business.id,
+          image: BusinessImageData(
+            bytes: bytes,
+            fileName: pickedImage.name,
+            mimeType: pickedImage.mimeType,
+          ),
+        );
+        if (result.isLeft()) throw Exception('insert image failed');
+      },
+      business: business,
+      changesPublicData: true,
+    );
   }
 
   Future<void> _deleteGalleryImage({
     required OwnedBusinessProfile business,
     required String imageUrl,
   }) async {
-    await _runMutation(() async {
-      final deleteUsecase = ref.read(deleteBusinessImageUsecaseProvider);
-      final result = await deleteUsecase(
-        businessId: business.id,
-        imageUrl: imageUrl,
-      );
-      if (result.isLeft()) throw Exception('delete image failed');
-    });
+    await _runMutation(
+      () async {
+        final deleteUsecase = ref.read(deleteBusinessImageUsecaseProvider);
+        final result = await deleteUsecase(
+          businessId: business.id,
+          imageUrl: imageUrl,
+        );
+        if (result.isLeft()) throw Exception('delete image failed');
+      },
+      business: business,
+      changesPublicData: true,
+    );
+  }
+
+  Future<void> _requestReview(OwnedBusinessProfile business) async {
+    final didConfirm = await showOurnegoDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return OurnegoAlertDialog(
+          title: 'Enviar a revisión',
+          content:
+              'Revisaremos tu negocio antes de publicarlo en el mapa. '
+              'Mientras tanto no será visible para otras personas.',
+          primaryAction: OurnegoDialogAction(
+            label: 'Enviar',
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+          ),
+          secondaryAction: OurnegoDialogAction(
+            label: 'Cancelar',
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+          ),
+        );
+      },
+    );
+    if (didConfirm != true || !mounted || _isSaving) return;
+
+    setState(() => _isSaving = true);
+    final result = await ref
+        .read(submitBusinessForReviewUsecaseProvider)
+        .call(businessId: business.id);
+    if (!mounted) return;
+    setState(() => _isSaving = false);
+    ref.invalidate(ownedBusinessProvider);
+    ScaffoldMessenger.of(context).showSnackBar(
+      OurnegoSnackbars.info(
+        context,
+        result.isRight()
+            ? 'Solicitud enviada. Te mostraremos aquí el resultado de la '
+                  'revisión.'
+            : 'No se pudo enviar la solicitud. Intenta nuevamente.',
+      ),
+    );
   }
 
   @override
@@ -374,6 +453,12 @@ class _BusinessPanelDashboardWidgetState
                               ownedBusiness.name,
                               textAlign: TextAlign.center,
                               style: OurnegoTextStyles.onboardingHeader,
+                            ),
+                            BusinessPanelReviewStatusCard(
+                              ownedBusiness: ownedBusiness,
+                              onRequestReview: _isSaving
+                                  ? null
+                                  : () => _requestReview(ownedBusiness),
                             ),
                             const SizedBox(height: 64),
                             BusinessPanelEditorDropdown(

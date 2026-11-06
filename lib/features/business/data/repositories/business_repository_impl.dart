@@ -9,6 +9,7 @@ import 'package:ournego/features/business/data/errors/business_registration_exce
 import 'package:ournego/features/business/domain/entities/app_schedule.dart';
 import 'package:ournego/features/business/domain/entities/business_image_data.dart';
 import 'package:ournego/features/business/domain/entities/business_panel_metrics.dart';
+import 'package:ournego/features/business/domain/entities/business_review_status.dart';
 import 'package:ournego/features/business/domain/entities/owned_business_profile.dart';
 import 'package:ournego/features/business/domain/repositories/business_repository.dart';
 
@@ -137,12 +138,45 @@ class BusinessRepositoryImpl implements BusinessRepository {
         longitude: ((data['longitude'] as num?) ?? 0).toDouble(),
         images: images,
         hours: hours,
+        reviewStatus: BusinessReviewStatus.fromWire(data['status'] as String?),
+        rejectionReason: _nonEmpty(data['rejection_reason'] as String?),
+        submittedAt: _parseDate(data['submitted_at']),
+        reviewedAt: _parseDate(data['reviewed_at']),
       );
       return Right(profile);
     } catch (e) {
       if (isNetworkError(e)) return Left(NetworkFailure());
       if (isSessionExpiredError(e)) return Left(SessionExpiredFailure());
       return Left(ServerFailure());
+    }
+  }
+
+  static String? _nonEmpty(String? value) {
+    final trimmed = value?.trim();
+    return (trimmed == null || trimmed.isEmpty) ? null : trimmed;
+  }
+
+  static DateTime? _parseDate(Object? raw) {
+    if (raw is! String) return null;
+    return DateTime.tryParse(raw)?.toLocal();
+  }
+
+  @override
+  Future<Either<Failure, void>> submitBusinessForReview({
+    required String businessId,
+  }) async {
+    try {
+      await businessDatasource.submitBusinessForReview(businessId: businessId);
+      return const Right(null);
+    } on BusinessRegistrationUnauthorizedException {
+      return Left(BusinessRegistrationUnauthorizedFailure());
+    } on BusinessRegistrationValidationException {
+      return Left(BusinessRegistrationValidationFailure());
+    } on BusinessRegistrationNetworkException {
+      return Left(BusinessRegistrationNetworkFailure());
+    } catch (e) {
+      if (isNetworkError(e)) return Left(BusinessRegistrationNetworkFailure());
+      return Left(BusinessRegistrationUnknownFailure());
     }
   }
 

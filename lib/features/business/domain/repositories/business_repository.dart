@@ -28,6 +28,13 @@ abstract class BusinessRepository {
 
   Future<Either<Failure, OwnedBusinessProfile?>> getOwnedBusiness();
 
+  /// Asks for a (new) review of a `rejected` or `withdrawn` listing, moving it
+  /// to `pending`. Fails with [BusinessRegistrationValidationFailure] when the
+  /// listing is in any other state. Never publishes: only a reviewer approves.
+  Future<Either<Failure, void>> submitBusinessForReview({
+    required String businessId,
+  });
+
   Future<Either<Failure, void>> upsertBusinessName({
     required String businessId,
     required String name,
