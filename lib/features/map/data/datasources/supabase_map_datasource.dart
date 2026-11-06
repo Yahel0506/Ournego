@@ -14,18 +14,31 @@ class SupabaseMapDatasource {
     return user.id;
   }
 
+  /// Only approved, active listings. The row level security policies enforce
+  /// the same on the server; the filter keeps owners and reviewers (who can
+  /// read more) from seeing unpublished listings on the public map.
   Stream<List<Map<String, dynamic>>> getBusinesses() {
-    return _supabase.from('businesses').stream(primaryKey: ['business_id']);
+    return _supabase
+        .from('businesses')
+        .stream(primaryKey: ['business_id'])
+        .eq('status', approvedStatus)
+        .map((rows) => rows.where(isPublicListing).toList());
   }
+
+  static const approvedStatus = 'approved';
+
+  static bool isPublicListing(Map<String, dynamic> row) =>
+      row['status'] == approvedStatus && row['is_active'] != false;
 
   Future<Map<String, dynamic>?> getBusinessById(String businessId) async {
     final data = await _supabase
         .from('businesses')
         .select()
         .eq('business_id', businessId)
+        .eq('status', approvedStatus)
         .maybeSingle();
 
-    if (data == null) {
+    if (data == null || !isPublicListing(data)) {
       return null;
     }
 
