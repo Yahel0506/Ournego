@@ -48,6 +48,8 @@ Constantes del sitio: `DELETION_GRACE_PERIOD_DAYS = 30`, `DELETION_RECORD_RETENT
 
 ## Pendiente de verificación manual
 
+Seguimiento y pasos exactos en OUR-159: `docs/development/testing/our-159-account-deletion-device-validation.md`.
+
 - Pulsar "Cancelar eliminación" en `/delete-account/confirm` con un enlace real (plazo vigente).
 - Iniciar sesión en la app con una cuenta programada y ver el aviso en dispositivo.
 - Decidir si el aviso del correo ("se conservará 30 días") debe reflejar el plazo configurado; hoy el texto es fijo.
