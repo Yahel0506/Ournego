@@ -79,3 +79,16 @@ class BusinessRegistrationUnknownFailure extends Failure {}
 
 // TODO: Add mapping helpers (e.g. `Failure.fromException`) to centralize
 // translation from platform / third-party errors to domain failures.
+
+// |---------------------------------| \\
+// |----- FAILURES DE MODERACIÓN ----| \\
+// |---------------------------------| \\
+
+// Si la cuenta no es de personal autorizado para resolver solicitudes
+class ModerationNotAuthorizedFailure extends Failure {}
+
+// Si falta el motivo al rechazar o retirar una ficha
+class ModerationReasonRequiredFailure extends Failure {}
+
+// Si la ficha ya cambió de estado (otra revisora la resolvió antes)
+class ModerationStaleFailure extends Failure {}

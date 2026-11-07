@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/core/theme/tokens/ournego_spacing_tokens.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
+import 'package:ournego/features/moderation/presentation/providers/moderation_providers.dart';
 import 'package:ournego/shared/widgets/buttons/ournego_button_tokens.dart';
 import 'package:ournego/shared/widgets/container_transform/container_transform_origin.dart';
 import 'package:ournego/shared/widgets/container_transform/show_ournego_window.dart';
@@ -19,6 +20,7 @@ enum ProfileMenuAction {
   logIn,
   editProfile,
   businessPanel,
+  moderation,
   locationPermissions,
   reportProblem,
   debugPanel,
@@ -64,6 +66,9 @@ class _ProfileMenuDialogWidgetState
     final showsBusinessEntry =
         isLogged && origin != ProfileMenuOrigin.businessPanel;
     final avatarVersion = ref.watch(profileAvatarVersionProvider);
+    // Only a convenience: the server decides who can moderate.
+    final showsModerationEntry =
+        isLogged && (ref.watch(isReviewerProvider).value ?? false);
 
     void select(ProfileMenuAction action) {
       // While the menu closes it still receives touches; a second one must not
@@ -130,6 +135,15 @@ class _ProfileMenuDialogWidgetState
                               label: 'Mi negocio',
                               onTap: () =>
                                   select(ProfileMenuAction.businessPanel),
+                            ),
+                          if (showsModerationEntry)
+                            _MenuItem(
+                              key: const ValueKey(
+                                'profileMenuModerationButton',
+                              ),
+                              icon: Icons.fact_check_outlined,
+                              label: 'Moderación',
+                              onTap: () => select(ProfileMenuAction.moderation),
                             ),
                         ],
                       ),

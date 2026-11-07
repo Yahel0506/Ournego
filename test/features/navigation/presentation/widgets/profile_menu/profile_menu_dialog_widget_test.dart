@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ournego/features/auth/domain/entities/app_user.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
+import 'package:ournego/features/moderation/presentation/providers/moderation_providers.dart';
 import 'package:ournego/features/navigation/presentation/widgets/profile_menu/profile_menu_dialog_widget.dart';
 
 void main() {
@@ -101,6 +102,34 @@ void main() {
       findsOneWidget,
     );
     expect(find.byKey(const ValueKey('profileMenuLogInButton')), findsNothing);
+  });
+
+  testWidgets('moderation entry is offered only to reviewers', (tester) async {
+    Future<void> pumpMenu(bool isReviewer) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          key: ValueKey(isReviewer),
+          overrides: [
+            authSessionStatusProvider.overrideWithValue(true),
+            isReviewerProvider.overrideWith((ref) async => isReviewer),
+            profileStreamProvider.overrideWith(
+              (ref) => Stream.value(
+                const AppUser(uid: 'u1', name: 'Ana', email: 'ana@test.com'),
+              ),
+            ),
+          ],
+          child: const MaterialApp(home: ProfileMenuDialogWidget()),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    const entry = ValueKey('profileMenuModerationButton');
+    await pumpMenu(false);
+    expect(find.byKey(entry), findsNothing);
+
+    await pumpMenu(true);
+    expect(find.byKey(entry), findsOneWidget);
   });
 
   testWidgets('guest sees log in entry and settings, but no log out', (

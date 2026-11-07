@@ -64,6 +64,16 @@ class BusinessRoutes {
 }
 
 // |---------------------------------| \\
+// |------- MODERATION ROUTES -------| \\
+// |---------------------------------| \\
+
+class ModerationRoutes {
+  ModerationRoutes._();
+
+  static const queue = '/moderation';
+}
+
+// |---------------------------------| \\
 // |------- NAVIGATION ROUTES -------| \\
 // |---------------------------------| \\
 

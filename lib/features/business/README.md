@@ -36,7 +36,9 @@ Statuses mirror `businesses.status`: `pending`, `approved`, `rejected`,
 
 The client never sets `approved`/`rejected` and never writes the reason or
 decision dates: the trigger `enforce_business_status_change` ignores them for
-non-reviewers. The decision UI and log are OUR-113.
+non-reviewers. Reviewers decide in the moderation feature
+(`lib/features/moderation`, OUR-113); a listing withdrawn by review shows
+"Retirado" with the reviewer's reason and date.
 
 SQL: `docs/sql/2026-11-06_business_review_requests.sql` (apply after
 `2026-11-05_business_review_status.sql`); tests in
@@ -51,4 +53,4 @@ SQL: `docs/sql/2026-11-06_business_review_requests.sql` (apply after
 
 - Old clients that edit an approved listing are covered because the S0 rule
   lives in the database, not in the client.
-- OUR-113 will add the reviewer screen that sets `approved`/`rejected`.
+- Reviewer screen and decision log: `lib/features/moderation` (OUR-113).
