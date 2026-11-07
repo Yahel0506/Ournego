@@ -27,6 +27,7 @@ import 'package:ournego/features/map/domain/usecases/search_zone_suggestions_use
 import 'package:ournego/features/map/domain/usecases/request_location_permission_usecase.dart';
 import 'package:ournego/features/map/domain/usecases/watch_location_service_usecase.dart';
 import 'package:ournego/features/map/domain/usecases/track_business_visit_usecase.dart';
+import 'package:ournego/features/map/presentation/providers/notifiers/map_businesses_notifier.dart';
 import 'package:ournego/features/map/presentation/providers/notifiers/map_notifier.dart';
 import 'package:ournego/features/map/presentation/providers/notifiers/map_voice_search_notifier.dart';
 import 'package:ournego/features/map/presentation/services/speech_to_text_voice_search_service.dart';
@@ -163,6 +164,12 @@ final businessesStreamProvider = StreamProvider<List<Business>>((ref) {
   final repository = ref.watch(mapRepositoryProvider);
   return GetBusinessesUsecase(repository: repository)();
 });
+
+/// Last businesses delivered, kept while the stream fails or reloads.
+final mapBusinessesProvider =
+    NotifierProvider<MapBusinessesNotifier, MapBusinesses>(
+      MapBusinessesNotifier.new,
+    );
 
 final ownerProfileStreamProvider = StreamProvider.autoDispose
     .family<AppUser, String>((ref, ownerId) {
