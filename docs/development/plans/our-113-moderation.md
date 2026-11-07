@@ -1,12 +1,11 @@
 # OUR-113 - Review requests and record decisions
 
-Status: client, SQL and tests written. The SQL was **dry-run** (whole script +
-tests inside a transaction that ends in `rollback`) against the Supabase
-project: every check passed and nothing persisted. It is **not applied**: apply
-`docs/sql/2026-11-07_business_review_decisions.sql` (after OUR-111 and OUR-112,
-already applied) before shipping the client, then add reviewers (see
-`lib/features/moderation/README.md`) and run
-`docs/sql/tests/2026-11-07_business_review_decisions_test.sql` (it rolls back).
+Status: client, SQL and tests written. The SQL was dry-run (script + tests in a
+transaction ending in `rollback`) and then **applied** to the Supabase project
+on 2026-11-07 as migration `business_review_decisions`. The existing catalog is
+untouched (7 of 7 listings still `approved`). Still to do: add reviewers (see
+`lib/features/moderation/README.md`); `docs/sql/tests/2026-11-07_business_review_decisions_test.sql`
+can be re-run any time (it rolls back).
 
 ## Decisions
 
