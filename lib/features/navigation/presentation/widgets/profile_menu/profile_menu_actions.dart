@@ -49,6 +49,8 @@ Future<void> openProfileMenu(
       }
     case ProfileMenuAction.businessPanel:
       context.go(BusinessRoutes.panel);
+    case ProfileMenuAction.moderation:
+      context.push(ModerationRoutes.queue);
     case ProfileMenuAction.locationPermissions:
       final opened = await openAppLocationSettings();
       if (!opened && context.mounted) {

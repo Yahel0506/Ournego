@@ -23,6 +23,9 @@ enum BusinessReviewStatus {
     }
   }
 
+  /// The database value, the inverse of [fromWire].
+  String get wire => name;
+
   /// The owner may ask for a (new) review only after a rejection or withdrawal.
   bool get canRequestReview =>
       this == BusinessReviewStatus.rejected ||

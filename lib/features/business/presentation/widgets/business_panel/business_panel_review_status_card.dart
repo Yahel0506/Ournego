@@ -58,7 +58,9 @@ class BusinessPanelReviewStatusCard extends StatelessWidget {
               key: const Key('reviewStatusMessage'),
               style: OurnegoTextStyles.bodyCompact,
             ),
-            if (status == BusinessReviewStatus.rejected && reason != null) ...[
+            if (reason != null &&
+                (status == BusinessReviewStatus.rejected ||
+                    status == BusinessReviewStatus.withdrawn)) ...[
               const SizedBox(height: OurnegoSpacingTokens.xs),
               Text(
                 'Motivo: $reason',
@@ -100,8 +102,13 @@ class BusinessPanelReviewStatusCard extends StatelessWidget {
       case BusinessReviewStatus.rejected:
         final at = ownedBusiness.reviewedAt;
         return at == null ? null : 'Revisada el ${formatReviewDate(at)}.';
-      case BusinessReviewStatus.approved:
       case BusinessReviewStatus.withdrawn:
+        // Only a reviewer's withdrawal carries a reason and a decision date.
+        final at = ownedBusiness.reviewedAt;
+        return (at == null || ownedBusiness.rejectionReason == null)
+            ? null
+            : 'Retirada el ${formatReviewDate(at)}.';
+      case BusinessReviewStatus.approved:
         return null;
     }
   }
@@ -137,13 +144,16 @@ class BusinessPanelReviewStatusCard extends StatelessWidget {
               'enviarlo a revisión.',
         );
       case BusinessReviewStatus.withdrawn:
-        return const _StatusCopy(
+        final byReview = ownedBusiness.rejectionReason != null;
+        return _StatusCopy(
           icon: Icons.remove_circle_outline_rounded,
           color: OurnegoColorTokens.warning,
           title: 'Retirado',
-          message:
-              'Tu negocio no está publicado. Puedes solicitar la publicación '
-              'de nuevo cuando quieras.',
+          message: byReview
+              ? 'Retiramos tu negocio del mapa. Corrige lo indicado y '
+                    'solicita la publicación de nuevo.'
+              : 'Tu negocio no está publicado. Puedes solicitar la '
+                    'publicación de nuevo cuando quieras.',
         );
     }
   }

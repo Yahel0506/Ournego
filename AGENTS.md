@@ -570,6 +570,7 @@ This repo has multiple documentation entrypoints. Before creating new docs, pref
 - `MODELS_TEMPLATE.md`: guidelines for models vs entities and serialization.
 - `DESIGN_SYSTEM.md`: visual design system (tokens, components, patterns) documented from current UI implementation.
 - `docs/development/plans/container-transform.md`: container transform plan (decisions D1–D32 and E1–E8, waves 0–8, status).
+- `docs/development/plans/our-113-moderation.md`: moderation queue, decision log and the rules the database enforces.
 - `docs/development/plans/our-110-debug-simulation.md`: debug simulator (startup, network, session, location, Google) and its panel.
 - `docs/development/design/motion/README.md`: container transform (windows that grow out of their trigger): pieces, presets and differences from the spec.
 - `SYSTEM_DESIGN.md`: alias entrypoint; canonical doc is `DESIGN_SYSTEM.md`.
@@ -590,6 +591,7 @@ Feature documentation (one README per feature):
 - `lib/features/community/README.md`
 - `lib/features/feedback/README.md`
 - `lib/features/map/README.md`
+- `lib/features/moderation/README.md`
 - `lib/features/navigation/README.md`
 - `lib/features/onboarding/README.md`
 

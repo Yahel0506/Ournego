@@ -29,6 +29,7 @@ import 'package:ournego/features/business/presentation/providers/business_provid
 import 'package:ournego/features/business/presentation/widgets/business_panel/business_panel_states.dart';
 import 'package:ournego/features/community/presentation/pages/community_screen.dart';
 import 'package:ournego/features/map/presentation/pages/map_screen.dart';
+import 'package:ournego/features/moderation/presentation/pages/moderation_screen.dart';
 import 'package:ournego/features/navigation/presentation/pages/main_layout_screen.dart';
 import 'package:ournego/features/onboarding/presentation/pages/onboarding_screen.dart';
 import 'package:ournego/shared/widgets/buttons/buttons.dart';
@@ -231,6 +232,13 @@ GoRouter createAppRouter({
         path: BusinessRoutes.form,
         name: 'business-form',
         builder: (context, state) => const BusinessFormScreen(),
+      ),
+      // Logged-out users are redirected to sign in; the screen itself shows
+      // "no access" to accounts that are not reviewers (the server decides).
+      GoRoute(
+        path: ModerationRoutes.queue,
+        name: 'moderation',
+        builder: (context, state) => const ModerationScreen(),
       ),
     ],
     redirect: (context, state) async {

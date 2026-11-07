@@ -122,6 +122,37 @@ void main() {
     expect(find.text('Solicitar publicación'), findsOneWidget);
   });
 
+  testWidgets('a withdrawal by review shows its reason and date', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      _business(
+        BusinessReviewStatus.withdrawn,
+        reason: 'El negocio cerró',
+        reviewedAt: DateTime(2026, 11, 7),
+      ),
+    );
+    expect(find.text('Retirado'), findsOneWidget);
+    expect(find.text('Motivo: El negocio cerró'), findsOneWidget);
+    expect(find.text('Retirada el 07/11/2026.'), findsOneWidget);
+    expect(find.text('Solicitar publicación'), findsOneWidget);
+  });
+
+  testWidgets('a withdrawal by the owner shows no reason or decision date', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      _business(
+        BusinessReviewStatus.withdrawn,
+        reviewedAt: DateTime(2026, 11, 7),
+      ),
+    );
+    expect(find.byKey(const Key('reviewStatusReason')), findsNothing);
+    expect(find.byKey(const Key('reviewStatusDate')), findsNothing);
+  });
+
   testWidgets('the button is disabled while another change is saving', (
     tester,
   ) async {
