@@ -10,6 +10,7 @@ import 'package:ournego/core/location/app_position.dart';
 import 'package:ournego/core/location/location_access_status.dart';
 import 'package:ournego/core/location/open_app_location_settings.dart';
 import 'package:ournego/core/motion/spring_clock.dart';
+import 'package:ournego/core/network/connectivity_providers.dart';
 import 'package:ournego/core/ournego_motion.dart';
 import 'package:ournego/core/mapbox_config.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
@@ -38,6 +39,7 @@ import 'package:ournego/features/map/presentation/widgets/location_access_sheet_
 import 'package:ournego/features/map/presentation/widgets/map_controls_widget.dart';
 import 'package:ournego/features/map/presentation/widgets/map_location_banner_widget.dart';
 import 'package:ournego/features/map/presentation/widgets/map_search_overlay_widget.dart';
+import 'package:ournego/features/map/presentation/widgets/map_stale_businesses_widget.dart';
 import 'package:ournego/features/map/presentation/widgets/search_morph_surface.dart';
 import 'package:ournego/features/map/presentation/widgets/top_navigation_bar_widget.dart';
 import 'package:ournego/features/map/presentation/widgets/zone_picker_sheet_widget.dart';
@@ -519,7 +521,16 @@ class _MapScreenState extends ConsumerState<MapScreen>
         !_showSearchPanel && locationStatusNeedsBanner(locationState?.status);
     final showZoneChip =
         !_showSearchPanel && locationState != null && !reference.isGps;
-    final businessState = ref.watch(businessesStreamProvider);
+    final liveBusinesses = ref.watch(businessesStreamProvider);
+    final retained = ref.watch(mapBusinessesProvider);
+    // Keep showing the last businesses while the stream fails or reloads.
+    final AsyncValue<List<Business>> businessState = retained.hasBusinesses
+        ? AsyncData(retained.businesses!)
+        : liveBusinesses;
+    final showStaleChip =
+        !_showSearchPanel &&
+        retained.hasBusinesses &&
+        (retained.loadFailed || !ref.watch(isOnlineProvider));
     final searchResults = _searchBusinessesUsecase(
       businesses: businessState.asData?.value ?? const <Business>[],
       query: _searchQuery,
@@ -599,6 +610,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
           if (!_showSearchPanel &&
               !showLocationBanner &&
               !showZoneChip &&
+              !showStaleChip &&
               isOwnerState.value == false)
             Positioned(
               top: topBarHeight + 8,
@@ -632,7 +644,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 ),
               ),
             ),
-          if (showLocationBanner || showZoneChip)
+          if (showLocationBanner || showZoneChip || showStaleChip)
             Positioned(
               top: topBarHeight + 8,
               left: 16,
@@ -645,7 +657,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                       status: locationState!.status,
                       onAction: _onLocationBannerAction,
                     ),
-                  if (showLocationBanner && showZoneChip)
+                  if (showLocationBanner && (showZoneChip || showStaleChip))
                     const SizedBox(height: 8),
                   if (showZoneChip)
                     OurnegoGlassChip(
@@ -654,6 +666,11 @@ class _MapScreenState extends ConsumerState<MapScreen>
                       actionLabel: 'Cambiar',
                       semanticLabel: 'Zona: ${reference.label}. Cambiar',
                       onPressed: _openZonePicker,
+                    ),
+                  if (showZoneChip && showStaleChip) const SizedBox(height: 8),
+                  if (showStaleChip)
+                    MapStaleBusinessesChip(
+                      onRefresh: () => ref.invalidate(businessesStreamProvider),
                     ),
                 ],
               ),

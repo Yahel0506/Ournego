@@ -40,6 +40,10 @@ class FakeMapRepository implements MapRepository {
     _businessesController.add(_businesses);
   }
 
+  void emitBusinessesError() {
+    _businessesController.addError(Exception('offline'));
+  }
+
   void setBusinessById(Business business) {
     _businessById[business.id] = business;
   }
