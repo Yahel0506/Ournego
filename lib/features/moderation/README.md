@@ -17,7 +17,10 @@ and read the history of decisions (OUR-113).
 - Entities: `ReviewListing`, `ReviewLogEntry`, `ReviewDecision`.
 - Repository: `ModerationRepository` / `ModerationRepositoryImpl`.
 - Usecases: `CheckIsReviewerUsecase`, `GetReviewListingsUsecase`,
-  `GetReviewLogUsecase`, `DecideBusinessReviewUsecase`.
+  `GetReviewLogUsecase`, `DecideBusinessReviewUsecase`,
+  `CheckListingBeforeApprovalUsecase` (OUR-114).
+- Pure rules: `checkListing` (`domain/listing_checker.dart`) returns a
+  `ListingReport` (issues + possible duplicates).
 - Providers (`presentation/providers/moderation_providers.dart`):
   `isReviewerProvider`, `reviewListingsProvider(status)`, `reviewLogProvider(id)`.
 - UI: `ModerationScreen` (tabs "Pendientes" / "Publicadas"), `ReviewListingCard`,
@@ -57,8 +60,15 @@ insert into public.reviewers (user_id) values ('<auth.users id>');
 
 ## Notes / extension points
 
-- OUR-114 (validation and duplicates before approving) plugs into the card /
-  confirmation step. OUR-116 (reports) can reuse the queue screen.
+- OUR-114: approving first runs `checkListing` against the pending and published
+  catalog. **Blocking** (approve disabled, reject still possible): name < 3
+  chars, category out of range, no address, missing / (0,0) / out-of-range
+  coordinates, no images, malformed phone, schedules with an invalid or empty
+  range. **Warnings** (approve after "Aprobar de todos modos"): no phone, no
+  hours, no description, and possible duplicates (same name within 150 m or same
+  address, or same phone). The check is client-side only: a reviewer calling the
+  REST API can still approve; moving it into the trigger would need a migration.
+  The card also shows the hours the owner captured. OUR-116 (reports) can reuse the queue screen.
 - The queue is in the app, not the web: the decision was made for the pilot to
   avoid a second client; the rules live in the database, so a web queue later
   needs no new security work.

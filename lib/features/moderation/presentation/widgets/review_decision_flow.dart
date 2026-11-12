@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:ournego/core/failures.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
+import 'package:ournego/features/business/domain/entities/business_review_status.dart';
+import 'package:ournego/features/moderation/domain/entities/listing_check.dart';
 import 'package:ournego/features/moderation/domain/entities/review_decision.dart';
 import 'package:ournego/features/moderation/domain/entities/review_listing.dart';
 import 'package:ournego/features/moderation/presentation/providers/moderation_providers.dart';
@@ -40,23 +42,58 @@ Future<bool> runReviewDecision(
     );
     if (reason == null) return false;
   } else {
+    final check = await ref.read(checkListingBeforeApprovalUsecaseProvider)(
+      listing: listing,
+    );
+    if (!context.mounted) return false;
+    final report = check.fold<ListingReport?>((_) => null, (r) => r);
+    if (report == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        OurnegoSnackbars.info(
+          context,
+          'No pudimos revisar la ficha. Revisa tu red e inténtalo de nuevo.',
+        ),
+      );
+      return false;
+    }
+    if (!report.canApprove) {
+      await showOurnegoDialog<void>(
+        context: context,
+        builder: (dialogContext) => ListingReportDialog(
+          listing: listing,
+          report: report,
+          confirmLabel: 'Entendido',
+          onConfirm: () => Navigator.of(dialogContext).pop(),
+        ),
+      );
+      return false;
+    }
+    if (!context.mounted) return false;
     final confirmed = await showOurnegoDialog<bool>(
       context: context,
-      builder: (dialogContext) => OurnegoAlertDialog(
-        title: 'Aprobar «${listing.name}»',
-        content:
-            'La ficha será visible para todas las personas en el mapa, la '
-            'búsqueda y el detalle.',
-        primaryAction: OurnegoDialogAction(
-          key: const Key('confirmApproveButton'),
-          label: 'Aprobar',
-          onPressed: () => Navigator.of(dialogContext).pop(true),
-        ),
-        secondaryAction: OurnegoDialogAction(
-          label: 'Cancelar',
-          onPressed: () => Navigator.of(dialogContext).pop(false),
-        ),
-      ),
+      builder: (dialogContext) => report.needsAttention
+          ? ListingReportDialog(
+              listing: listing,
+              report: report,
+              confirmLabel: 'Aprobar de todos modos',
+              onConfirm: () => Navigator.of(dialogContext).pop(true),
+              onCancel: () => Navigator.of(dialogContext).pop(false),
+            )
+          : OurnegoAlertDialog(
+              title: 'Aprobar «${listing.name}»',
+              content:
+                  'La ficha será visible para todas las personas en el mapa, la '
+                  'búsqueda y el detalle.',
+              primaryAction: OurnegoDialogAction(
+                key: const Key('confirmApproveButton'),
+                label: 'Aprobar',
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+              ),
+              secondaryAction: OurnegoDialogAction(
+                label: 'Cancelar',
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+              ),
+            ),
     );
     if (confirmed != true) return false;
     reason = null;
@@ -185,6 +222,77 @@ class _ReviewReasonDialogState extends State<ReviewReasonDialog> {
               key: Key('reviewReasonError'),
               style: OurnegoTextStyles.errorText,
             ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// What the check found. With blocking issues it only informs ([onCancel] is
+/// null); with warnings or duplicates the reviewer can still approve.
+class ListingReportDialog extends StatelessWidget {
+  const ListingReportDialog({
+    super.key,
+    required this.listing,
+    required this.report,
+    required this.confirmLabel,
+    required this.onConfirm,
+    this.onCancel,
+  });
+
+  final ReviewListing listing;
+  final ListingReport report;
+  final String confirmLabel;
+  final VoidCallback onConfirm;
+  final VoidCallback? onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    final blocking = report.blocking;
+    final warnings = report.warnings;
+    return OurnegoFormDialog(
+      title: blocking.isEmpty
+          ? 'Revisa antes de aprobar'
+          : 'No se puede aprobar «${listing.name}»',
+      primaryAction: OurnegoDialogAction(
+        key: const Key('confirmReportButton'),
+        label: confirmLabel,
+        onPressed: onConfirm,
+      ),
+      secondaryAction: onCancel == null
+          ? null
+          : OurnegoDialogAction(label: 'Cancelar', onPressed: onCancel!),
+      child: Column(
+        key: const Key('listingReport'),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (blocking.isNotEmpty) ...[
+            const Text(
+              'Contenido inválido. Rechaza la ficha con el motivo para que la '
+              'dueña la corrija.',
+              style: OurnegoTextStyles.bodyCompact,
+            ),
+            const SizedBox(height: 8),
+            for (final issue in blocking)
+              Text('• ${issue.message}', style: OurnegoTextStyles.bodyCompact),
+          ],
+          if (warnings.isNotEmpty) ...[
+            if (blocking.isNotEmpty) const SizedBox(height: 12),
+            const Text('Avisos', style: OurnegoTextStyles.caption),
+            for (final issue in warnings)
+              Text('• ${issue.message}', style: OurnegoTextStyles.bodyCompact),
+          ],
+          if (report.duplicates.isNotEmpty) ...[
+            if (blocking.isNotEmpty || warnings.isNotEmpty)
+              const SizedBox(height: 12),
+            const Text('Posibles duplicados', style: OurnegoTextStyles.caption),
+            for (final d in report.duplicates)
+              Text(
+                '• «${d.listing.name}» (${d.reason.label}'
+                '${d.listing.status == BusinessReviewStatus.approved ? ', ya publicada' : ', pendiente'})',
+                style: OurnegoTextStyles.bodyCompact,
+              ),
           ],
         ],
       ),

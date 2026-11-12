@@ -14,7 +14,7 @@ class SupabaseModerationDatasource {
 
   static const _listingColumns =
       'business_id, name, description, type, address, phone_number, images, '
-      'status, submitted_at, reviewed_at, rejection_reason';
+      'latitude, longitude, status, submitted_at, reviewed_at, rejection_reason';
 
   Future<bool> isReviewer() async {
     final uid = _supabase.auth.currentUser?.id;
@@ -37,7 +37,25 @@ class SupabaseModerationDatasource {
     final rows = status == BusinessReviewStatus.pending
         ? await filtered.order('submitted_at', ascending: true)
         : await filtered.order('name', ascending: true);
-    return List<Map<String, dynamic>>.from(rows);
+    final listings = List<Map<String, dynamic>>.from(rows);
+    if (listings.isEmpty) return listings;
+
+    // Reviewers can read every listing's hours (business_hours_select_reviewer).
+    final hourRows = await _supabase
+        .from('business_hours')
+        .select('business_id, day_of_week, opening_time, closing_time')
+        .inFilter('business_id', [
+          for (final row in listings) row['business_id'] as String,
+        ]);
+    final byBusiness = <String, List<Map<String, dynamic>>>{};
+    for (final row in hourRows) {
+      final data = Map<String, dynamic>.from(row);
+      byBusiness.putIfAbsent(data['business_id'] as String, () => []).add(data);
+    }
+    return [
+      for (final row in listings)
+        {...row, 'hours': byBusiness[row['business_id']] ?? const []},
+    ];
   }
 
   Future<List<Map<String, dynamic>>> getReviewLog({
