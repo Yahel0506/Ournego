@@ -8,6 +8,7 @@ import 'package:ournego/features/moderation/domain/entities/review_listing.dart'
 import 'package:ournego/features/moderation/domain/entities/review_log_entry.dart';
 import 'package:ournego/features/moderation/domain/repositories/moderation_repository.dart';
 import 'package:ournego/features/moderation/domain/usecases/check_is_reviewer_usecase.dart';
+import 'package:ournego/features/moderation/domain/usecases/check_listing_before_approval_usecase.dart';
 import 'package:ournego/features/moderation/domain/usecases/decide_business_review_usecase.dart';
 import 'package:ournego/features/moderation/domain/usecases/get_review_listings_usecase.dart';
 import 'package:ournego/features/moderation/domain/usecases/get_review_log_usecase.dart';
@@ -38,6 +39,13 @@ final checkIsReviewerUsecaseProvider = Provider<CheckIsReviewerUsecase>((ref) {
     repository: ref.watch(moderationRepositoryProvider),
   );
 });
+
+final checkListingBeforeApprovalUsecaseProvider =
+    Provider<CheckListingBeforeApprovalUsecase>((ref) {
+      return CheckListingBeforeApprovalUsecase(
+        repository: ref.watch(moderationRepositoryProvider),
+      );
+    });
 
 final getReviewListingsUsecaseProvider = Provider<GetReviewListingsUsecase>((
   ref,

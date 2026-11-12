@@ -1,3 +1,4 @@
+import 'package:ournego/features/business/domain/entities/app_schedule.dart';
 import 'package:ournego/features/business/domain/entities/business_review_status.dart';
 import 'package:ournego/features/moderation/domain/entities/review_log_entry.dart';
 
@@ -38,4 +39,24 @@ String reviewActorLabel(ReviewLogEntry entry) {
     case ReviewActorRole.system:
       return 'Sistema';
   }
+}
+
+/// `Lun 09:00-18:00 · Mar 09:00-18:00`, Monday first.
+String reviewHoursSummary(List<AppSchedule> hours) {
+  const days = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+  String time(int minutes) {
+    final h = (minutes ~/ 60) % 24;
+    final m = minutes % 60;
+    return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
+  }
+
+  final sorted = [...hours]..sort((a, b) => a.dayOfWeek.compareTo(b.dayOfWeek));
+  return sorted
+      .where((h) => h.dayOfWeek >= 0 && h.dayOfWeek <= 6)
+      .map(
+        (h) =>
+            '${days[h.dayOfWeek]} ${time(h.openMinutes)}-'
+            '${time(h.closeMinutes)}',
+      )
+      .join(' · ');
 }

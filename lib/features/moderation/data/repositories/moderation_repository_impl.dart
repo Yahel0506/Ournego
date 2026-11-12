@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 
 import 'package:ournego/core/failures.dart';
 import 'package:ournego/core/network/network_error_classifier.dart';
+import 'package:ournego/features/business/domain/entities/app_schedule.dart';
 import 'package:ournego/features/business/domain/entities/business_review_status.dart';
 import 'package:ournego/features/moderation/data/datasources/supabase_moderation_datasource.dart';
 import 'package:ournego/features/moderation/data/errors/moderation_exceptions.dart';
@@ -89,6 +90,9 @@ class ModerationRepositoryImpl implements ModerationRepository {
       images: (row['images'] as List<dynamic>? ?? const [])
           .whereType<String>()
           .toList(growable: false),
+      latitude: (row['latitude'] as num?)?.toDouble(),
+      longitude: (row['longitude'] as num?)?.toDouble(),
+      hours: _parseHours(row['hours']),
       status: BusinessReviewStatus.fromWire(row['status'] as String?),
       submittedAt: _parseDate(row['submitted_at']),
       reviewedAt: _parseDate(row['reviewed_at']),
@@ -107,6 +111,34 @@ class ModerationRepositoryImpl implements ModerationRepository {
       reason: _nonEmpty(row['reason'] as String?),
       createdAt: _parseDate(row['created_at']) ?? DateTime.now(),
     );
+  }
+
+  /// `business_hours` rows (day 1 = Monday, `HH:MM:SS` times) to schedules.
+  /// Rows that cannot be read are skipped.
+  static List<AppSchedule> _parseHours(Object? raw) {
+    if (raw is! List) return const [];
+    final hours = <AppSchedule>[];
+    for (final item in raw) {
+      if (item is! Map) continue;
+      final day = item['day_of_week'];
+      final open = _parseMinutes(item['opening_time']);
+      final close = _parseMinutes(item['closing_time']);
+      if (day is! int || open == null || close == null) continue;
+      hours.add(
+        AppSchedule(dayOfWeek: day - 1, openMinutes: open, closeMinutes: close),
+      );
+    }
+    return hours;
+  }
+
+  static int? _parseMinutes(Object? raw) {
+    if (raw is! String) return null;
+    final parts = raw.split(':');
+    if (parts.length < 2) return null;
+    final h = int.tryParse(parts[0]);
+    final m = int.tryParse(parts[1]);
+    if (h == null || m == null) return null;
+    return h * 60 + m;
   }
 
   static String? _nonEmpty(String? value) {

@@ -6,6 +6,7 @@ import 'package:ournego/features/business/domain/entities/business_review_status
 import 'package:ournego/features/business/presentation/widgets/business_panel/business_panel_labels.dart';
 import 'package:ournego/features/business/presentation/widgets/business_panel/business_panel_review_status_card.dart';
 import 'package:ournego/features/moderation/domain/entities/review_listing.dart';
+import 'package:ournego/features/moderation/presentation/widgets/review_labels.dart';
 import 'package:ournego/shared/widgets/buttons/buttons.dart';
 import 'package:ournego/shared/widgets/ournego_content_container.dart';
 
@@ -60,6 +61,14 @@ class ReviewListingCard extends StatelessWidget {
           if (listing.phoneNumber != null) ...[
             const SizedBox(height: OurnegoSpacingTokens.xs),
             Text(listing.phoneNumber!, style: OurnegoTextStyles.bodyCompact),
+          ],
+          if (listing.hours.isNotEmpty) ...[
+            const SizedBox(height: OurnegoSpacingTokens.xs),
+            Text(
+              reviewHoursSummary(listing.hours),
+              key: Key('reviewHours_$id'),
+              style: OurnegoTextStyles.caption,
+            ),
           ],
           if (listing.description.isNotEmpty) ...[
             const SizedBox(height: OurnegoSpacingTokens.xs),

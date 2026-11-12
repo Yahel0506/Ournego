@@ -91,6 +91,56 @@ void main() {
     expect(find.byKey(const Key('moderationEmpty')), findsOneWidget);
   });
 
+  testWidgets('invalid content blocks approving and shows why', (tester) async {
+    final repo = FakeModerationRepository(
+      pending: [fakeReviewListing('a', images: const [], latitude: null)],
+    );
+    await pump(tester, repo);
+
+    await tester.tap(find.byKey(const Key('approveButton_a')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('listingReport')), findsOneWidget);
+    expect(find.text('• No tiene ninguna imagen.'), findsOneWidget);
+    expect(find.byKey(const Key('confirmApproveButton')), findsNothing);
+
+    await tester.tap(find.byKey(const Key('confirmReportButton')));
+    await tester.pumpAndSettle();
+    expect(repo.calls, isEmpty);
+    expect(find.byKey(const Key('reviewListingCard_a')), findsOneWidget);
+  });
+
+  testWidgets('a possible duplicate needs an explicit "approve anyway"', (
+    tester,
+  ) async {
+    final repo = FakeModerationRepository(
+      pending: [fakeReviewListing('a', name: 'Café Luna')],
+      approved: [
+        fakeReviewListing(
+          'p',
+          name: 'Café Luna',
+          status: BusinessReviewStatus.approved,
+        ),
+      ],
+    );
+    await pump(tester, repo);
+
+    await tester.tap(find.byKey(const Key('approveButton_a')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Posibles duplicados'), findsOneWidget);
+    expect(find.textContaining('ya publicada'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('confirmReportButton')));
+    await tester.pumpAndSettle();
+    expect(repo.calls.single.decision, ReviewDecision.approve);
+  });
+
+  testWidgets('the card shows the opening hours', (tester) async {
+    final repo = FakeModerationRepository(pending: [fakeReviewListing('a')]);
+    await pump(tester, repo);
+    expect(find.text('Lun 09:00-18:00'), findsOneWidget);
+  });
+
   testWidgets('rejecting needs a reason', (tester) async {
     final repo = FakeModerationRepository(pending: [fakeReviewListing('a')]);
     await pump(tester, repo);

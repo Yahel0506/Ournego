@@ -83,6 +83,29 @@ void main() {
     expect(listing.reason, 'Foto borrosa');
   });
 
+  test('parses coordinates and hours (DB day 1 = Monday)', () {
+    final listing = ModerationRepositoryImpl.parseListing({
+      'business_id': 'b1',
+      'latitude': 40,
+      'longitude': -3.5,
+      'hours': [
+        {
+          'day_of_week': 1,
+          'opening_time': '09:00:00',
+          'closing_time': '18:30:00',
+        },
+        {'day_of_week': 7, 'opening_time': null, 'closing_time': '10:00:00'},
+      ],
+      'status': 'pending',
+    });
+    expect(listing.latitude, 40.0);
+    expect(listing.longitude, -3.5);
+    expect(listing.hours, hasLength(1));
+    expect(listing.hours.single.dayOfWeek, 0);
+    expect(listing.hours.single.openMinutes, 540);
+    expect(listing.hours.single.closeMinutes, 1110);
+  });
+
   test('parses a log row with and without a previous status', () {
     final created = ModerationRepositoryImpl.parseLogEntry({
       'id': 1,
