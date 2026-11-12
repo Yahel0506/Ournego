@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.5.0](https://github.com/Yahel0506/Ournego/compare/ournego-v0.4.0...ournego-v0.5.0) (2026-11-12)
+
+
+### Features
+
+* **business:** publish only approved listings from the server (OUR-111) ([af8e637](https://github.com/Yahel0506/Ournego/commit/af8e637a994283aaf6471e7eb92555029c645554))
+* **business:** publish only approved listings from the server (OUR-111) ([07e107a](https://github.com/Yahel0506/Ournego/commit/07e107a8d0e65941be4552f86beeb38d431d90aa))
+* **business:** request listing review and show the result (OUR-112) ([15738e3](https://github.com/Yahel0506/Ournego/commit/15738e34f8a27e637389c3a212dda28e23c572c6))
+* **business:** request listing review and show the result (OUR-112) ([50b150d](https://github.com/Yahel0506/Ournego/commit/50b150d330f345dc11982ed56511d0bf3a2b18a0))
+* **moderation:** review listing requests and record decisions (OUR-113) ([2c63b09](https://github.com/Yahel0506/Ournego/commit/2c63b09729948f1fa1a49ac9ae765535bcd8ec15))
+* **moderation:** review listing requests and record decisions (OUR-113) ([874408d](https://github.com/Yahel0506/Ournego/commit/874408db59372dabddf24a079c80f94351b5bd11))
+* **moderation:** validate listing data and flag duplicates before approving (OUR-114) ([24c98a1](https://github.com/Yahel0506/Ournego/commit/24c98a148ca7d78c239ca7507bd8186028a74475))
+* **moderation:** validate listing data and flag duplicates before approving (OUR-114) ([cfe435a](https://github.com/Yahel0506/Ournego/commit/cfe435ab1d6b1696ab57b6a90f4568afe9aa7192))
+
+
+### Bug Fixes
+
+* **android:** separate launcher icon layers and restore monochrome ([#135](https://github.com/Yahel0506/Ournego/issues/135)) ([a58af31](https://github.com/Yahel0506/Ournego/commit/a58af31691367de20fc633de624c2d35a67263e3))
+* **map:** keep the last businesses when the network drops (OUR-150) ([7379174](https://github.com/Yahel0506/Ournego/commit/73791746b114e5010fd8a644b113c22f850650f4))
+* **map:** keep the last businesses when the network drops (OUR-150) ([d64ea10](https://github.com/Yahel0506/Ournego/commit/d64ea10aefd79187b85c9079def4600a89441951))
+
 ## [0.4.0](https://github.com/Yahel0506/Ournego/compare/ournego-v0.3.0...ournego-v0.4.0) (2026-10-30)
 
 
