@@ -1,15 +1,18 @@
 import 'package:dartz/dartz.dart';
+
 import 'package:flutter/foundation.dart';
+
 import 'package:ournego/core/failures.dart';
-import 'package:ournego/core/network/network_error_classifier.dart';
 import 'package:ournego/core/location/app_position.dart';
 import 'package:ournego/core/geocoding/locationiq_geocoding_datasource.dart';
+import 'package:ournego/core/network/network_error_classifier.dart';
 import 'package:ournego/features/business/data/datasources/business_supabase_datasource.dart';
 import 'package:ournego/features/business/data/errors/business_registration_exceptions.dart';
 import 'package:ournego/features/business/domain/entities/app_schedule.dart';
 import 'package:ournego/features/business/domain/entities/business_image_data.dart';
 import 'package:ournego/features/business/domain/entities/business_panel_metrics.dart';
 import 'package:ournego/features/business/domain/entities/business_review_status.dart';
+import 'package:ournego/features/business/domain/entities/business_submission_result.dart';
 import 'package:ournego/features/business/domain/entities/owned_business_profile.dart';
 import 'package:ournego/features/business/domain/repositories/business_repository.dart';
 
@@ -55,7 +58,8 @@ class BusinessRepositoryImpl implements BusinessRepository {
   }
 
   @override
-  Future<Either<Failure, void>> registerBusiness({
+  Future<Either<Failure, BusinessSubmissionResult>> registerBusiness({
+    required String businessId,
     required String name,
     required String description,
     required int category,
@@ -67,20 +71,19 @@ class BusinessRepositoryImpl implements BusinessRepository {
     required List<AppSchedule> hours,
   }) async {
     try {
-      final businessId = await businessDatasource.registerBusiness({
-        'name': name,
-        'description': description,
-        'address': address,
-        'type': category,
-        'latitude': latitude,
-        'longitude': longitude,
-        'phone_number': phoneNumber,
-      });
-
-      await businessDatasource.uploadBusinessImage(image, businessId);
-      await businessDatasource.setBusinessHours(businessId, hours);
-
-      return Right(null);
+      final result = await businessDatasource.submitBusinessListing(
+        businessId: businessId,
+        name: name,
+        description: description,
+        category: category,
+        address: address,
+        latitude: latitude,
+        longitude: longitude,
+        image: image,
+        phoneNumber: phoneNumber,
+        hours: hours,
+      );
+      return Right(result);
     } on BusinessRegistrationUnauthorizedException {
       return Left(BusinessRegistrationUnauthorizedFailure());
     } on BusinessRegistrationValidationException {
@@ -93,6 +96,15 @@ class BusinessRepositoryImpl implements BusinessRepository {
       return Left(BusinessRegistrationNetworkFailure());
     } on BusinessRegistrationUnknownException {
       return Left(BusinessRegistrationUnknownFailure());
+    } on BusinessRegistrationRuleException catch (e) {
+      if (e.code == 'profile_required') {
+        return Left(BusinessProfileRequiredFailure());
+      }
+      if (e.code == 'business_daily_limit' ||
+          e.code == 'business_active_limit') {
+        return Left(BusinessRegistrationLimitFailure(e.code));
+      }
+      return Left(BusinessRegistrationValidationFailure());
     } catch (e) {
       if (isNetworkError(e)) return Left(NetworkFailure());
       if (isSessionExpiredError(e)) return Left(SessionExpiredFailure());
@@ -140,6 +152,7 @@ class BusinessRepositoryImpl implements BusinessRepository {
         hours: hours,
         reviewStatus: BusinessReviewStatus.fromWire(data['status'] as String?),
         rejectionReason: _nonEmpty(data['rejection_reason'] as String?),
+        pendingIssueCode: _nonEmpty(data['pending_issue_code'] as String?),
         submittedAt: _parseDate(data['submitted_at']),
         reviewedAt: _parseDate(data['reviewed_at']),
       );

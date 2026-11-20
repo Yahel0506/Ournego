@@ -28,6 +28,9 @@ class ReviewListing {
   /// Reason of the last rejection or withdrawal.
   final String? reason;
 
+  /// Server rule that kept the listing pending.
+  final String? pendingIssueCode;
+
   const ReviewListing({
     required this.id,
     required this.name,
@@ -43,5 +46,6 @@ class ReviewListing {
     this.submittedAt,
     this.reviewedAt,
     this.reason,
+    this.pendingIssueCode,
   });
 }

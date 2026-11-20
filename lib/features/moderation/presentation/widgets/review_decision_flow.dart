@@ -14,9 +14,8 @@ import 'package:ournego/shared/widgets/ournego_form_dialog.dart';
 import 'package:ournego/shared/widgets/ournego_inputs.dart';
 import 'package:ournego/shared/widgets/ournego_snackbars.dart';
 
-/// Confirms (approve) or asks for the reason (reject, withdraw) and applies the
-/// decision. Returns true when the server accepted it, so the caller can
-/// refresh the queue.
+/// Confirms approvals, asks for reasons where needed, and applies the decision.
+/// Returns true when the server accepted it or reported a stale listing.
 Future<bool> runReviewDecision(
   BuildContext context,
   WidgetRef ref, {
@@ -31,17 +30,22 @@ Future<bool> runReviewDecision(
         title: decision == ReviewDecision.reject
             ? 'Rechazar «${listing.name}»'
             : 'Retirar «${listing.name}»',
-        helper: decision == ReviewDecision.reject
-            ? 'La dueña verá este motivo y podrá corregir y reenviar.'
-            : 'Dejará de verse en el mapa, la búsqueda y el detalle. La '
-                  'dueña verá este motivo.',
+        helper: switch (decision) {
+          ReviewDecision.reject =>
+            'La dueña verá este motivo y podrá corregir y reenviar.',
+          ReviewDecision.withdrawUnderReview =>
+            'La ficha seguirá oculta. La dueña verá este motivo.',
+          _ =>
+            'Dejará de verse en el mapa, la búsqueda y el detalle. La '
+                'dueña verá este motivo.',
+        },
         confirmLabel: decision == ReviewDecision.reject
             ? 'Rechazar'
             : 'Retirar',
       ),
     );
     if (reason == null) return false;
-  } else {
+  } else if (decision == ReviewDecision.approve) {
     final check = await ref.read(checkListingBeforeApprovalUsecaseProvider)(
       listing: listing,
     );
@@ -97,6 +101,28 @@ Future<bool> runReviewDecision(
     );
     if (confirmed != true) return false;
     reason = null;
+  } else if (decision == ReviewDecision.restore) {
+    final confirmed = await showOurnegoDialog<bool>(
+      context: context,
+      builder: (dialogContext) => OurnegoAlertDialog(
+        title: 'Restaurar «${listing.name}»',
+        content:
+            'La ficha volverá a verse en el mapa, la búsqueda y el detalle.',
+        primaryAction: OurnegoDialogAction(
+          key: const Key('confirmRestoreButton'),
+          label: 'Restaurar',
+          onPressed: () => Navigator.of(dialogContext).pop(true),
+        ),
+        secondaryAction: OurnegoDialogAction(
+          label: 'Cancelar',
+          onPressed: () => Navigator.of(dialogContext).pop(false),
+        ),
+      ),
+    );
+    if (confirmed != true) return false;
+    reason = null;
+  } else {
+    reason = null;
   }
   if (!context.mounted) return false;
 
@@ -131,6 +157,10 @@ String reviewSuccessMessage(ReviewDecision decision) {
     case ReviewDecision.reject:
       return 'Ficha rechazada. La dueña verá el motivo.';
     case ReviewDecision.withdraw:
+      return 'Ficha retirada del mapa.';
+    case ReviewDecision.restore:
+      return 'Ficha publicada de nuevo.';
+    case ReviewDecision.withdrawUnderReview:
       return 'Ficha retirada del mapa.';
   }
 }

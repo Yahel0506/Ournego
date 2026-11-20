@@ -60,14 +60,17 @@ class FakeModerationRepository implements ModerationRepository {
     this.reviewer = true,
     List<ReviewListing>? pending,
     List<ReviewListing>? approved,
+    List<ReviewListing>? underReview,
     this.log = const [],
     this.decideFailure,
   }) : pending = pending ?? [],
-       approved = approved ?? [];
+       approved = approved ?? [],
+       underReview = underReview ?? [];
 
   bool reviewer;
   final List<ReviewListing> pending;
   final List<ReviewListing> approved;
+  final List<ReviewListing> underReview;
   List<ReviewLogEntry> log;
   Failure? decideFailure;
   final List<DecisionCall> calls = [];
@@ -81,7 +84,13 @@ class FakeModerationRepository implements ModerationRepository {
   }) async {
     if (!reviewer) return const Right([]);
     return Right(
-      List.of(status == BusinessReviewStatus.pending ? pending : approved),
+      List.of(switch (status) {
+        BusinessReviewStatus.pending => pending,
+        BusinessReviewStatus.approved => approved,
+        BusinessReviewStatus.underReview => underReview,
+        BusinessReviewStatus.rejected ||
+        BusinessReviewStatus.withdrawn => const <ReviewListing>[],
+      }),
     );
   }
 
@@ -99,14 +108,32 @@ class FakeModerationRepository implements ModerationRepository {
     calls.add(DecisionCall(businessId, decision, reason));
     final failure = decideFailure;
     if (failure != null) return Left(failure);
-    final source = decision == ReviewDecision.withdraw ? approved : pending;
+    final source = switch (decision.requiredStatus) {
+      BusinessReviewStatus.pending => pending,
+      BusinessReviewStatus.approved => approved,
+      BusinessReviewStatus.underReview => underReview,
+      BusinessReviewStatus.rejected ||
+      BusinessReviewStatus.withdrawn => <ReviewListing>[],
+    };
     final index = source.indexWhere((l) => l.id == businessId);
     if (index == -1) return Left(ModerationStaleFailure());
     final listing = source.removeAt(index);
-    if (decision == ReviewDecision.approve) {
-      approved.add(
-        fakeReviewListing(listing.id, status: BusinessReviewStatus.approved),
-      );
+    switch (decision.resultingStatus) {
+      case BusinessReviewStatus.approved:
+        approved.add(
+          fakeReviewListing(listing.id, status: BusinessReviewStatus.approved),
+        );
+      case BusinessReviewStatus.underReview:
+        underReview.add(
+          fakeReviewListing(
+            listing.id,
+            status: BusinessReviewStatus.underReview,
+          ),
+        );
+      case BusinessReviewStatus.pending ||
+          BusinessReviewStatus.rejected ||
+          BusinessReviewStatus.withdrawn:
+        break;
     }
     return const Right(null);
   }

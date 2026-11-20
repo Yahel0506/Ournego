@@ -86,4 +86,33 @@ void main() {
       'Retirada por la dueña',
     );
   });
+
+  test('describes community review and automatic publication', () {
+    expect(
+      reviewLogEntryLabel(
+        _entry(
+          BusinessReviewStatus.approved,
+          BusinessReviewStatus.underReview,
+          ReviewActorRole.system,
+        ),
+      ),
+      'En revisión comunitaria',
+    );
+    expect(
+      reviewLogEntryLabel(
+        _entry(
+          BusinessReviewStatus.underReview,
+          BusinessReviewStatus.approved,
+          ReviewActorRole.reviewer,
+        ),
+      ),
+      'Revisión resuelta y publicada',
+    );
+    expect(
+      reviewLogEntryLabel(
+        _entry(null, BusinessReviewStatus.approved, ReviewActorRole.system),
+      ),
+      'Publicada automáticamente',
+    );
+  });
 }

@@ -4,6 +4,7 @@ import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/core/theme/tokens/ournego_color_tokens.dart';
 import 'package:ournego/core/theme/tokens/ournego_spacing_tokens.dart';
 import 'package:ournego/features/business/domain/entities/business_review_status.dart';
+import 'package:ournego/features/business/domain/entities/business_pending_reason.dart';
 import 'package:ournego/features/business/domain/entities/owned_business_profile.dart';
 import 'package:ournego/shared/widgets/buttons/buttons.dart';
 import 'package:ournego/shared/widgets/ournego_content_container.dart';
@@ -58,6 +59,15 @@ class BusinessPanelReviewStatusCard extends StatelessWidget {
               key: const Key('reviewStatusMessage'),
               style: OurnegoTextStyles.bodyCompact,
             ),
+            if (status == BusinessReviewStatus.pending &&
+                ownedBusiness.pendingIssueCode != null) ...[
+              const SizedBox(height: OurnegoSpacingTokens.xs),
+              Text(
+                businessPendingReasonLabel(ownedBusiness.pendingIssueCode),
+                key: const Key('reviewPendingReason'),
+                style: OurnegoTextStyles.bodyCompact,
+              ),
+            ],
             if (reason != null &&
                 (status == BusinessReviewStatus.rejected ||
                     status == BusinessReviewStatus.withdrawn)) ...[
@@ -99,6 +109,8 @@ class BusinessPanelReviewStatusCard extends StatelessWidget {
       case BusinessReviewStatus.pending:
         final at = ownedBusiness.submittedAt;
         return at == null ? null : 'Enviada el ${formatReviewDate(at)}.';
+      case BusinessReviewStatus.underReview:
+        return null;
       case BusinessReviewStatus.rejected:
         final at = ownedBusiness.reviewedAt;
         return at == null ? null : 'Revisada el ${formatReviewDate(at)}.';
@@ -130,9 +142,15 @@ class BusinessPanelReviewStatusCard extends StatelessWidget {
           color: OurnegoColorTokens.success,
           title: 'Publicado',
           message:
-              'Tu negocio es visible en el mapa. Si cambias el nombre, la '
-              'descripción, la categoría, la dirección, el teléfono o las '
-              'fotos, volverá a revisión y dejará de verse hasta ser aprobado.',
+              'Tu negocio es visible en el mapa. Al editar algunos '
+              'datos, se volverán a comprobar.',
+        );
+      case BusinessReviewStatus.underReview:
+        return const _StatusCopy(
+          icon: Icons.visibility_off_outlined,
+          color: OurnegoColorTokens.warning,
+          title: 'En revisión',
+          message: 'Tu negocio está oculto mientras se resuelven los reportes.',
         );
       case BusinessReviewStatus.rejected:
         return const _StatusCopy(

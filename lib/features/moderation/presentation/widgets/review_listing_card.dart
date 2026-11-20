@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:ournego/core/ournego_text_styles.dart';
 import 'package:ournego/core/theme/tokens/ournego_spacing_tokens.dart';
 import 'package:ournego/features/business/domain/entities/business_review_status.dart';
+import 'package:ournego/features/business/domain/entities/business_pending_reason.dart';
 import 'package:ournego/features/business/presentation/widgets/business_panel/business_panel_labels.dart';
 import 'package:ournego/features/business/presentation/widgets/business_panel/business_panel_review_status_card.dart';
 import 'package:ournego/features/moderation/domain/entities/review_listing.dart';
@@ -19,6 +20,7 @@ class ReviewListingCard extends StatelessWidget {
     required this.onApprove,
     required this.onReject,
     required this.onWithdraw,
+    required this.onRestore,
     required this.onHistory,
     this.enabled = true,
   });
@@ -27,6 +29,7 @@ class ReviewListingCard extends StatelessWidget {
   final VoidCallback onApprove;
   final VoidCallback onReject;
   final VoidCallback onWithdraw;
+  final VoidCallback onRestore;
   final VoidCallback onHistory;
 
   /// False while a decision is being saved, so a second tap cannot overlap it.
@@ -54,6 +57,15 @@ class ReviewListingCard extends StatelessWidget {
             businessTypeLabel(listing.category),
             style: OurnegoTextStyles.caption,
           ),
+          if (listing.status == BusinessReviewStatus.pending &&
+              listing.pendingIssueCode != null) ...[
+            const SizedBox(height: OurnegoSpacingTokens.xs),
+            Text(
+              businessPendingReasonLabel(listing.pendingIssueCode),
+              key: Key('pendingIssue_$id'),
+              style: OurnegoTextStyles.caption,
+            ),
+          ],
           if (listing.address.isNotEmpty) ...[
             const SizedBox(height: OurnegoSpacingTokens.xs),
             Text(listing.address, style: OurnegoTextStyles.bodyCompact),
@@ -139,6 +151,21 @@ class ReviewListingCard extends StatelessWidget {
                   label: 'Retirar',
                   onPressed: enabled ? onWithdraw : null,
                 ),
+              if (listing.status == BusinessReviewStatus.underReview) ...[
+                OurnegoButton.primary(
+                  key: Key('restoreButton_$id'),
+                  size: OurnegoButtonSize.compact,
+                  label: 'Restaurar',
+                  icon: Icons.visibility_rounded,
+                  onPressed: enabled ? onRestore : null,
+                ),
+                OurnegoButton.destructive(
+                  key: Key('withdrawUnderReviewButton_$id'),
+                  size: OurnegoButtonSize.compact,
+                  label: 'Retirar',
+                  onPressed: enabled ? onWithdraw : null,
+                ),
+              ],
               OurnegoButton.text(
                 key: Key('historyButton_$id'),
                 size: OurnegoButtonSize.compact,

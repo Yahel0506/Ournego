@@ -4,6 +4,7 @@ import 'package:ournego/core/location/app_position.dart';
 import 'package:ournego/features/business/domain/entities/app_schedule.dart';
 import 'package:ournego/features/business/domain/entities/business_image_data.dart';
 import 'package:ournego/features/business/domain/entities/business_panel_metrics.dart';
+import 'package:ournego/features/business/domain/entities/business_submission_result.dart';
 import 'package:ournego/features/business/domain/entities/owned_business_profile.dart';
 import 'package:ournego/features/business/domain/repositories/business_repository.dart';
 
@@ -21,7 +22,8 @@ class FakeBusinessRepository implements BusinessRepository {
   }
 
   @override
-  Future<Either<Failure, void>> registerBusiness({
+  Future<Either<Failure, BusinessSubmissionResult>> registerBusiness({
+    required String businessId,
     required String name,
     required String description,
     required int category,
@@ -32,7 +34,12 @@ class FakeBusinessRepository implements BusinessRepository {
     required String phoneNumber,
     required List<AppSchedule> hours,
   }) async {
-    return const Right(null);
+    return Right(
+      BusinessSubmissionResult(
+        businessId: businessId,
+        status: BusinessSubmissionStatus.pending,
+      ),
+    );
   }
 
   @override

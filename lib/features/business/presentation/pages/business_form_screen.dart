@@ -6,8 +6,12 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
+
 import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
+
 import 'package:ournego/core/failures.dart';
 import 'package:ournego/core/location/app_position.dart';
 import 'package:ournego/core/location/geolocator_location_datasource.dart';
@@ -27,8 +31,9 @@ import 'package:ournego/shared/widgets/ournego_alert_dialog.dart';
 import 'package:ournego/shared/widgets/ournego_inputs.dart';
 import 'package:ournego/shared/widgets/ournego_snackbars.dart';
 import 'package:ournego/shared/widgets/container_transform/show_ournego_window.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../domain/entities/app_schedule.dart';
+import '../../domain/entities/business_pending_reason.dart';
+import '../../domain/entities/business_submission_result.dart';
 import '../providers/business_providers.dart';
 
 final _businessLocationDatasourceProvider = Provider<LocationDatasource>(
@@ -64,6 +69,7 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
   static const _draftLongitudeKey = 'business_form_draft_longitude';
 
   final _formKey = GlobalKey<FormState>();
+  final String _submissionBusinessId = const Uuid().v4();
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _addressController = TextEditingController();
@@ -218,6 +224,23 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
         title: 'Hay datos invalidos en el registro',
         description:
             'Revisa nombre, direccion, categoria e imagen. Luego vuelve a intentar.',
+      );
+    }
+
+    if (failure is BusinessProfileRequiredFailure) {
+      return const _BusinessRegistrationErrorContent(
+        title: 'Completa tu perfil',
+        description:
+            'Agrega la información requerida a tu perfil para registrar tu negocio.',
+      );
+    }
+
+    if (failure is BusinessRegistrationLimitFailure) {
+      return _BusinessRegistrationErrorContent(
+        title: 'Alcanzaste el límite de registros',
+        description: failure.limit == 'business_daily_limit'
+            ? 'Intenta registrar este negocio mañana.'
+            : 'Ya tienes el máximo de negocios activos permitidos.',
       );
     }
 
@@ -610,6 +633,7 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
                             .whereType<AppSchedule>()
                             .toList(growable: false);
                         final response = await registerBusinessUsecase(
+                          businessId: _submissionBusinessId,
                           name: _nameController.text,
                           description: _descriptionController.text,
                           category: _selectedCategory ?? 12,
@@ -644,12 +668,13 @@ class _BusinessFormScreenState extends ConsumerState<BusinessFormScreen>
                           (success) {
                             _clearDraft();
                             if (!mounted) return Future<void>.value();
+                            final message =
+                                success.status ==
+                                    BusinessSubmissionStatus.approved
+                                ? 'Tu negocio ya está publicado en el mapa.'
+                                : 'Recibimos tu negocio. ${businessPendingReasonLabel(success.reviewPendingReason)}';
                             ScaffoldMessenger.of(context).showSnackBar(
-                              OurnegoSnackbars.info(
-                                context,
-                                'Solicitud enviada. Revisaremos tu negocio antes de publicarlo; '
-                                'puedes ver el estado en tu panel.',
-                              ),
+                              OurnegoSnackbars.info(context, message),
                             );
                             ref.invalidate(isOwnerProvider);
                             Navigator.of(context).pop();

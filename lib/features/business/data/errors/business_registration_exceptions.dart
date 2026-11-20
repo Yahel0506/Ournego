@@ -9,3 +9,9 @@ class BusinessRegistrationImageUploadException implements Exception {}
 class BusinessRegistrationNetworkException implements Exception {}
 
 class BusinessRegistrationUnknownException implements Exception {}
+
+class BusinessRegistrationRuleException implements Exception {
+  final String code;
+
+  const BusinessRegistrationRuleException(this.code);
+}
