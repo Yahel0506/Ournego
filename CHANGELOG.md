@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.6.0](https://github.com/Yahel0506/Ournego/compare/ournego-v0.5.0...ournego-v0.6.0) (2026-11-20)
+
+
+### Features
+
+* **business:** enforce automatic publication and community review ([5ff8da9](https://github.com/Yahel0506/Ournego/commit/5ff8da96792f904a96913f09f88db01906b05fec))
+* **business:** publish eligible listings and support community review ([d3dcc02](https://github.com/Yahel0506/Ournego/commit/d3dcc02f3b1e268f8bead0e7634745a77296d98f))
+* **business:** submit listings atomically and show review outcomes ([19a0776](https://github.com/Yahel0506/Ournego/commit/19a0776b90520f40f4b77ae7e3894ae4bb96e02a))
+
 ## [0.5.0](https://github.com/Yahel0506/Ournego/compare/ournego-v0.4.0...ournego-v0.5.0) (2026-11-12)
 
 
