@@ -62,6 +62,30 @@ jobs:
           kotlin.daemon.jvmargs=-Xmx1G
           EOF
 
+      # CI needs a signed smoke-test APK, but it must not use the production
+      # upload key. This throwaway certificate is never registered with OAuth.
+      - name: Configure ephemeral release signing
+        run: |
+          set -euo pipefail
+          umask 077
+          store_password="$(openssl rand -hex 32)"
+          keytool -genkeypair -noprompt \
+            -keystore android/ci-upload-keystore.p12 \
+            -storetype PKCS12 \
+            -storepass "$store_password" \
+            -alias upload \
+            -keypass "$store_password" \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 2 \
+            -dname "CN=Ournego Android CI"
+          cat > android/key.properties <<EOF
+          storeFile=ci-upload-keystore.p12
+          storePassword=$store_password
+          keyAlias=upload
+          keyPassword=$store_password
+          EOF
+
       - name: Build release APK
         run: flutter build apk --release --verbose
 
@@ -71,3 +95,7 @@ jobs:
           name: ournego-android-release
           path: build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
+
+      - name: Remove ephemeral signing files
+        if: always()
+        run: rm -f android/key.properties android/ci-upload-keystore.p12
