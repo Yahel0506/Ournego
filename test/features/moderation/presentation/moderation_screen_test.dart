@@ -14,8 +14,12 @@ import 'package:ournego/features/moderation/presentation/providers/moderation_pr
 import '../../../fakes/fake_moderation_repository.dart';
 
 void main() {
-  Future<void> pump(WidgetTester tester, FakeModerationRepository repo) async {
-    tester.view.physicalSize = const Size(500, 1200);
+  Future<void> pump(
+    WidgetTester tester,
+    FakeModerationRepository repo, {
+    Size size = const Size(500, 1200),
+  }) async {
+    tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
@@ -65,6 +69,64 @@ void main() {
     expect(find.byKey(const Key('approveButton_a')), findsOneWidget);
     expect(find.byKey(const Key('rejectButton_a')), findsOneWidget);
     expect(find.byKey(const Key('withdrawButton_a')), findsNothing);
+  });
+
+  testWidgets('review tab restores a listing from a narrow screen', (
+    tester,
+  ) async {
+    final repo = FakeModerationRepository(
+      underReview: [
+        fakeReviewListing('a', status: BusinessReviewStatus.underReview),
+      ],
+    );
+    await pump(tester, repo, size: const Size(320, 1200));
+
+    await tester.tap(find.byKey(const Key('moderationTabUnderReview')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('reviewListingCard_a')), findsOneWidget);
+    expect(find.byKey(const Key('restoreButton_a')), findsOneWidget);
+    expect(
+      find.byKey(const Key('withdrawUnderReviewButton_a')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('approveButton_a')), findsNothing);
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.byKey(const Key('restoreButton_a')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('confirmRestoreButton')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('confirmRestoreButton')));
+    await tester.pumpAndSettle();
+
+    expect(repo.calls.single.decision, ReviewDecision.restore);
+    expect(repo.calls.single.reason, isNull);
+    expect(repo.approved.single.id, 'a');
+    expect(find.byKey(const Key('moderationEmpty')), findsOneWidget);
+  });
+
+  testWidgets('withdrawing a community review requires a reason', (
+    tester,
+  ) async {
+    final repo = FakeModerationRepository(
+      underReview: [
+        fakeReviewListing('a', status: BusinessReviewStatus.underReview),
+      ],
+    );
+    await pump(tester, repo);
+
+    await tester.tap(find.byKey(const Key('moderationTabUnderReview')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('withdrawUnderReviewButton_a')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('reviewReasonField')),
+      'Reporte confirmado',
+    );
+    await tester.tap(find.byKey(const Key('confirmReasonButton')));
+    await tester.pumpAndSettle();
+
+    expect(repo.calls.single.decision, ReviewDecision.withdrawUnderReview);
+    expect(repo.calls.single.reason, 'Reporte confirmado');
   });
 
   testWidgets('shows an empty state', (tester) async {

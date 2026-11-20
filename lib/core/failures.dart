@@ -77,6 +77,14 @@ class BusinessRegistrationNetworkFailure extends Failure {}
 
 class BusinessRegistrationUnknownFailure extends Failure {}
 
+class BusinessProfileRequiredFailure extends Failure {}
+
+class BusinessRegistrationLimitFailure extends Failure {
+  final String limit;
+
+  BusinessRegistrationLimitFailure(this.limit);
+}
+
 // TODO: Add mapping helpers (e.g. `Failure.fromException`) to centralize
 // translation from platform / third-party errors to domain failures.
 

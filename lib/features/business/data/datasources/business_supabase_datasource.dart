@@ -1,10 +1,13 @@
 import 'dart:async';
 import 'dart:io' show SocketException;
 
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
+
 import 'package:ournego/features/business/data/errors/business_registration_exceptions.dart';
+import 'package:ournego/features/business/data/models/business_submission_result_model.dart';
 import 'package:ournego/features/business/domain/entities/app_schedule.dart';
 import 'package:ournego/features/business/domain/entities/business_image_data.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class BusinessSupabaseDatasource {
   final _supabase = Supabase.instance.client;
@@ -41,17 +44,56 @@ class BusinessSupabaseDatasource {
     }
   }
 
-  String _minutesToSqlTime(int minutesFromMidnight) {
+  static String _minutesToSqlTime(int minutesFromMidnight) {
     final hours = minutesFromMidnight ~/ 60;
     final minutes = minutesFromMidnight % 60;
     return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:00';
   }
 
-  int _mapAppDayToSqlDay(int appDay) {
+  static int _mapAppDayToSqlDay(int appDay) {
     // App: 0 = Monday, 6 = Sunday
     // DB:  1 = Monday, 7 = Sunday
     return appDay + 1;
   }
+
+  static List<Map<String, dynamic>> submissionHoursPayload(
+    List<AppSchedule> hours,
+  ) => [
+    for (final schedule in hours)
+      {
+        'day_of_week': _mapAppDayToSqlDay(schedule.dayOfWeek),
+        'opening_time': _minutesToSqlTime(schedule.openMinutes),
+        'closing_time': _minutesToSqlTime(schedule.closeMinutes),
+      },
+  ];
+
+  static Map<String, dynamic> submissionRpcArguments({
+    required String businessId,
+    required String name,
+    required String description,
+    required int category,
+    required String address,
+    required double latitude,
+    required double longitude,
+    required String phoneNumber,
+    required String imageObject,
+    required String imageUrl,
+    required List<AppSchedule> hours,
+  }) => {
+    'p_listing': {
+      'business_id': businessId,
+      'name': name,
+      'description': description,
+      'type': category,
+      'address': address,
+      'latitude': latitude,
+      'longitude': longitude,
+      'phone_number': phoneNumber.trim().isEmpty ? null : phoneNumber.trim(),
+      'image_object': imageObject,
+      'image_url': imageUrl,
+    },
+    'p_hours': submissionHoursPayload(hours),
+  };
 
   int? _parseSqlTimeToMinutes(String raw) {
     final parts = raw.split(':');
@@ -77,85 +119,107 @@ class BusinessSupabaseDatasource {
     }
   }
 
-  Future<String> registerBusiness(Map<String, dynamic> businessData) async {
+  Future<BusinessSubmissionResultModel> submitBusinessListing({
+    required String businessId,
+    required String name,
+    required String description,
+    required int category,
+    required String address,
+    required double latitude,
+    required double longitude,
+    required BusinessImageData image,
+    required String phoneNumber,
+    required List<AppSchedule> hours,
+  }) async {
     try {
-      final user = _supabase.auth.currentUser;
-      if (user == null) {
+      if (_supabase.auth.currentUser == null) {
         throw BusinessRegistrationUnauthorizedException();
       }
-
-      final response = await _supabase
-          .from('businesses')
-          .insert(businessData)
-          .select('business_id')
-          .single();
-      return response['business_id'] as String;
-    } on TimeoutException {
-      throw BusinessRegistrationNetworkException();
-    } on SocketException {
-      throw BusinessRegistrationNetworkException();
-    } on PostgrestException catch (e) {
-      final code = (e.code ?? '').toLowerCase();
-      final message = e.message.toLowerCase();
-
-      if (code == '42501' || message.contains('permission denied')) {
-        throw BusinessRegistrationUnauthorizedException();
-      }
-
-      if (code == '23505' || message.contains('duplicate')) {
-        throw BusinessRegistrationDuplicateException();
-      }
-
-      if (code == '23514' ||
-          message.contains('violates') ||
-          message.contains('invalid')) {
-        throw BusinessRegistrationValidationException();
-      }
-
-      throw BusinessRegistrationUnknownException();
-    } catch (_) {
-      throw BusinessRegistrationUnknownException();
-    }
-  }
-
-  Future<void> uploadBusinessImage(
-    BusinessImageData image,
-    String business,
-  ) async {
-    try {
-      final fileName = image.fileName.trim().isNotEmpty
-          ? image.fileName
-          : 'business-image.jpg';
-      final storagePath = '$business/$fileName';
-
+      final suffix = _safeImageExtension(image.fileName, image.mimeType);
+      final objectName = '${const Uuid().v4()}$suffix';
+      final objectPath = '$businessId/$objectName';
       await _supabase.storage
           .from('businesses_pictures')
           .uploadBinary(
-            storagePath,
+            objectPath,
             image.bytes,
-            fileOptions: const FileOptions(cacheControl: '3600', upsert: true),
+            fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
           );
       final imageUrl = _supabase.storage
           .from('businesses_pictures')
-          .getPublicUrl(storagePath);
-
-      await _supabase
-          .from('businesses')
-          .update({
-            'images': [imageUrl],
-          })
-          .eq('business_id', business);
+          .getPublicUrl(objectPath);
+      final response = await _supabase.rpc(
+        'submit_business_listing',
+        params: submissionRpcArguments(
+          businessId: businessId,
+          name: name,
+          description: description,
+          category: category,
+          address: address,
+          latitude: latitude,
+          longitude: longitude,
+          phoneNumber: phoneNumber,
+          imageObject: objectPath,
+          imageUrl: imageUrl,
+          hours: hours,
+        ),
+      );
+      final data = response is Map<String, dynamic>
+          ? response
+          : Map<String, dynamic>.from(response as Map);
+      return BusinessSubmissionResultModel.fromJson(data);
+    } on BusinessRegistrationUnauthorizedException {
+      rethrow;
     } on TimeoutException {
       throw BusinessRegistrationNetworkException();
     } on SocketException {
       throw BusinessRegistrationNetworkException();
     } on StorageException {
       throw BusinessRegistrationImageUploadException();
-    } on PostgrestException {
-      throw BusinessRegistrationImageUploadException();
-    } catch (_) {
+    } on PostgrestException catch (e) {
+      final message = e.message.toLowerCase();
+      final code = (e.code ?? '').toLowerCase();
+      if (message.contains('profile_required')) {
+        throw const BusinessRegistrationRuleException('profile_required');
+      }
+      if (message.contains('business_daily_limit')) {
+        throw const BusinessRegistrationRuleException('business_daily_limit');
+      }
+      if (message.contains('business_active_limit')) {
+        throw const BusinessRegistrationRuleException('business_active_limit');
+      }
+      if (message.contains('invalid_listing') || code == '23514') {
+        throw const BusinessRegistrationRuleException('invalid_listing');
+      }
+      if (code == '42501') throw BusinessRegistrationUnauthorizedException();
+      if (code == '23505' || message.contains('duplicate')) {
+        throw BusinessRegistrationDuplicateException();
+      }
+      throw BusinessRegistrationUnknownException();
+    } catch (e) {
+      if (e is BusinessRegistrationRuleException ||
+          e is BusinessRegistrationNetworkException ||
+          e is BusinessRegistrationImageUploadException ||
+          e is BusinessRegistrationDuplicateException ||
+          e is BusinessRegistrationUnknownException) {
+        rethrow;
+      }
       throw BusinessRegistrationUnknownException();
     }
+  }
+
+  String _safeImageExtension(String fileName, String? mimeType) {
+    final extension = fileName.contains('.')
+        ? fileName.split('.').last.toLowerCase()
+        : switch (mimeType) {
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+            'image/heic' => 'heic',
+            _ => 'jpg',
+          };
+    return RegExp(r'^[a-z0-9]{1,8}$').hasMatch(extension)
+        ? '.$extension'
+        : '.jpg';
   }
 
   /// Moves a rejected or withdrawn listing back to `pending`. The status
@@ -397,49 +461,6 @@ class BusinessSupabaseDatasource {
             .inFilter('day_of_week', daysToDelete);
       }
     });
-  }
-
-  Future<void> setBusinessHours(
-    String businessId,
-    List<AppSchedule> hours,
-  ) async {
-    try {
-      await Future.wait(
-        hours.map((schedule) async {
-          final openTime = _minutesToSqlTime(schedule.openMinutes);
-          final closeTime = _minutesToSqlTime(schedule.closeMinutes);
-          final dayOfWeek = _mapAppDayToSqlDay(schedule.dayOfWeek);
-
-          await _supabase.from('business_hours').insert({
-            'business_id': businessId,
-            'day_of_week': dayOfWeek,
-            'opening_time': openTime,
-            'closing_time': closeTime,
-          });
-        }),
-      );
-    } on TimeoutException {
-      throw BusinessRegistrationNetworkException();
-    } on SocketException {
-      throw BusinessRegistrationNetworkException();
-    } on PostgrestException catch (e) {
-      final code = (e.code ?? '').toLowerCase();
-      final message = e.message.toLowerCase();
-
-      if (code == '42501' || message.contains('permission denied')) {
-        throw BusinessRegistrationUnauthorizedException();
-      }
-
-      if (code == '23514' ||
-          message.contains('violates') ||
-          message.contains('invalid')) {
-        throw BusinessRegistrationValidationException();
-      }
-
-      throw BusinessRegistrationUnknownException();
-    } catch (_) {
-      throw BusinessRegistrationUnknownException();
-    }
   }
 
   Future<bool> checkIfOwner() async {

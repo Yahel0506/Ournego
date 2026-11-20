@@ -12,6 +12,7 @@ OwnedBusinessProfile _business(
   String? reason,
   DateTime? submittedAt,
   DateTime? reviewedAt,
+  String? pendingIssueCode,
 }) {
   return OwnedBusinessProfile(
     id: 'b1',
@@ -26,6 +27,7 @@ OwnedBusinessProfile _business(
     hours: const [],
     reviewStatus: status,
     rejectionReason: reason,
+    pendingIssueCode: pendingIssueCode,
     submittedAt: submittedAt,
     reviewedAt: reviewedAt,
   );
@@ -73,14 +75,41 @@ void main() {
     expect(button, findsNothing);
   });
 
-  testWidgets('approved shows it is public and warns about re-review', (
+  testWidgets('approved describes rechecking edits without promising review', (
     tester,
   ) async {
     await pump(tester, _business(BusinessReviewStatus.approved));
     expect(find.text('Publicado'), findsOneWidget);
-    expect(find.textContaining('volverá a revisión'), findsOneWidget);
+    expect(find.textContaining('se volverán a comprobar'), findsOneWidget);
     expect(button, findsNothing);
   });
+
+  testWidgets('pending explains the server reason when one is available', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      _business(
+        BusinessReviewStatus.pending,
+        pendingIssueCode: 'possible_duplicate',
+      ),
+    );
+    expect(
+      find.text('Hay una ficha similar; se revisará antes de publicar.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets(
+    'under review explains the business is hidden without an action',
+    (tester) async {
+      await pump(tester, _business(BusinessReviewStatus.underReview));
+      expect(find.text('En revisión'), findsOneWidget);
+      expect(find.textContaining('está oculto'), findsOneWidget);
+      expect(button, findsNothing);
+      expect(find.byKey(const Key('reviewStatusReason')), findsNothing);
+    },
+  );
 
   testWidgets('rejected shows the reason and lets the owner resubmit', (
     tester,

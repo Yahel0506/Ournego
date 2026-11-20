@@ -97,6 +97,7 @@ class ModerationRepositoryImpl implements ModerationRepository {
       submittedAt: _parseDate(row['submitted_at']),
       reviewedAt: _parseDate(row['reviewed_at']),
       reason: _nonEmpty(row['rejection_reason'] as String?),
+      pendingIssueCode: _nonEmpty(row['pending_issue_code'] as String?),
     );
   }
 

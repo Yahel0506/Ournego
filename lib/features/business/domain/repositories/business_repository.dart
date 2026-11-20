@@ -3,6 +3,7 @@ import 'package:ournego/core/location/app_position.dart';
 import 'package:ournego/features/business/domain/entities/app_schedule.dart';
 import 'package:ournego/features/business/domain/entities/business_image_data.dart';
 import 'package:ournego/features/business/domain/entities/business_panel_metrics.dart';
+import 'package:ournego/features/business/domain/entities/business_submission_result.dart';
 import 'package:ournego/features/business/domain/entities/owned_business_profile.dart';
 
 import '../../../../core/failures.dart';
@@ -12,7 +13,8 @@ abstract class BusinessRepository {
     String query,
   );
 
-  Future<Either<Failure, void>> registerBusiness({
+  Future<Either<Failure, BusinessSubmissionResult>> registerBusiness({
+    required String businessId,
     required String name,
     required String description,
     required int category,

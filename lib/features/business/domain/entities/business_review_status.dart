@@ -4,6 +4,7 @@
 enum BusinessReviewStatus {
   pending,
   approved,
+  underReview,
   rejected,
   withdrawn;
 
@@ -15,6 +16,8 @@ enum BusinessReviewStatus {
         return BusinessReviewStatus.approved;
       case 'rejected':
         return BusinessReviewStatus.rejected;
+      case 'under_review':
+        return BusinessReviewStatus.underReview;
       case 'withdrawn':
         return BusinessReviewStatus.withdrawn;
       case 'pending':
@@ -24,7 +27,8 @@ enum BusinessReviewStatus {
   }
 
   /// The database value, the inverse of [fromWire].
-  String get wire => name;
+  String get wire =>
+      this == BusinessReviewStatus.underReview ? 'under_review' : name;
 
   /// The owner may ask for a (new) review only after a rejection or withdrawal.
   bool get canRequestReview =>

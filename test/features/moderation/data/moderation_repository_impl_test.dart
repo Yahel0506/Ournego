@@ -73,6 +73,7 @@ void main() {
       'submitted_at': '2026-11-03T10:00:00Z',
       'reviewed_at': null,
       'rejection_reason': '  Foto borrosa ',
+      'pending_issue_code': 'possible_duplicate',
     });
     expect(listing.id, 'b1');
     expect(listing.category, 3);
@@ -81,6 +82,7 @@ void main() {
     expect(listing.status, BusinessReviewStatus.pending);
     expect(listing.submittedAt, isNotNull);
     expect(listing.reason, 'Foto borrosa');
+    expect(listing.pendingIssueCode, 'possible_duplicate');
   });
 
   test('parses coordinates and hours (DB day 1 = Monday)', () {

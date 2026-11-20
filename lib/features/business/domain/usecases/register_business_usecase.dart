@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:ournego/features/business/domain/entities/business_image_data.dart';
+import 'package:ournego/features/business/domain/entities/business_submission_result.dart';
 
 import '../../../../core/failures.dart';
 import '../entities/app_schedule.dart';
@@ -10,7 +11,8 @@ class RegisterBusinessUsecase {
 
   RegisterBusinessUsecase({required this.repository});
 
-  Future<Either<Failure, void>> call({
+  Future<Either<Failure, BusinessSubmissionResult>> call({
+    required String businessId,
     required String name,
     required String description,
     required int category,
@@ -22,6 +24,7 @@ class RegisterBusinessUsecase {
     required List<AppSchedule> hours,
   }) async {
     return await repository.registerBusiness(
+      businessId: businessId,
       name: name,
       description: description,
       category: category,

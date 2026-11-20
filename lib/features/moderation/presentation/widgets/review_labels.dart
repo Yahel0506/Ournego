@@ -22,7 +22,16 @@ String reviewLogEntryLabel(ReviewLogEntry entry) {
           ? 'Reabierta por revisión'
           : 'Reenviada a revisión por la dueña';
     case BusinessReviewStatus.approved:
-      return 'Aprobada';
+      if (entry.from == BusinessReviewStatus.underReview) {
+        return byReviewer ? 'Revisión resuelta y publicada' : 'Publicada';
+      }
+      return entry.actorRole == ReviewActorRole.system && entry.from == null
+          ? 'Publicada automáticamente'
+          : 'Aprobada';
+    case BusinessReviewStatus.underReview:
+      return byReviewer
+          ? 'Ocultada y enviada a revisión'
+          : 'En revisión comunitaria';
     case BusinessReviewStatus.rejected:
       return 'Rechazada';
     case BusinessReviewStatus.withdrawn:

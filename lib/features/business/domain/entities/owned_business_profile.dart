@@ -18,6 +18,9 @@ class OwnedBusinessProfile {
   /// [BusinessReviewStatus.rejected].
   final String? rejectionReason;
 
+  /// Server rule that is keeping a pending listing from immediate publication.
+  final String? pendingIssueCode;
+
   /// When the listing was last sent to review.
   final DateTime? submittedAt;
 
@@ -37,6 +40,7 @@ class OwnedBusinessProfile {
     required this.hours,
     this.reviewStatus = BusinessReviewStatus.approved,
     this.rejectionReason,
+    this.pendingIssueCode,
     this.submittedAt,
     this.reviewedAt,
   });

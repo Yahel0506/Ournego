@@ -9,7 +9,7 @@ import '../../../fakes/fake_moderation_repository.dart';
 
 void main() {
   group('ReviewDecision', () {
-    test('approve and reject start from pending, withdraw from approved', () {
+    test('decisions filter the status they are allowed to change', () {
       expect(
         ReviewDecision.approve.requiredStatus,
         BusinessReviewStatus.pending,
@@ -21,6 +21,14 @@ void main() {
       expect(
         ReviewDecision.withdraw.requiredStatus,
         BusinessReviewStatus.approved,
+      );
+      expect(
+        ReviewDecision.restore.requiredStatus,
+        BusinessReviewStatus.underReview,
+      );
+      expect(
+        ReviewDecision.withdrawUnderReview.requiredStatus,
+        BusinessReviewStatus.underReview,
       );
     });
 
@@ -39,9 +47,19 @@ void main() {
           ReviewDecision.withdraw.resultingStatus,
           BusinessReviewStatus.withdrawn,
         );
+        expect(
+          ReviewDecision.restore.resultingStatus,
+          BusinessReviewStatus.approved,
+        );
+        expect(
+          ReviewDecision.withdrawUnderReview.resultingStatus,
+          BusinessReviewStatus.withdrawn,
+        );
         expect(ReviewDecision.approve.requiresReason, isFalse);
         expect(ReviewDecision.reject.requiresReason, isTrue);
         expect(ReviewDecision.withdraw.requiresReason, isTrue);
+        expect(ReviewDecision.restore.requiresReason, isFalse);
+        expect(ReviewDecision.withdrawUnderReview.requiresReason, isTrue);
       },
     );
 
@@ -49,6 +67,7 @@ void main() {
       expect(BusinessReviewStatus.values.map((s) => s.wire), [
         'pending',
         'approved',
+        'under_review',
         'rejected',
         'withdrawn',
       ]);

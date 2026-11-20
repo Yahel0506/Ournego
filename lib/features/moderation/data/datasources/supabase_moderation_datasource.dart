@@ -14,7 +14,7 @@ class SupabaseModerationDatasource {
 
   static const _listingColumns =
       'business_id, name, description, type, address, phone_number, images, '
-      'latitude, longitude, status, submitted_at, reviewed_at, rejection_reason';
+      'latitude, longitude, status, submitted_at, reviewed_at, rejection_reason, pending_issue_code';
 
   Future<bool> isReviewer() async {
     final uid = _supabase.auth.currentUser?.id;

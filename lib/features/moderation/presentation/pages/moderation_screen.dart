@@ -47,6 +47,7 @@ class _ModerationScreenState extends ConsumerState<ModerationScreen> {
     if (changed) {
       ref.invalidate(reviewListingsProvider(BusinessReviewStatus.pending));
       ref.invalidate(reviewListingsProvider(BusinessReviewStatus.approved));
+      ref.invalidate(reviewListingsProvider(BusinessReviewStatus.underReview));
     }
   }
 
@@ -149,7 +150,9 @@ class _Queue extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
+        Wrap(
+          spacing: OurnegoSpacingTokens.xs,
+          runSpacing: OurnegoSpacingTokens.xs,
           children: [
             OurnegoChip<void>.filter(
               key: const Key('moderationTabPending'),
@@ -157,7 +160,12 @@ class _Queue extends ConsumerWidget {
               selected: tab == BusinessReviewStatus.pending,
               onSelected: (_) => onTab(BusinessReviewStatus.pending),
             ),
-            const SizedBox(width: OurnegoSpacingTokens.xs),
+            OurnegoChip<void>.filter(
+              key: const Key('moderationTabUnderReview'),
+              label: 'En revisión',
+              selected: tab == BusinessReviewStatus.underReview,
+              onSelected: (_) => onTab(BusinessReviewStatus.underReview),
+            ),
             OurnegoChip<void>.filter(
               key: const Key('moderationTabPublished'),
               label: 'Publicadas',
@@ -180,9 +188,18 @@ class _Queue extends ConsumerWidget {
               if (items.isEmpty) {
                 return _Message(
                   key: const Key('moderationEmpty'),
-                  text: tab == BusinessReviewStatus.pending
-                      ? 'No hay solicitudes pendientes.'
-                      : 'No hay fichas publicadas.',
+                  text: switch (tab) {
+                    BusinessReviewStatus.pending =>
+                      'No hay solicitudes pendientes.',
+                    BusinessReviewStatus.approved =>
+                      'No hay fichas publicadas.',
+                    BusinessReviewStatus.underReview =>
+                      'No hay negocios en revisión comunitaria.',
+                    BusinessReviewStatus.rejected =>
+                      'No hay fichas rechazadas.',
+                    BusinessReviewStatus.withdrawn =>
+                      'No hay fichas retiradas.',
+                  },
                 );
               }
               return ListView.builder(
@@ -195,8 +212,14 @@ class _Queue extends ConsumerWidget {
                     onApprove: () =>
                         onDecision(listing, ReviewDecision.approve),
                     onReject: () => onDecision(listing, ReviewDecision.reject),
-                    onWithdraw: () =>
-                        onDecision(listing, ReviewDecision.withdraw),
+                    onWithdraw: () => onDecision(
+                      listing,
+                      listing.status == BusinessReviewStatus.underReview
+                          ? ReviewDecision.withdrawUnderReview
+                          : ReviewDecision.withdraw,
+                    ),
+                    onRestore: () =>
+                        onDecision(listing, ReviewDecision.restore),
                     onHistory: () => onHistory(listing),
                   );
                 },

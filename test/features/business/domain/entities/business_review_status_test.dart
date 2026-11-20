@@ -13,6 +13,10 @@ void main() {
       BusinessReviewStatus.approved,
     );
     expect(
+      BusinessReviewStatus.fromWire('under_review'),
+      BusinessReviewStatus.underReview,
+    );
+    expect(
       BusinessReviewStatus.fromWire('rejected'),
       BusinessReviewStatus.rejected,
     );
@@ -32,5 +36,9 @@ void main() {
       BusinessReviewStatus.rejected,
       BusinessReviewStatus.withdrawn,
     ]);
+  });
+
+  test('under review cannot be resubmitted by its owner', () {
+    expect(BusinessReviewStatus.underReview.canRequestReview, isFalse);
   });
 }
