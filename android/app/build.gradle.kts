@@ -13,11 +13,27 @@ dependencies {
     androidTestUtil("androidx.test:orchestrator:1.5.1")
 }
 
-// Release signing comes from android/key.properties (git-ignored). Without it
-// the release build falls back to the debug key so local builds keep working.
+// The upload key is local-only or supplied temporarily by the Android CI job.
 val keystoreProperties = Properties().apply {
     val file = rootProject.file("key.properties")
     if (file.exists()) file.inputStream().use { load(it) }
+}
+val uploadKeystorePath = keystoreProperties.getProperty("storeFile")
+    ?.takeIf { it.isNotBlank() }
+    ?.let { rootProject.file(it) }
+val hasReleaseSigning = listOf("storeFile", "storePassword", "keyAlias", "keyPassword")
+    .all { !keystoreProperties.getProperty(it).isNullOrBlank() } &&
+    uploadKeystorePath?.isFile == true
+
+val checkReleaseSigning = tasks.register("checkReleaseSigning") {
+    group = "verification"
+    description = "Checks that a release build has a configured upload key."
+    doLast {
+        check(hasReleaseSigning) {
+            "Release builds require a valid android/key.properties and an existing upload keystore. " +
+                "See docs/development/release-process.md for setup and recovery instructions."
+        }
+    }
 }
 
 android {
@@ -65,12 +81,13 @@ android {
     }
 
     buildTypes {
-        // Profile signs with the release key on purpose: Google Sign-In only
-        // accepts the SHA-1 fingerprints registered as Android OAuth clients,
-        // and the debug key (different on every machine) is not one of them.
-        // Without key.properties both fall back to the debug key.
-        val releaseSigning = signingConfigs.findByName("release")
-            ?: signingConfigs.getByName("debug")
+        // Profile prefers the upload key for Google Sign-In, with debug as a
+        // local-only fallback. Release builds require the upload key below.
+        val profileSigning = if (hasReleaseSigning) {
+            signingConfigs.getByName("release")
+        } else {
+            signingConfigs.getByName("debug")
+        }
         // Debug builds install next to the release app (their own id and
         // launcher name) so a debug run never replaces or wipes the release
         // install. Google Sign-In needs an Android OAuth client for
@@ -80,11 +97,19 @@ android {
             manifestPlaceholders["appName"] = "Ournego Debug"
         }
         release {
-            signingConfig = releaseSigning
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
         getByName("profile") {
-            signingConfig = releaseSigning
+            signingConfig = profileSigning
         }
+    }
+}
+
+tasks.configureEach {
+    if (name == "preReleaseBuild") {
+        dependsOn(checkReleaseSigning)
     }
 }
 

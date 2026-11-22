@@ -64,6 +64,95 @@ Each version keeps its own release, so older APKs stay downloadable. The
 newest one. The release notes are the changelog entry for that version, written
 by release-please.
 
+## Android upload key and Play bundles
+
+The upload key is the private key used to authenticate AAB uploads to Google
+Play. With Play App Signing enabled, Google keeps the separate app-signing key
+and uses it for APKs delivered to users. Keep the upload keystore and
+`android/key.properties` outside Git. Release APK and AAB builds fail unless
+all four properties are present and the referenced keystore exists. Debug
+builds need no upload key. Profile builds use it when configured and otherwise
+use the local debug key. [Google Play App Signing](https://support.google.com/googleplay/android-developer/answer/9842756?hl=en)
+
+The current release keystore signs Ournego's GitHub APKs. Use that same
+keystore for the first Play upload and later updates so every build keeps the
+same upload certificate. Create a new upload key only for a new app or after
+Google approves a reset for an enrolled Play app. When creating one, do so
+interactively so passwords do not appear in shell history:
+
+```bash
+keytool -genkeypair -v \
+  -keystore android/upload-keystore.jks \
+  -storetype JKS \
+  -alias upload \
+  -keyalg RSA -keysize 2048 -validity 10000
+```
+
+Create `android/key.properties` with restrictive file permissions. Gradle
+resolves `storeFile` relative to `android/`:
+
+```properties
+storeFile=upload-keystore.jks
+storePassword=<keystore password>
+keyAlias=upload
+keyPassword=<key password>
+```
+
+Keep at least two independently recoverable copies of the keystore in access
+controlled storage outside the repository. Encrypt an offline backup and keep
+its recovery phrase in a separate password manager. For example, GNU Privacy
+Guard can create an encrypted backup interactively:
+
+```bash
+gpg --symmetric --cipher-algo AES256 \
+  --output /secure-backup/ournego-upload-keystore.jks.gpg \
+  android/upload-keystore.jks
+```
+
+To recover it, decrypt to a temporary path outside the repository, compare its
+certificate with the recorded upload certificate, then place it under
+`android/` and recreate `key.properties` from the password manager:
+
+```bash
+gpg --output /secure-temporary-path/upload-keystore.jks \
+  --decrypt /secure-backup/ournego-upload-keystore.jks.gpg
+keytool -list -v -keystore /secure-temporary-path/upload-keystore.jks -alias upload
+```
+
+Record the upload certificate SHA-1 and SHA-256 when the key is created. The
+certificate is safe to share with Play Console and Google Cloud. Never store
+the keystore passwords beside the backup. If an enrolled Play upload key is
+lost or compromised, request an upload-key reset in Play Console and update
+the protected local and GitHub Actions copies only after Google confirms the
+reset. The Play app-signing key remains separate. See [Google's key guidance](https://support.google.com/googleplay/android-developer/answer/9842756?hl=en).
+
+Build a versioned AAB from the current `version:` in `pubspec.yaml`. Set a
+build number greater than the last version uploaded to Play:
+
+```bash
+flutter build appbundle --release \
+  --build-name=0.5.0 \
+  --build-number=36 \
+  --dart-define-from-file=.env
+```
+
+Update the example version and build number for each upload. This produces
+`build/app/outputs/bundle/release/app-release.aab`. Verify its contents and
+signature before uploading it to a Play test track:
+
+```bash
+jarsigner -verify build/app/outputs/bundle/release/app-release.aab
+keytool -printcert -jarfile build/app/outputs/bundle/release/app-release.aab
+```
+
+Compare the certificate fingerprint with the saved release certificate. The
+Android CI workflow uses a short lived throwaway key to build a smoke-test APK.
+Its certificate is not the upload key and must never be used for a Play upload.
+
+Flutter's final AAB check also needs Android SDK Command-line Tools, including
+`apkanalyzer`. Install them from Android Studio's SDK Manager if Flutter reports
+that it could not inspect the generated bundle.
+
 ## Configuration
 
 | File | Purpose |
@@ -93,7 +182,8 @@ first changelog only lists commits made afterwards.
 
 Run the `Release` workflow manually (**Actions → Release → Run workflow**) and
 give it an existing tag such as `v0.2.0`. It rebuilds the APK from that tag and
-replaces the attached file.
+replaces the attached file. To rebuild a Play AAB locally, use the versioned
+command above with the matching upload key.
 
 ## Going to 1.0.0
 

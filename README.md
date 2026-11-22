@@ -168,9 +168,15 @@ flutter run -d chrome
 
 ```bash
 flutter build web                                          # Web
-flutter build apk --release --dart-define-from-file=.env   # APK de Android
-flutter build appbundle --dart-define-from-file=.env       # Android App Bundle
+flutter build apk --release --build-name=0.5.0 --build-number=36 --dart-define-from-file=.env  # APK firmado de Android
+flutter build appbundle --release --build-name=0.5.0 --build-number=36 --dart-define-from-file=.env  # AAB para Google Play
 ```
+
+Actualiza `--build-name` a la versión de `pubspec.yaml` y usa un
+`--build-number` mayor al último paquete subido a Google Play. Las variantes
+release requieren el keystore de carga configurado en `android/key.properties`.
+La guía de [release](docs/development/release-process.md) cubre creación,
+resguardo y recuperación de esa clave.
 
 ### 5. Calidad y pruebas
 

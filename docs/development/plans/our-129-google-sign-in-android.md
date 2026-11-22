@@ -27,7 +27,7 @@ Los SHA-1 de la tabla se midieron leyendo el certificado de cada APK compilado c
 
 ## Qué cambió
 
-1. `android/app/build.gradle.kts`: el build type `profile` usa la misma firma que `release`. Sin `android/key.properties` ambos siguen cayendo a la clave de debug, de modo que los clones sin credenciales compilan igual.
+1. `android/app/build.gradle.kts`: `profile` usa la clave de carga cuando está configurada y conserva el fallback a debug en clones locales sin esa clave. Los builds `release` exigen una configuración completa y nunca recurren a la firma de debug.
 2. Debug se queda con su clave de debug (firmar debug con la clave de subida no es buena práctica). Esa huella se registra como cliente Android en la consola.
 
 Comprobación posterior al cambio (`apksigner`, mismos APK tras recompilar):
@@ -35,8 +35,8 @@ Comprobación posterior al cambio (`apksigner`, mismos APK tras recompilar):
 | Modo | Firma | SHA-1 |
 |---|---|---|
 | debug | debug | `3B:51:AF:FA:…:1B:0C` |
-| profile | upload-keystore | `1D:B6:BD:C7:…:58:93` |
-| release | upload-keystore | `1D:B6:BD:C7:…:58:93` |
+| profile | upload-keystore si está configurada; si no, debug | Según la clave elegida |
+| release | upload-keystore; el build falla si no está configurada | `1D:B6:BD:C7:…:58:93` |
 
 ## Mensajes de error y reintento
 
@@ -63,7 +63,9 @@ Un cliente Android admite **una sola huella SHA-1**, pero puede haber varios cli
 
 | Para | Huella a registrar | Estado |
 |---|---|---|
-| profile y release local y del CI (clave de subida) | `1D:B6:BD:C7:09:4E:B3:6A:22:98:F7:07:B0:E5:CA:EA:51:EA:58:93` | Registrada (cliente `…kjvg…`) |
+| release local y workflow de release (clave de subida) | `1D:B6:BD:C7:09:4E:B3:6A:22:98:F7:07:B0:E5:CA:EA:51:EA:58:93` | Registrada (cliente `…kjvg…`) |
+| profile local | Clave de subida cuando se configura, o debug en clones locales sin la clave | Registrar el certificado correspondiente si se usa Google Sign-In |
+| APK de smoke test de Android CI | Certificado efímero por ejecución | No usar para Play ni Google OAuth |
 | debug, una por cada equipo de desarrollo | la de `keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android` | Registrar. En el equipo de referencia: `3B:51:AF:FA:08:B9:92:A9:DA:4D:C1:00:D7:D7:F5:68:AF:2C:1B:0C` |
 | Instalación desde Google Play | SHA-1 de la firma de app de Play (Play Console → Integridad de la app) | Pendiente de cuenta de Play, ver OUR-123 |
 
@@ -77,7 +79,7 @@ Existe otro cliente Android (`…b7b1…`) con la huella `BB:B7:1F:6A:…`, que 
 
 ### Firma local
 
-`android/key.properties` (ignorado por git) alimenta la firma de release y profile. `storeFile` se resuelve **relativo a `android/`**:
+`android/key.properties` (ignorado por git) alimenta la firma de release y profile. Release requiere los cuatro valores y un keystore existente; profile permite fallback a debug para clones locales sin la clave de carga. `storeFile` se resuelve **relativo a `android/`**:
 
 ```properties
 storeFile=app/upload-keystore.jks
@@ -86,7 +88,7 @@ keyAlias=upload
 keyPassword=…
 ```
 
-El CI de release escribe el mismo archivo desde secrets de GitHub, con el keystore en `android/upload-keystore.jks` (`storeFile=upload-keystore.jks`). Como usa la misma clave, no hay que registrar otra huella para él.
+El workflow de release escribe el mismo archivo desde secrets de GitHub, con el keystore en `android/upload-keystore.jks` (`storeFile=upload-keystore.jks`). Ese workflow usa la clave de subida registrada. El workflow Android CI genera una clave efímera distinta solo para su APK de smoke test y la elimina al final del job.
 
 ### Diagnóstico rápido
 
