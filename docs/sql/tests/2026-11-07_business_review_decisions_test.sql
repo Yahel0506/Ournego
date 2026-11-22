@@ -1,7 +1,7 @@
 -- OUR-113 - Tests for moderation rules and the review log.
 -- Run after 2026-11-05_business_review_status.sql,
 -- 2026-11-06_business_review_requests.sql and
--- 2026-11-07_business_review_decisions.sql. Everything is rolled back; a
+-- 2026-11-07_business_review_decisions.sql and both 2026-11-19 trust migrations. Everything is rolled back; a
 -- failing check raises an exception that starts with FAIL.
 
 begin;
@@ -18,6 +18,19 @@ insert into public.businesses (business_id, owner_id, name, status) values
   ('00000000-0000-0000-0000-0000000113b3', '00000000-0000-0000-0000-000000113a01', 'pending2', 'pending'),
   -- owned by the reviewer: they cannot decide it
   ('00000000-0000-0000-0000-0000000113b4', '00000000-0000-0000-0000-000000113a03', 'mine',     'pending');
+
+-- Valid data and owned images are required for approval and resubmission.
+update private.trust_settings set storage_public_origin='https://test-project.supabase.co', prohibited_terms=array['bannedword'] where singleton;
+insert into public.users(id,has_profile,name) values
+ ('00000000-0000-0000-0000-000000113a01',true,'Owner'),
+ ('00000000-0000-0000-0000-000000113a02',true,'Other'),
+ ('00000000-0000-0000-0000-000000113a03',true,'Reviewer');
+insert into storage.objects(bucket_id,name,owner,owner_id)
+select 'businesses_pictures', business_id::text||'/hero.jpg', owner_id, owner_id::text
+from public.businesses where business_id::text like '00000000-0000-0000-0000-0000000113b%';
+update public.businesses set type=1,address='Ciudad Guzmán',latitude=19.7086,longitude=-103.4641,
+ images=array['https://test-project.supabase.co/storage/v1/object/public/businesses_pictures/'||business_id::text||'/hero.jpg']
+where business_id::text like '00000000-0000-0000-0000-0000000113b%';
 
 -- Non-reviewer accounts cannot resolve requests ---------------------------------
 set local role authenticated;
@@ -223,18 +236,18 @@ do $$ declare r record; begin
 end $$;
 reset role;
 
--- S0 bounce is logged (approved listing edited by its owner) ---------------------
+-- A risky owner edit is logged as a system decision ---------------------
 set local role authenticated;
 select set_config('request.jwt.claims',
   '{"sub":"00000000-0000-0000-0000-000000113a01","role":"authenticated"}', true);
 do $$ declare l record; begin
-  update public.businesses set name = 'approved edited'
+  update public.businesses set name = 'Bannedword edited'
     where business_id = '00000000-0000-0000-0000-0000000113b1';
   select * into l from public.business_review_log
     where business_id = '00000000-0000-0000-0000-0000000113b1'
     order by id desc limit 1;
-  if l.from_status <> 'approved' or l.to_status <> 'pending' or l.actor_role <> 'owner' then
-    raise exception 'FAIL: return to review (S0) not logged';
+  if l.from_status <> 'approved' or l.to_status <> 'pending' or l.actor_role <> 'system' or l.actor_id is not null or l.reason <> 'prohibited_language' then
+    raise exception 'FAIL: automatic return to review not logged';
   end if;
 end $$;
 reset role;
@@ -244,8 +257,8 @@ set local role authenticated;
 select set_config('request.jwt.claims',
   '{"sub":"00000000-0000-0000-0000-000000113a02","role":"authenticated"}', true);
 do $$ begin
-  insert into public.businesses (business_id, owner_id, name)
-    values ('00000000-0000-0000-0000-0000000113b5', '00000000-0000-0000-0000-000000113a02', 'new');
+  insert into public.businesses (business_id, owner_id, name, type, address, latitude, longitude)
+    values ('00000000-0000-0000-0000-0000000113b5', '00000000-0000-0000-0000-000000113a02', 'new',1,'Ciudad Guzmán',19.7086,-103.4641);
   if (select to_status from public.business_review_log
       where business_id = '00000000-0000-0000-0000-0000000113b5') <> 'pending' then
     raise exception 'FAIL: new listing not logged as pending';

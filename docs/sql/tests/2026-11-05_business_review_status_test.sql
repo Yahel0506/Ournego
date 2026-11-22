@@ -1,5 +1,5 @@
--- OUR-111 - Tests for the approved-only access rules on businesses.
--- Run after 2026-11-05_business_review_status.sql. Everything is rolled back;
+-- OUR-111 - Access rules under the trust submission model.
+-- Run after all migrations through 2026-11-19_business_trust_submission.sql. Everything is rolled back;
 -- a failing check raises an exception that starts with FAIL.
 
 begin;
@@ -15,7 +15,13 @@ insert into public.businesses (business_id, owner_id, name, status, is_active) v
   ('00000000-0000-0000-0000-0000000111b2', '00000000-0000-0000-0000-000000111a01', 'pending',   'pending',   true),
   ('00000000-0000-0000-0000-0000000111b3', '00000000-0000-0000-0000-000000111a01', 'rejected',  'rejected',  true),
   ('00000000-0000-0000-0000-0000000111b4', '00000000-0000-0000-0000-000000111a01', 'withdrawn', 'withdrawn', true),
-  ('00000000-0000-0000-0000-0000000111b5', '00000000-0000-0000-0000-000000111a01', 'hidden',    'approved',  false);
+  ('00000000-0000-0000-0000-0000000111b5', '00000000-0000-0000-0000-000000111a01', 'hidden',    'approved',  false),
+  ('00000000-0000-0000-0000-0000000111b6', '00000000-0000-0000-0000-000000111a01', 'under review', 'under_review', true);
+update public.businesses set type=1, address='Ciudad Guzmán', latitude=19.7086, longitude=-103.4641 where business_id::text like '00000000-0000-0000-0000-0000000111b%';
+insert into public.users(id,has_profile,name) values ('00000000-0000-0000-0000-000000111a01',true,'Owner');
+update private.trust_settings set storage_public_origin='https://test-project.supabase.co', prohibited_terms=array[]::text[] where singleton;
+insert into storage.objects(bucket_id,name,owner,owner_id) values ('businesses_pictures','00000000-0000-0000-0000-0000000111b2/hero.jpg','00000000-0000-0000-0000-000000111a01','00000000-0000-0000-0000-000000111a01');
+update public.businesses set images=array['https://test-project.supabase.co/storage/v1/object/public/businesses_pictures/00000000-0000-0000-0000-0000000111b2/hero.jpg'] where business_id='00000000-0000-0000-0000-0000000111b2';
 insert into public.business_hours (business_id, day_of_week, opening_time, closing_time) values
   ('00000000-0000-0000-0000-0000000111b1', 1, '08:00', '17:00'),
   ('00000000-0000-0000-0000-0000000111b2', 1, '08:00', '17:00');
@@ -73,26 +79,19 @@ select set_config('request.jwt.claims',
   '{"sub":"00000000-0000-0000-0000-000000111a01","role":"authenticated"}', true);
 do $$ begin
   if (select count(*) from public.businesses
-      where business_id::text like '00000000-0000-0000-0000-0000000111b%') <> 5 then
+      where business_id::text like '00000000-0000-0000-0000-0000000111b%') <> 6 then
     raise exception 'FAIL: owner does not see all own listings';
   end if;
   if (select count(*) from public.business_hours
       where business_id::text like '00000000-0000-0000-0000-0000000111b%') <> 2 then
     raise exception 'FAIL: owner does not see hours of own pending listing';
   end if;
-  -- cannot create approved
+  -- Direct insertion cannot bypass the trusted submission RPC.
   begin
     insert into public.businesses (owner_id, name, status)
       values ('00000000-0000-0000-0000-000000111a01', 'self-approved', 'approved');
-    raise exception 'FAIL: owner created an approved listing';
+    raise exception 'FAIL: owner created an approved listing directly';
   exception when insufficient_privilege then null; end;
-  -- can create pending
-  insert into public.businesses (business_id, owner_id, name)
-    values ('00000000-0000-0000-0000-0000000111b6', '00000000-0000-0000-0000-000000111a01', 'new');
-  if (select status from public.businesses
-      where business_id = '00000000-0000-0000-0000-0000000111b6') <> 'pending' then
-    raise exception 'FAIL: new listing is not pending';
-  end if;
   -- cannot self-approve or self-reject (re-opening is allowed since OUR-112)
   begin
     update public.businesses set status = 'approved'
