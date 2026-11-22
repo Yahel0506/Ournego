@@ -36,6 +36,7 @@ class SupabaseMapDatasource {
         .select()
         .eq('business_id', businessId)
         .eq('status', approvedStatus)
+        .or('is_active.is.null,is_active.eq.true')
         .maybeSingle();
 
     if (data == null || !isPublicListing(data)) {

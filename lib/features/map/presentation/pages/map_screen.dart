@@ -382,7 +382,18 @@ class _MapScreenState extends ConsumerState<MapScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           OurnegoSnackbars.info(
             context,
-            'No encontramos el negocio solicitado',
+            'Esta ficha no está disponible o ya fue retirada.',
+          ),
+        );
+      },
+      onDeepLinkError: () {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          OurnegoSnackbars.error(
+            context,
+            'No pudimos cargar la ficha. Revisa tu conexión.',
+            actionLabel: 'Reintentar',
+            onAction: () => _viewController.resolveDeepLinkBusiness(),
           ),
         );
       },
@@ -519,8 +530,11 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final reference = locationState?.reference ?? ReferenceLocation.defaultZone;
     final showLocationBanner =
         !_showSearchPanel && locationStatusNeedsBanner(locationState?.status);
+    final isOnline = ref.watch(isOnlineProvider);
     final showZoneChip =
-        !_showSearchPanel && locationState != null && !reference.isGps;
+        !_showSearchPanel &&
+        locationState != null &&
+        (!reference.isGps || !isOnline);
     final liveBusinesses = ref.watch(businessesStreamProvider);
     final retained = ref.watch(mapBusinessesProvider);
     // Keep showing the last businesses while the stream fails or reloads.
@@ -530,7 +544,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final showStaleChip =
         !_showSearchPanel &&
         retained.hasBusinesses &&
-        (retained.loadFailed || !ref.watch(isOnlineProvider));
+        (retained.loadFailed || !isOnline);
     final searchResults = _searchBusinessesUsecase(
       businesses: businessState.asData?.value ?? const <Business>[],
       query: _searchQuery,
@@ -644,6 +658,23 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 ),
               ),
             ),
+          if (!_showSearchPanel &&
+              businessState.asData?.value.isEmpty == true &&
+              !retained.loadFailed &&
+              isOnline)
+            Positioned(
+              top: topBarHeight + 120,
+              left: 24,
+              right: 24,
+              child: Center(
+                child: OurnegoButton.secondary(
+                  key: const Key('empty-map-action'),
+                  size: OurnegoButtonSize.small,
+                  label: 'Aún no hay negocios disponibles. Explorar otra zona',
+                  onPressed: _openZonePicker,
+                ),
+              ),
+            ),
           if (showLocationBanner || showZoneChip || showStaleChip)
             Positioned(
               top: topBarHeight + 8,
@@ -662,9 +693,13 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   if (showZoneChip)
                     OurnegoGlassChip(
                       key: const Key('zone-chip'),
-                      label: 'Zona: ${reference.label}',
+                      label: reference.isGps
+                          ? 'Explorar otra zona'
+                          : 'Zona: ${reference.label}',
                       actionLabel: 'Cambiar',
-                      semanticLabel: 'Zona: ${reference.label}. Cambiar',
+                      semanticLabel: reference.isGps
+                          ? 'Explorar otra zona. Cambiar'
+                          : 'Zona: ${reference.label}. Cambiar',
                       onPressed: _openZonePicker,
                     ),
                   if (showZoneChip && showStaleChip) const SizedBox(height: 8),
@@ -688,7 +723,14 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 child: MapSearchOverlayWidget(
                   results: searchResults,
                   query: _searchQuery,
-                  hasData: businessState.hasValue,
+                  hasData:
+                      businessState.hasValue &&
+                      !(retained.loadFailed &&
+                          (retained.businesses?.isEmpty ?? true)),
+                  loadFailed:
+                      retained.loadFailed &&
+                      (retained.businesses?.isEmpty ?? true),
+                  onRetry: () => ref.invalidate(businessesStreamProvider),
                   location: location,
                   referenceLabel: reference.isGps ? null : reference.label,
                   filters: _searchFilters,

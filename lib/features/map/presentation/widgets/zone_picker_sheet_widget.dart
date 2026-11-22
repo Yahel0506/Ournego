@@ -189,16 +189,15 @@ class _ZonePickerSheetState extends ConsumerState<ZonePickerSheet> {
                   title: const Text('Usar el centro del mapa'),
                   onTap: _useMapCenter,
                 ),
-                if (widget.currentZone != null)
-                  ListTile(
-                    key: const Key('zone-picker-clear'),
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.restart_alt_rounded),
-                    title: Text(
-                      'Volver a ${ReferenceLocation.defaultZone.label}',
-                    ),
-                    onTap: () => Navigator.of(context).pop(const ZoneCleared()),
+                ListTile(
+                  key: const Key('zone-picker-clear'),
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.restart_alt_rounded),
+                  title: Text(
+                    'Explorar ${ReferenceLocation.defaultZone.label}',
                   ),
+                  onTap: () => Navigator.of(context).pop(const ZoneCleared()),
+                ),
                 const Divider(height: OurnegoSpacingTokens.md),
                 Flexible(child: _buildResults(context)),
               ],

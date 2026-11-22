@@ -132,7 +132,10 @@ void main() {
     await tester.pump(const Duration(milliseconds: 120));
     await tester.pumpAndSettle(const Duration(milliseconds: 200));
 
-    expect(find.text('No encontramos el negocio solicitado'), findsOneWidget);
+    expect(
+      find.text('Esta ficha no está disponible o ya fue retirada.'),
+      findsOneWidget,
+    );
     expect(find.byKey(appNavigationBarKey), findsOneWidget);
   });
 }
