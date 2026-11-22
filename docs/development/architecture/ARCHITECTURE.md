@@ -104,3 +104,19 @@ Extend an existing feature when changes are tightly coupled to that feature's ex
 - **Liskov Substitution:** repository implementations remain interchangeable.
 - **Interface Segregation:** small feature-specific repository interfaces.
 - **Dependency Inversion:** presentation/domain depend on abstractions, not data-layer concretions.
+
+## Listing publication and trust
+
+Business registration calls the database submission RPC. Valid clean listings
+are published immediately; automatic filters route doubtful submissions to
+`pending`. Only active `approved` listings and their public child rows are
+visible publicly. The other states are `pending`, `rejected`, `withdrawn` and
+`under_review`. Reviewer decisions and owner resubmissions are constrained by
+server triggers and RLS, and status changes are audited.
+
+Publication (`published_at`) is independent of community verification
+(`verified_at`, `verification_paused`). The current trust migration establishes
+and protects these fields; it does not itself implement community voting.
+Historical published listings remain visible without requiring a new image.
+See `docs/development/plans/our-113-moderation.md` and the migrations in
+`docs/sql/` for the current transitions and validation.

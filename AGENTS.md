@@ -554,7 +554,7 @@ Multi-context layout rooted at `CONTEXT-MAP.md`. See `docs/agents/domain.md`.
 
 Keep these files aligned when architecture evolves:
 
-- `ARCHITECTURE.md` (high-level architecture and dependency rules)
+- `docs/development/architecture/ARCHITECTURE.md` (high-level architecture and dependency rules)
 - `AGENTS.md` (coding instructions and conventions)
 - `README.md` (developer onboarding and quick start)
 
@@ -563,14 +563,15 @@ Keep these files aligned when architecture evolves:
 This repo has multiple documentation entrypoints. Before creating new docs, prefer extending an existing one.
 
 - `README.md`: developer onboarding, setup basics.
-- `ARCHITECTURE.md`: high-level architecture and dependency rules.
+- `docs/development/architecture/ARCHITECTURE.md`: high-level architecture and dependency rules.
 - `CONTEXT-MAP.md`: map of domain context and where to find details.
 - `AGENTS.md`: agent/dev workflow conventions and commands.
 - `TESTING.md`: testing strategy and how to run tests.
 - `MODELS_TEMPLATE.md`: guidelines for models vs entities and serialization.
 - `DESIGN_SYSTEM.md`: visual design system (tokens, components, patterns) documented from current UI implementation.
 - `docs/development/plans/container-transform.md`: container transform plan (decisions D1–D32 and E1–E8, waves 0–8, status).
-- `docs/development/plans/our-113-moderation.md`: moderation queue, decision log and the rules the database enforces.
+- `docs/development/plans/our-113-moderation.md`: moderation queue, decision log and current trust rules.
+- `docs/development/plans/our-171-linear-criteria.md`: proposed acceptance criteria for OUR-117 and OUR-119.
 - `docs/development/plans/our-110-debug-simulation.md`: debug simulator (startup, network, session, location, Google) and its panel.
 - `docs/development/design/motion/README.md`: container transform (windows that grow out of their trigger): pieces, presets and differences from the spec.
 - `SYSTEM_DESIGN.md`: alias entrypoint; canonical doc is `DESIGN_SYSTEM.md`.

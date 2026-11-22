@@ -1,41 +1,36 @@
-# OUR-113 - Review requests and record decisions
+# OUR-113 - Moderation and decisions
 
-Status: client, SQL and tests written. The SQL was dry-run (script + tests in a
-transaction ending in `rollback`) and then **applied** to the Supabase project
-on 2026-11-07 as migration `business_review_decisions`. The existing catalog is
-untouched (7 of 7 listings still `approved`). Still to do: add reviewers (see
-`lib/features/moderation/README.md`); `docs/sql/tests/2026-11-07_business_review_decisions_test.sql`
-can be re-run any time (it rolls back).
+The current model is defined by the review migrations and the two
+`2026-11-19` trust migrations in `docs/sql/`. Clean submissions are published
+immediately; automatic filters send doubtful submissions to `pending` with a
+`pending_issue_code`. Publication and community verification are separate:
+`published_at` records publication, while `verified_at` and
+`verification_paused` are trust metadata. The current migration adds and
+protects these fields; it does not implement a community voting workflow.
 
-## Decisions
+`/moderation` is restricted to members of `public.reviewers`. Its current
+client displays pending and published listings. Pending listings may be
+approved or rejected; published listings may be withdrawn. The database also
+allows a reviewer to restore or withdraw an `under_review` listing. An owner
+cannot resolve their own listing even if they are a reviewer. Reviewer
+transitions are constrained to `pending → approved/rejected`,
+`approved → withdrawn` and `under_review → approved/withdrawn`.
+Rejection and reviewer withdrawal require a nonblank reason; approval stamps
+`reviewed_at` and `published_at` if needed. Approval of a pending listing
+requires valid basic data and an owned image. Restoring a historical
+`under_review` listing does not require a replacement image.
 
-- **Where the queue lives:** in the app (`/moderation`), visible only to
-  reviewers. The security does not depend on it (all in the database), so a web
-  queue can be added later. Chosen to avoid a second client in the pilot.
-- **Who is authorized:** rows in `public.reviewers` (OUR-111), managed from the
-  dashboard / service role. No role UI in the app.
-- **Log:** `business_review_log`, filled by an `AFTER INSERT OR UPDATE` trigger
-  on `businesses`, so every route (app, REST, SQL as an end user) leaves a
-  record. It also logs owner moves (request, resubmit, own withdrawal, the S0
-  return to review) with `actor_role`, giving the full timeline. Append-only:
-  no insert/update/delete grant for `anon` / `authenticated`.
-- **Reason:** required (non-blank, trimmed) to reject **and** to withdraw; it is
-  stored in `businesses.rejection_reason` so the owner sees it in OUR-112's
-  panel (now also for a withdrawal). Approving or re-opening clears it; an
-  owner's own withdrawal or resubmission clears it too.
-- **Decision date:** `reviewed_at` is stamped for approve, reject and withdraw.
-- **Self-review:** a reviewer cannot approve or reject a listing they own (the
-  open gap noted in OUR-112). They can still withdraw or re-submit it as owner.
-- **Transitions:** the client only offers approve/reject on `pending` and
-  withdraw on `approved`, using a status filter so a stale tap (someone else
-  decided first) fails with "ya cambió de estado" instead of overwriting. The
-  database does not restrict reviewer transitions further (OUR-111/112 tests
-  rely on it); the service role is unrestricted.
-- **Reviewer name:** the log stores `actor_id`; the UI shows the role ("Revisión")
-  because `users` is not readable across accounts.
+Owners can correct rejected listings and resubmit them to `pending`, or withdraw
+and later resubmit, subject to validation and capacity. An owner cannot
+withdraw an `under_review` listing. Clean edits of published data remain
+public; an automatic filter can move an edited listing to `pending` and record
+the reason. Identity edits clear `verified_at`. Existing approved listings
+retain visibility and may keep their historical image until it is changed.
 
-## Not here
-
-- Notifications to the owner (the result shows in the panel; no push/email).
-- Validation / duplicate detection (OUR-114), reports (OUR-116).
-- Storage hardening for images of unpublished listings (see OUR-112 gaps).
+`business_review_log` records status changes with actor, transition and reason.
+Automatic publication and filter decisions are attributed to `system`; owner
+and reviewer actions are attributed accordingly. Owners can read their own
+history, reviewers can read the queue and history, and clients cannot write the
+log directly. Public RLS exposes only active `approved` listings and their
+related public rows. See the SQL tests in `docs/sql/tests/`; they require a
+Supabase-compatible database with all migrations applied and roll back fixtures.

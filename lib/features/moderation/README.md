@@ -1,74 +1,41 @@
 # Moderation feature
 
-## Responsibility
+## Responsibility and dependencies
 
-Lets authorized staff ("revisoras") resolve listing requests: see the queue of
-pending listings, approve, reject (with reason) and withdraw published ones,
-and read the history of decisions (OUR-113).
+Authorized reviewers use `/moderation` to inspect pending and published
+listings, approve or reject pending submissions, withdraw published listings,
+and inspect decision history. The app uses Supabase `businesses`, `reviewers`
+and `business_review_log`, the auth session and business status entities.
+`ModerationRepository`, review usecases and providers back the screen.
 
-## Dependencies
+## Current model and security
 
-- Supabase: `businesses`, `reviewers`, `business_review_log` (RLS + triggers).
-- `auth` (`currentUserIdProvider`), `business` (`BusinessReviewStatus`,
-  panel labels).
+Clean submissions publish automatically; filters queue doubtful submissions
+with a reason. Public access is limited to active `approved` rows. `pending`,
+`rejected`, `withdrawn` and `under_review` are not public. Publication does
+not imply community verification: `verified_at` and `verification_paused` are
+protected metadata, and a community voting workflow is not supplied by these
+migrations.
 
-## Key pieces
+The database, not the UI, restricts decisions to reviewers and prevents
+self-review. Reviewer transitions are pending to approved/rejected, approved
+to withdrawn, and under_review to approved/withdrawn. Reasons are required for
+rejection and reviewer withdrawal. Pending approval checks basic data and an
+owned photo. The client also runs `checkListing` and presents blocking issues
+and duplicate warnings; its extra checks are not a substitute for server
+validation. The current UI tabs expose pending and approved, not a dedicated
+under-review queue.
 
-- Entities: `ReviewListing`, `ReviewLogEntry`, `ReviewDecision`.
-- Repository: `ModerationRepository` / `ModerationRepositoryImpl`.
-- Usecases: `CheckIsReviewerUsecase`, `GetReviewListingsUsecase`,
-  `GetReviewLogUsecase`, `DecideBusinessReviewUsecase`,
-  `CheckListingBeforeApprovalUsecase` (OUR-114).
-- Pure rules: `checkListing` (`domain/listing_checker.dart`) returns a
-  `ListingReport` (issues + possible duplicates).
-- Providers (`presentation/providers/moderation_providers.dart`):
-  `isReviewerProvider`, `reviewListingsProvider(status)`, `reviewLogProvider(id)`.
-- UI: `ModerationScreen` (tabs "Pendientes" / "Publicadas"), `ReviewListingCard`,
-  reason dialog and confirmation (`review_decision_flow.dart`), history
-  (`ReviewLogDialog`). Entry: "Moderación" in the profile menu, only for
-  reviewers.
-
-## Routes
-
-`ModerationRoutes.queue` (`/moderation`), outside the shell. Logged-out users are
-sent to sign in; a signed-in account that is not a reviewer sees "no access".
-
-## Security model
-
-The client never grants anything. The server enforces it
-(`docs/sql/2026-11-05_business_review_status.sql`,
-`2026-11-07_business_review_decisions.sql`):
-
-- Only rows in `public.reviewers` can read the whole queue and set
-  `approved` / `rejected` / `withdrawn`; any other account gets an error (or no
-  rows) even calling the REST API directly.
-- Rejecting or withdrawing needs a non-blank reason (stored in
-  `businesses.rejection_reason`, which the owner reads in the business panel).
-- A reviewer cannot approve or reject their own listing.
-- Every status change is written by trigger to `business_review_log` (actor,
-  role, from/to, reason, date). The table is append-only for everyone.
-- Approving makes the listing public; withdrawing hides it from map, search and
-  detail (public RLS from OUR-111).
+The append-only `business_review_log` records status changes. Automatic filter
+and publication decisions use the system actor; owners can read their own
+history and reviewers can read all history. See
+`docs/development/plans/our-113-moderation.md` and the review and trust
+migrations in `docs/sql/` for details.
 
 ## Adding a reviewer
 
-Reviewers are managed only from the dashboard or with the service role:
+Manage the allow-list through the dashboard or service role:
 
 ```sql
 insert into public.reviewers (user_id) values ('<auth.users id>');
 ```
-
-## Notes / extension points
-
-- OUR-114: approving first runs `checkListing` against the pending and published
-  catalog. **Blocking** (approve disabled, reject still possible): name < 3
-  chars, category out of range, no address, missing / (0,0) / out-of-range
-  coordinates, no images, malformed phone, schedules with an invalid or empty
-  range. **Warnings** (approve after "Aprobar de todos modos"): no phone, no
-  hours, no description, and possible duplicates (same name within 150 m or same
-  address, or same phone). The check is client-side only: a reviewer calling the
-  REST API can still approve; moving it into the trigger would need a migration.
-  The card also shows the hours the owner captured. OUR-116 (reports) can reuse the queue screen.
-- The queue is in the app, not the web: the decision was made for the pilot to
-  avoid a second client; the rules live in the database, so a web queue later
-  needs no new security work.

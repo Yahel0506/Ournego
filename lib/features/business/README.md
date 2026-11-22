@@ -1,56 +1,39 @@
 # Business feature
 
-## Responsibility
+## Responsibility and dependencies
 
-Business registration and the owner's panel: create a listing, edit its data,
-and request and follow its publication review (OUR-111, OUR-112).
+Business registration, editing and the owner panel use Supabase businesses,
+hours and `businesses_pictures` storage, LocationIQ and the auth session.
+`BusinessRepository`, `RegisterBusinessUsecase`, the owner providers and
+`BusinessPanelReviewStatusCard` implement these flows.
 
-## Dependencies
+## Publication and review
 
-- Supabase (`businesses`, `business_hours`, storage bucket `businesses_pictures`).
-- LocationIQ geocoding (address suggestions).
-- `auth` (`currentUserIdProvider`, session).
+`submit_business_listing` validates the profile, data, owned image, hours and
+limits, then applies automatic filters. A clean submission becomes `approved`
+and public immediately with `published_at`; a doubtful submission becomes
+`pending`, hidden from the public and accompanied by a reason code. A direct
+legacy insert remains pending and cannot self-publish. Only active `approved`
+rows and their public child rows are visible publicly.
 
-## Key pieces
+The five statuses are `pending` (awaiting review), `approved` (published),
+`rejected` (correctable), `withdrawn` (hidden) and `under_review` (hidden
+for community review). The owner can edit a rejection and resubmit to pending;
+a reviewer can approve or reject it. Owners can withdraw and resubmit except
+that an owner cannot withdraw while `under_review`. Reviewer withdrawals show
+the reason and date. Clean edits to a published listing stay public; a filter
+may instead send it to pending. Changes to name, category, address or position
+clear `verified_at`; contact-only edits do not. Verification is distinct from
+publication: `verified_at` and `verification_paused` are protected metadata,
+not proof that a voting workflow is already implemented.
 
-- Entities: `OwnedBusinessProfile`, `BusinessReviewStatus`, `AppSchedule`.
-- Repository: `BusinessRepository` / `BusinessRepositoryImpl`.
-- Usecases: `RegisterBusinessUsecase`, `GetOwnedBusinessUsecase`,
-  `SubmitBusinessForReviewUsecase` and the `Upsert*` / image usecases.
-- Providers: `ownedBusinessProvider`, `isOwnerProvider`
-  (`presentation/providers/business_providers.dart`).
-- Review UI: `BusinessPanelReviewStatusCard` in the owner panel.
-
-## Review flow (OUR-112)
-
-Statuses mirror `businesses.status`: `pending`, `approved`, `rejected`,
-`withdrawn`. Only `approved` (and active) listings are public.
-
-| Moment | What happens |
-| --- | --- |
-| Owner registers a business | Row is created as `pending` and `submitted_at` is set; the form confirms that the request was sent. The panel shows "En revisión". |
-| Reviewer approves | Listing becomes public; the panel shows "Publicado". |
-| Reviewer rejects | The panel shows "No aprobado" with the reason (`rejection_reason`) and the date. The owner edits the data and taps "Reenviar a revisión" (confirmation dialog) which moves it back to `pending` and clears the reason. |
-| Owner withdrew the listing | The panel offers "Solicitar publicación" with the same confirmation. |
-| Owner edits public data of an `approved` listing | The server returns it to `pending` (it leaves the public map until approved again). Public data: name, description, category, address/coordinates, images. Phone and hours are published without review. The panel tells the owner after saving. |
-
-The client never sets `approved`/`rejected` and never writes the reason or
-decision dates: the trigger `enforce_business_status_change` ignores them for
-non-reviewers. Reviewers decide in the moderation feature
-(`lib/features/moderation`, OUR-113); a listing withdrawn by review shows
-"Retirado" with the reviewer's reason and date.
-
-SQL: `docs/sql/2026-11-06_business_review_requests.sql` (apply after
-`2026-11-05_business_review_status.sql`); tests in
-`docs/sql/tests/2026-11-06_business_review_requests_test.sql`. See also
-`docs/development/plans/our-112-review-requests.md`.
+Historical approved listings remain visible without a new photo; new
+submissions and image changes require a valid owned image. The authoritative
+server rules are in `docs/sql/2026-11-19_business_under_review_status.sql`
+and `docs/sql/2026-11-19_business_trust_submission.sql`, after the earlier
+review migrations. Tests are in `docs/sql/tests/`.
 
 ## Routes
 
-`BusinessRoutes.panel` (shell), `BusinessRoutes.register`, `BusinessRoutes.form`.
-
-## Notes / extension points
-
-- Old clients that edit an approved listing are covered because the S0 rule
-  lives in the database, not in the client.
-- Reviewer screen and decision log: `lib/features/moderation` (OUR-113).
+`BusinessRoutes.panel` (shell), `BusinessRoutes.register` and
+`BusinessRoutes.form`. Moderation is owned by `lib/features/moderation`.
