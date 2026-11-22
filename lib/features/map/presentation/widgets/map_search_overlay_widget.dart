@@ -20,6 +20,8 @@ class MapSearchOverlayWidget extends StatelessWidget {
   final List<MapSearchResult> results;
   final String query;
   final bool hasData;
+  final bool loadFailed;
+  final VoidCallback onRetry;
   final AppPosition? location;
 
   /// Name of the zone distances are measured from when there is no GPS fix.
@@ -41,6 +43,8 @@ class MapSearchOverlayWidget extends StatelessWidget {
     required this.results,
     required this.query,
     required this.hasData,
+    required this.loadFailed,
+    required this.onRetry,
     required this.location,
     this.referenceLabel,
     required this.filters,
@@ -71,6 +75,22 @@ class MapSearchOverlayWidget extends StatelessWidget {
           style: OurnegoTextStyles.body.copyWith(fontSize: 14),
         ),
       );
+    } else if (loadFailed && !hasData) {
+      bodyState = 'error';
+      body = Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('No pudimos cargar los negocios. Revisa tu conexión.'),
+            OurnegoButton.text(
+              size: OurnegoButtonSize.small,
+              label: 'Reintentar',
+              onPressed: onRetry,
+            ),
+          ],
+        ),
+      );
     } else if (!hasData) {
       bodyState = 'loading';
       body = const Padding(
@@ -81,9 +101,19 @@ class MapSearchOverlayWidget extends StatelessWidget {
       bodyState = 'empty';
       body = Padding(
         padding: const EdgeInsets.all(14),
-        child: Text(
-          'No encontramos coincidencias para "$trimmedQuery".',
-          style: OurnegoTextStyles.body.copyWith(fontSize: 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'No encontramos coincidencias para "$trimmedQuery". Prueba otra búsqueda o elimina los filtros.',
+              style: OurnegoTextStyles.body.copyWith(fontSize: 14),
+            ),
+            OurnegoButton.text(
+              size: OurnegoButtonSize.small,
+              label: 'Limpiar búsqueda',
+              onPressed: onClear,
+            ),
+          ],
         ),
       );
     } else {

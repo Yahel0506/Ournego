@@ -21,8 +21,28 @@ void main() {
       );
     });
 
+    test(
+      'keeps historical approved listings without a publication timestamp',
+      () {
+        expect(
+          SupabaseMapDatasource.isPublicListing({
+            'status': 'approved',
+            'is_active': true,
+            'published_at': null,
+          }),
+          isTrue,
+        );
+      },
+    );
+
     test('rejects every status other than approved', () {
-      for (final status in ['pending', 'rejected', 'withdrawn', null]) {
+      for (final status in [
+        'pending',
+        'under_review',
+        'rejected',
+        'withdrawn',
+        null,
+      ]) {
         expect(
           SupabaseMapDatasource.isPublicListing({
             'status': status,

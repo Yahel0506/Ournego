@@ -23,6 +23,7 @@ class MapViewController {
   final GetBusinessById getBusinessById;
   final IsFavoriteSnapshot isFavoriteSnapshot;
   final MissingBusinessReporter onMissingBusiness;
+  final VoidCallback onDeepLinkError;
   final TrackBusinessVisit trackBusinessVisit;
 
   LatLng? _initialCenter;
@@ -38,6 +39,7 @@ class MapViewController {
     required this.getBusinessById,
     required this.isFavoriteSnapshot,
     required this.onMissingBusiness,
+    required this.onDeepLinkError,
     required this.trackBusinessVisit,
     String? initialBusinessId,
   }) : _pendingDeepLinkBusinessId = initialBusinessId;
@@ -175,9 +177,16 @@ class MapViewController {
     _isResolvingDeepLink = true;
     final result = await getBusinessById(targetId);
 
+    if (_pendingDeepLinkBusinessId != targetId) {
+      _isResolvingDeepLink = false;
+      resolveDeepLinkBusiness();
+      return;
+    }
+
+    _isResolvingDeepLink = false;
     result.fold(
       (_) {
-        _reportMissingDeepLinkBusiness();
+        onDeepLinkError();
       },
       (business) {
         if (business == null) {
@@ -191,8 +200,6 @@ class MapViewController {
         });
       },
     );
-
-    _isResolvingDeepLink = false;
   }
 
   void _reportMissingDeepLinkBusiness() {

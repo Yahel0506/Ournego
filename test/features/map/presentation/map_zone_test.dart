@@ -71,6 +71,25 @@ void main() {
 
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
+  testWidgets('empty map offers the pilot zone through the picker', (
+    tester,
+  ) async {
+    final repository = FakeMapRepository();
+    await _pumpMap(
+      tester,
+      repository: repository,
+      zones: FakeManualZoneRepository(),
+    );
+    repository.setBusinesses([]);
+    await _settle(tester);
+    await tester.tap(find.byKey(const Key('empty-map-action')));
+    await _settle(tester);
+    expect(find.text('Explorar Ciudad Guzmán'), findsOneWidget);
+    await tester.tap(find.byKey(_clearZone));
+    await _settle(tester);
+    expect(find.byKey(_pickerField), findsNothing);
+  });
+
   testWidgets('blocked permission offers a zone or the settings', (
     tester,
   ) async {
