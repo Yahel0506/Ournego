@@ -304,10 +304,6 @@ When adding a new key, also add it to `_compileTimeDefines` in
 - **Auth:** Supabase Auth (via `supabase_flutter`) + `google_sign_in` (mobile OAuth helper used by `SupabaseAuthDatasource`)
 - **Local Storage:** shared_preferences, sembast
 
-Notes:
-
-- `firebase_auth` / `cloud_firestore` are listed in `pubspec.yaml` but are not currently imported/used under `lib/`.
-
 ## Analysis Rules
 
 Configured in `analysis_options.yaml`:
@@ -573,6 +569,7 @@ This repo has multiple documentation entrypoints. Before creating new docs, pref
 - `docs/development/plans/our-113-moderation.md`: moderation queue, decision log and current trust rules.
 - `docs/development/plans/our-171-linear-criteria.md`: proposed acceptance criteria for OUR-117 and OUR-119.
 - `docs/development/plans/our-110-debug-simulation.md`: debug simulator (startup, network, session, location, Google) and its panel.
+- `docs/development/release/android-package-audit.md`: Android package, configuration and RLS audit.
 - `docs/development/design/motion/README.md`: container transform (windows that grow out of their trigger): pieces, presets and differences from the spec.
 - `SYSTEM_DESIGN.md`: alias entrypoint; canonical doc is `DESIGN_SYSTEM.md`.
 - `components.md`: project-specific component notes.
