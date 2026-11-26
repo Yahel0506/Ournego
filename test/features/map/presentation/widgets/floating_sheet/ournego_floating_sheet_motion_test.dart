@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:ournego/core/theme/ournego_theme.dart';
+import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
 import 'package:ournego/features/map/domain/entities/business_type.dart';
 import 'package:ournego/features/map/presentation/providers/map_providers.dart';
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/components/minimized_stack_icon.dart';
@@ -43,6 +44,8 @@ Future<FloatingSheetController> _pumpSheet(WidgetTester tester) async {
         ownerProfileStreamProvider.overrideWith(
           (ref, ownerId) => const Stream.empty(),
         ),
+        // The confirmation card reads the session; signed out means hidden.
+        currentUserIdProvider.overrideWith((ref) => null),
       ],
       child: MaterialApp(
         theme: OurnegoTheme.light,

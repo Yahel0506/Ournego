@@ -2,19 +2,26 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:ournego/core/geocoding/geocoding_providers.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
+import 'package:ournego/core/failures.dart';
+import 'package:ournego/features/business/data/datasources/business_confirmation_supabase_datasource.dart';
 import 'package:ournego/features/business/data/datasources/business_supabase_datasource.dart';
+import 'package:ournego/features/business/data/repositories/business_confirmation_repository_impl.dart';
 import 'package:ournego/features/business/data/repositories/business_repository_impl.dart';
+import 'package:ournego/features/business/domain/entities/business_confirmation_answer.dart';
 import 'package:ournego/features/business/domain/entities/owned_business_profile.dart';
 import 'package:ournego/features/business/domain/entities/business_panel_metrics.dart';
+import 'package:ournego/features/business/domain/repositories/business_confirmation_repository.dart';
 import 'package:ournego/features/business/domain/repositories/business_repository.dart';
 import 'package:ournego/features/business/domain/usecases/check_if_owner_usecase.dart';
 import 'package:ournego/features/business/domain/usecases/delete_business_image_usecase.dart';
 import 'package:ournego/features/business/domain/usecases/delete_business_phone_number_usecase.dart';
 import 'package:ournego/features/business/domain/usecases/get_addresses_suggestions_usecase.dart';
+import 'package:ournego/features/business/domain/usecases/get_my_business_confirmation_usecase.dart';
 import 'package:ournego/features/business/domain/usecases/get_owned_business_usecase.dart';
 import 'package:ournego/features/business/domain/usecases/get_business_panel_metrics_usecase.dart';
 import 'package:ournego/features/business/domain/usecases/insert_business_image_usecase.dart';
 import 'package:ournego/features/business/domain/usecases/register_business_usecase.dart';
+import 'package:ournego/features/business/domain/usecases/submit_business_confirmation_usecase.dart';
 import 'package:ournego/features/business/domain/usecases/submit_business_for_review_usecase.dart';
 import 'package:ournego/features/business/domain/usecases/upsert_business_category_usecase.dart';
 import 'package:ournego/features/business/domain/usecases/upsert_business_description_usecase.dart';
@@ -31,6 +38,11 @@ final businessSupabaseDatasourceProvider = Provider<BusinessSupabaseDatasource>(
   (ref) => BusinessSupabaseDatasource(),
 );
 
+final businessConfirmationDatasourceProvider =
+    Provider<BusinessConfirmationSupabaseDatasource>(
+      (ref) => BusinessConfirmationSupabaseDatasource(),
+    );
+
 // |---------------------------------| \\
 // |------- LAYER 2: REPOSITORIES --| \\
 // |---------------------------------| \\
@@ -43,6 +55,12 @@ final businessRepositoryProvider = Provider<BusinessRepository>((ref) {
     geocodingDatasource: geocodingDatasource,
   );
 });
+
+final businessConfirmationRepositoryProvider =
+    Provider<BusinessConfirmationRepository>((ref) {
+      final datasource = ref.watch(businessConfirmationDatasourceProvider);
+      return BusinessConfirmationRepositoryImpl(datasource: datasource);
+    });
 
 // |---------------------------------| \\
 // |------- LAYER 3: USECASES ------| \\
@@ -146,6 +164,18 @@ final getBusinessPanelMetricsUsecaseProvider =
       return GetBusinessPanelMetricsUsecase(repository: repository);
     });
 
+final getMyBusinessConfirmationUsecaseProvider =
+    Provider<GetMyBusinessConfirmationUsecase>((ref) {
+      final repository = ref.watch(businessConfirmationRepositoryProvider);
+      return GetMyBusinessConfirmationUsecase(repository: repository);
+    });
+
+final submitBusinessConfirmationUsecaseProvider =
+    Provider<SubmitBusinessConfirmationUsecase>((ref) {
+      final repository = ref.watch(businessConfirmationRepositoryProvider);
+      return SubmitBusinessConfirmationUsecase(repository: repository);
+    });
+
 final isOwnerProvider = FutureProvider<bool>((ref) async {
   // Watching the user id re-runs the check on every login/logout, so a stale
   // value from a previous (or anonymous) session is never reused.
@@ -182,3 +212,49 @@ final businessPanelMetricsProvider =
         (metrics) => metrics,
       );
     });
+
+/// The signed-in user's answer to "¿Conoces este negocio?" for one business.
+///
+/// `null` data means the user has not answered yet; the server row is the
+/// source of truth, so nothing is cached locally. It watches the signed-in user,
+/// so a different account never reuses another account's answer.
+final businessConfirmationProvider =
+    AsyncNotifierProvider.family<
+      BusinessConfirmationNotifier,
+      BusinessConfirmationAnswer?,
+      String
+    >(BusinessConfirmationNotifier.new);
+
+class BusinessConfirmationNotifier
+    extends AsyncNotifier<BusinessConfirmationAnswer?> {
+  BusinessConfirmationNotifier(this.businessId);
+
+  final String businessId;
+
+  @override
+  Future<BusinessConfirmationAnswer?> build() async {
+    final userId = ref.watch(currentUserIdProvider);
+    if (userId == null) return null;
+    final result = await ref.read(getMyBusinessConfirmationUsecaseProvider)(
+      businessId: businessId,
+    );
+    return result.fold((failure) => throw failure, (answer) => answer);
+  }
+
+  /// Sends [answer]. Returns `null` on success or the [Failure] so the caller
+  /// can keep the card visible and let the user try again.
+  Future<Failure?> submit(BusinessConfirmationAnswer answer) async {
+    final result = await ref.read(submitBusinessConfirmationUsecaseProvider)(
+      businessId: businessId,
+      answer: answer,
+    );
+    return result.fold(
+      // The state is untouched on failure so the card stays and can retry.
+      (failure) => failure,
+      (stored) {
+        state = AsyncData(stored);
+        return null;
+      },
+    );
+  }
+}

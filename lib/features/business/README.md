@@ -33,6 +33,14 @@ server rules are in `docs/sql/2026-11-19_business_under_review_status.sql`
 and `docs/sql/2026-11-19_business_trust_submission.sql`, after the earlier
 review migrations. Tests are in `docs/sql/tests/`.
 
+## Community confirmation
+
+A signed-in user who is not the owner answers "¿Conoces este negocio?" from a
+card in the map sheet (`BusinessConfirmationCardWidget`). Answers go through
+`submit_business_confirmation`; the server decides if they count and the card
+disappears once a row exists. See
+`docs/development/plans/our-165-community-confirmation.md`.
+
 ## Routes
 
 `BusinessRoutes.panel` (shell), `BusinessRoutes.register` and
