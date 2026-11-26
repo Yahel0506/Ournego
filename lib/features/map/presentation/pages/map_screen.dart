@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -1106,11 +1108,15 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
   Rect _searchPanelRect(Size size) {
     final padding = MediaQuery.paddingOf(context);
+    final left = padding.left + 16;
+    final top = padding.top + _topNavigationHeight + 10;
+    // An expanded sheet can take all the vertical space, which would leave a
+    // negative height. Collapse to an empty panel instead of an invalid rect.
     return Rect.fromLTRB(
-      padding.left + 16,
-      padding.top + _topNavigationHeight + 10,
-      size.width - padding.right - 16,
-      size.height - padding.bottom - _searchPanelBottomInset,
+      left,
+      top,
+      math.max(left, size.width - padding.right - 16),
+      math.max(top, size.height - padding.bottom - _searchPanelBottomInset),
     );
   }
 
