@@ -59,6 +59,7 @@ Future<FloatingSheetController> _pumpSheet(WidgetTester tester) async {
             maxWidth: double.infinity,
             onFavorite: (_) async => true,
             onContact: (_, _) async {},
+            onCall: (_, _) async {},
             onCatalog: (_) {},
             onReviews: (_) {},
             onShare: (_) async {},
