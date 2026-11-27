@@ -3,7 +3,8 @@ import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:ournego/features/auth/data/models/user_model.dart';
-import 'package:path/path.dart' as p;
+import 'package:ournego/shared/services/image_compression_service.dart';
+import 'package:ournego/shared/services/storage_paths.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Datasource for authentication operations using Supabase.
@@ -12,6 +13,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// Returns [UserModel] instances for use by the repository layer.
 class SupabaseAuthDatasource {
   final _supabase = Supabase.instance.client;
+  final ImageCompressionService _imageCompression;
+
+  SupabaseAuthDatasource({ImageCompressionService? imageCompression})
+    : _imageCompression = imageCompression ?? ImageCompressionService();
 
   /// Gets the current authenticated user's ID.
   /// Throws if no user is authenticated.
@@ -146,15 +151,32 @@ class SupabaseAuthDatasource {
   }
 
   /// Updates the profile picture for the current user.
+  ///
+  /// The photo is compressed to WebP and stored as `<userId>.webp`, so a new
+  /// photo overwrites the previous one. Photos stored before WebP
+  /// (`<userId>.jpg`, ...) are removed afterwards so none is left behind.
   Future<void> updateProfilePicture(File profilePicture) async {
     final String userId = _requireUserId();
-    await _supabase.storage
-        .from('profile_pictures')
-        .upload(
-          '$userId${p.extension(profilePicture.path)}',
-          profilePicture,
-          fileOptions: const FileOptions(cacheControl: '3600', upsert: true),
-        );
+    final compressed = await _imageCompression.compress(
+      await profilePicture.readAsBytes(),
+      profile: ImageCompressionProfile.avatar,
+    );
+    final bucket = _supabase.storage.from(StoragePaths.profilesBucket);
+    await bucket.uploadBinary(
+      StoragePaths.userAvatar(userId),
+      compressed.bytes,
+      fileOptions: const FileOptions(
+        cacheControl: '3600',
+        contentType: CompressedImage.contentType,
+        upsert: true,
+      ),
+    );
+    try {
+      // Removing a missing object is not an error.
+      await bucket.remove(StoragePaths.legacyAvatarPaths(userId));
+    } catch (e) {
+      debugPrint('Could not remove legacy avatars: $e');
+    }
   }
 
   /// Updates the user's display name.

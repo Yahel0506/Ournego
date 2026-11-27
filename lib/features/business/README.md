@@ -49,6 +49,16 @@ dialog (`BusinessReportDialogWidget`). Reports go through
 `submit_business_report`; the server decides if they count and when enough of
 them hide a listing. See `docs/development/plans/our-166-reports.md`.
 
+## Photos
+
+Every photo (cover on submit, gallery additions) is compressed to WebP by
+`ImageCompressionService` (`ImageCompressionProfile.business`) and stored as
+`businesses_pictures/<businessId>/<uuid>.webp` (`StoragePaths`). A photo is
+removed from Storage when it is deleted from the gallery or when the row write
+that should reference it fails. Photos uploaded before WebP keep their old
+names and URLs; they are still served and removed through the URL. See
+`docs/development/features/image-uploads.md`.
+
 ## Routes
 
 `BusinessRoutes.panel` (shell), `BusinessRoutes.register` and

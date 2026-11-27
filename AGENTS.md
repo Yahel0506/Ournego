@@ -571,6 +571,7 @@ This repo has multiple documentation entrypoints. Before creating new docs, pref
 - `docs/development/plans/our-165-community-confirmation.md`: community confirmation ("¿Conoces este negocio?"): table, server validity rule, card and decisions.
 - `docs/development/plans/our-166-reports.md`: business reports (table, server rules, automatic hiding) and the client flow.
 - `docs/development/plans/our-110-debug-simulation.md`: debug simulator (startup, network, session, location, Google) and its panel.
+- `docs/development/features/image-uploads.md`: image upload pipeline (WebP compression, Storage naming, cleanup of orphan files).
 - `docs/development/release/android-package-audit.md`: Android package, configuration and RLS audit.
 - `docs/development/design/motion/README.md`: container transform (windows that grow out of their trigger): pieces, presets and differences from the spec.
 - `SYSTEM_DESIGN.md`: alias entrypoint; canonical doc is `DESIGN_SYSTEM.md`.
