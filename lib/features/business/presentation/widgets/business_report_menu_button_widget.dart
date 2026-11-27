@@ -11,6 +11,7 @@ import 'package:ournego/shared/widgets/buttons/buttons.dart';
 import 'package:ournego/shared/widgets/container_transform/container_transform_origin.dart';
 import 'package:ournego/shared/widgets/container_transform/show_ournego_window.dart';
 import 'package:ournego/shared/widgets/ournego_dialog_surface.dart';
+import 'package:ournego/shared/widgets/ournego_snackbars.dart';
 
 /// "More" button of the business sheet: opens a small menu whose entry
 /// "Reportar negocio" leads to the reasons dialog.
@@ -42,11 +43,12 @@ class BusinessReportMenuButtonWidget extends ConsumerWidget {
       context,
       businessId: businessId,
     );
-    if (!sent) return;
+    if (!sent || !context.mounted) return;
     // Plain confirmation: nothing about how reports are processed.
     messenger?.showSnackBar(
-      const SnackBar(
-        content: Text('Recibimos tu reporte. Gracias por avisarnos.'),
+      OurnegoSnackbars.success(
+        context,
+        'Recibimos tu reporte. Gracias por avisarnos.',
       ),
     );
   }
