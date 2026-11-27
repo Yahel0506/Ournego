@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:io' show SocketException;
 
+import 'package:flutter/foundation.dart' show debugPrint;
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
@@ -8,15 +10,69 @@ import 'package:ournego/features/business/data/errors/business_registration_exce
 import 'package:ournego/features/business/data/models/business_submission_result_model.dart';
 import 'package:ournego/features/business/domain/entities/app_schedule.dart';
 import 'package:ournego/features/business/domain/entities/business_image_data.dart';
+import 'package:ournego/shared/services/image_compression_service.dart';
+import 'package:ournego/shared/services/storage_paths.dart';
 
 class BusinessSupabaseDatasource {
   final _supabase = Supabase.instance.client;
+  final ImageCompressionService _imageCompression;
+
+  BusinessSupabaseDatasource({ImageCompressionService? imageCompression})
+    : _imageCompression = imageCompression ?? ImageCompressionService();
+
+  /// Compresses [image] to WebP and uploads it under the business folder.
+  /// Returns the object path inside the bucket.
+  Future<String> _uploadBusinessImage(
+    String businessId,
+    BusinessImageData image,
+  ) async {
+    final CompressedImage compressed;
+    try {
+      compressed = await _imageCompression.compress(
+        image.bytes,
+        profile: ImageCompressionProfile.business,
+      );
+    } on ImageCompressionException {
+      throw BusinessRegistrationImageUploadException();
+    }
+    final objectPath = StoragePaths.businessImage(
+      businessId,
+      const Uuid().v4(),
+    );
+    await _supabase.storage
+        .from(StoragePaths.businessesBucket)
+        .uploadBinary(
+          objectPath,
+          compressed.bytes,
+          fileOptions: const FileOptions(
+            cacheControl: '31536000',
+            contentType: CompressedImage.contentType,
+            upsert: false,
+          ),
+        );
+    return objectPath;
+  }
+
+  /// Best-effort removal of an object whose row was never saved, so a failed
+  /// write does not leave an orphan in Storage.
+  Future<void> _discardUploadedImage(String objectPath) async {
+    try {
+      await _supabase.storage.from(StoragePaths.businessesBucket).remove([
+        objectPath,
+      ]);
+    } catch (e) {
+      debugPrint('Could not discard orphan image $objectPath: $e');
+    }
+  }
 
   Future<void> _runProtectedWrite(Future<void> Function() action) async {
     try {
       await action();
     } on BusinessRegistrationValidationException {
       // Raised by the action itself (for example a stale review request).
+      rethrow;
+    } on BusinessRegistrationImageUploadException {
+      // Raised by the image compression step.
       rethrow;
     } on TimeoutException {
       throw BusinessRegistrationNetworkException();
@@ -135,35 +191,32 @@ class BusinessSupabaseDatasource {
       if (_supabase.auth.currentUser == null) {
         throw BusinessRegistrationUnauthorizedException();
       }
-      final suffix = _safeImageExtension(image.fileName, image.mimeType);
-      final objectName = '${const Uuid().v4()}$suffix';
-      final objectPath = '$businessId/$objectName';
-      await _supabase.storage
-          .from('businesses_pictures')
-          .uploadBinary(
-            objectPath,
-            image.bytes,
-            fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
-          );
+      final objectPath = await _uploadBusinessImage(businessId, image);
       final imageUrl = _supabase.storage
-          .from('businesses_pictures')
+          .from(StoragePaths.businessesBucket)
           .getPublicUrl(objectPath);
-      final response = await _supabase.rpc(
-        'submit_business_listing',
-        params: submissionRpcArguments(
-          businessId: businessId,
-          name: name,
-          description: description,
-          category: category,
-          address: address,
-          latitude: latitude,
-          longitude: longitude,
-          phoneNumber: phoneNumber,
-          imageObject: objectPath,
-          imageUrl: imageUrl,
-          hours: hours,
-        ),
-      );
+      final dynamic response;
+      try {
+        response = await _supabase.rpc(
+          'submit_business_listing',
+          params: submissionRpcArguments(
+            businessId: businessId,
+            name: name,
+            description: description,
+            category: category,
+            address: address,
+            latitude: latitude,
+            longitude: longitude,
+            phoneNumber: phoneNumber,
+            imageObject: objectPath,
+            imageUrl: imageUrl,
+            hours: hours,
+          ),
+        );
+      } catch (_) {
+        await _discardUploadedImage(objectPath);
+        rethrow;
+      }
       final data = response is Map<String, dynamic>
           ? response
           : Map<String, dynamic>.from(response as Map);
@@ -206,20 +259,6 @@ class BusinessSupabaseDatasource {
       }
       throw BusinessRegistrationUnknownException();
     }
-  }
-
-  String _safeImageExtension(String fileName, String? mimeType) {
-    final extension = fileName.contains('.')
-        ? fileName.split('.').last.toLowerCase()
-        : switch (mimeType) {
-            'image/png' => 'png',
-            'image/webp' => 'webp',
-            'image/heic' => 'heic',
-            _ => 'jpg',
-          };
-    return RegExp(r'^[a-z0-9]{1,8}$').hasMatch(extension)
-        ? '.$extension'
-        : '.jpg';
   }
 
   /// Moves a rejected or withdrawn listing back to `pending`. The status
@@ -298,39 +337,30 @@ class BusinessSupabaseDatasource {
     required BusinessImageData image,
   }) async {
     await _runProtectedWrite(() async {
-      final fileName = image.fileName.trim().isNotEmpty
-          ? image.fileName
-          : 'business-image.jpg';
-      final storagePath = '$businessId/$fileName';
-
-      await _supabase.storage
-          .from('businesses_pictures')
-          .uploadBinary(
-            storagePath,
-            image.bytes,
-            fileOptions: const FileOptions(cacheControl: '3600', upsert: true),
-          );
-
+      final storagePath = await _uploadBusinessImage(businessId, image);
       final imageUrl = _supabase.storage
-          .from('businesses_pictures')
+          .from(StoragePaths.businessesBucket)
           .getPublicUrl(storagePath);
 
-      final existing = await _supabase
-          .from('businesses')
-          .select('images')
-          .eq('business_id', businessId)
-          .single();
-
-      final rawImages = (existing['images'] as List<dynamic>? ?? const [])
-          .whereType<String>()
-          .toList();
-
-      final updatedImages = [...rawImages, imageUrl];
-
-      await _supabase
-          .from('businesses')
-          .update({'images': updatedImages})
-          .eq('business_id', businessId);
+      try {
+        final existing = await _supabase
+            .from('businesses')
+            .select('images')
+            .eq('business_id', businessId)
+            .single();
+        final rawImages = (existing['images'] as List<dynamic>? ?? const [])
+            .whereType<String>()
+            .toList();
+        await _supabase
+            .from('businesses')
+            .update({
+              'images': [...rawImages, imageUrl],
+            })
+            .eq('business_id', businessId);
+      } catch (_) {
+        await _discardUploadedImage(storagePath);
+        rethrow;
+      }
     });
   }
 
@@ -356,16 +386,16 @@ class BusinessSupabaseDatasource {
           .update({'images': rawImages})
           .eq('business_id', businessId);
 
-      final bucket = _supabase.storage.from('businesses_pictures');
-      final uri = Uri.tryParse(imageUrl);
-      final path = uri?.pathSegments.skipWhile(
-        (s) => s != 'businesses_pictures',
+      // The object path comes from the URL, so photos stored with the old
+      // naming scheme are removed too.
+      final storagePath = StoragePaths.objectPathFromPublicUrl(
+        imageUrl,
+        StoragePaths.businessesBucket,
       );
-      if (path != null && path.isNotEmpty) {
-        final storagePath = path.skip(1).join('/');
-        if (storagePath.isNotEmpty) {
-          await bucket.remove([storagePath]);
-        }
+      if (storagePath != null) {
+        await _supabase.storage.from(StoragePaths.businessesBucket).remove([
+          storagePath,
+        ]);
       }
     });
   }

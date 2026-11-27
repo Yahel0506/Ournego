@@ -22,3 +22,7 @@ Captures in-app feedback with optional attachment metadata and sends it to Supab
 ## UI Refactor Notes
 - If feedback evolves into a dedicated screen, build it on top of shared page/input/button/dialog presets.
 - Keep confirmation and error messaging aligned with shared snackbar/dialog patterns.
+
+## Attachments
+
+The screenshot is compressed to WebP (`ImageCompressionProfile.attachment`) and uploaded as `feedback_attachments/<userId>/<uuid>.webp`; if the `feedback` row cannot be saved the file is removed. See `image-uploads.md`.

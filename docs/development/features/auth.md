@@ -36,3 +36,7 @@ Handles authentication and profile lifecycle: email login/signup, Google login, 
 - This feature is one of the most migrated to shared UI presets.
 - Prefer `OurnegoPageLayout`, `OurnegoInputField`, the `lib/shared/widgets/buttons/` family, and `OurnegoSnackbars` for new auth screens/flows.
 - Avoid inline `InputDecoration`/`styleFrom` unless there is a feature-specific visual requirement that cannot be represented by current shared presets.
+
+## Profile photo
+
+The cropped photo is compressed to WebP (`ImageCompressionProfile.avatar`, 512 px) and stored as `profile_pictures/<userId>.webp`, overwriting the previous one; legacy `<userId>.jpg|jpeg|png|heic` files are removed after the upload. See `image-uploads.md`.
