@@ -7,6 +7,7 @@ import 'package:ournego/features/auth/presentation/providers/auth_providers.dart
 import 'package:ournego/features/business/domain/entities/business_confirmation_answer.dart';
 import 'package:ournego/features/business/presentation/providers/business_providers.dart';
 import 'package:ournego/shared/widgets/buttons/buttons.dart';
+import 'package:ournego/shared/widgets/ournego_snackbars.dart';
 
 /// "¿Conoces este negocio?" card shown inside the business sheet.
 ///
@@ -42,8 +43,9 @@ class _BusinessConfirmationCardWidgetState
     setState(() => _submitting = false);
     if (failure != null) {
       ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-        const SnackBar(
-          content: Text('No se pudo enviar tu respuesta. Inténtalo de nuevo.'),
+        OurnegoSnackbars.error(
+          context,
+          'No se pudo enviar tu respuesta. Inténtalo de nuevo.',
         ),
       );
     }

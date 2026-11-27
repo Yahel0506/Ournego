@@ -85,6 +85,12 @@ class BusinessRegistrationLimitFailure extends Failure {
   BusinessRegistrationLimitFailure(this.limit);
 }
 
+// Si la cuenta ya envió el máximo de reportes del día
+class BusinessReportLimitFailure extends Failure {}
+
+// Si la ficha ya no admite reportes (oculta, retirada o inexistente)
+class BusinessReportUnavailableFailure extends Failure {}
+
 // TODO: Add mapping helpers (e.g. `Failure.fromException`) to centralize
 // translation from platform / third-party errors to domain failures.
 

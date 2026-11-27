@@ -12,6 +12,7 @@ import 'package:ournego/core/theme/tokens/ournego_radius_tokens.dart';
 import 'package:ournego/core/theme/tokens/ournego_semantic_tokens.dart';
 import 'package:ournego/core/theme/tokens/ournego_spacing_tokens.dart';
 import 'package:ournego/features/business/presentation/widgets/business_confirmation_card_widget.dart';
+import 'package:ournego/features/business/presentation/widgets/business_report_menu_button_widget.dart';
 import 'package:ournego/features/map/presentation/providers/map_providers.dart';
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/components/business_hours_compact_card.dart';
 import 'package:ournego/features/map/presentation/widgets/floating_sheet/components/minimized_stack.dart';
@@ -823,6 +824,8 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
               _TypeRatingBadgeRow(type: business.type, rating: business.rating),
               const Spacer(),
               _SheetControls(
+                businessId: business.id,
+                ownerId: business.ownerId,
                 onShare: () => widget.onShare(business),
                 isFavorite: business.isFavorite,
                 onFavoriteToggle: _isFavoriteUpdating
@@ -1309,6 +1312,8 @@ class _CollapsedActions extends StatelessWidget {
 
 class _SheetControls extends StatelessWidget {
   const _SheetControls({
+    required this.businessId,
+    required this.ownerId,
     required this.onShare,
     required this.isFavorite,
     required this.onFavoriteToggle,
@@ -1318,6 +1323,8 @@ class _SheetControls extends StatelessWidget {
     required this.onLast,
   });
 
+  final String businessId;
+  final String ownerId;
   final VoidCallback onShare;
   final bool isFavorite;
 
@@ -1367,6 +1374,11 @@ class _SheetControls extends StatelessWidget {
           onPressed: onMinimize,
         ),
         gap,
+        // Hidden for guests and for the owner; adds its own trailing gap.
+        BusinessReportMenuButtonWidget(
+          businessId: businessId,
+          ownerId: ownerId,
+        ),
         OurnegoIconButton(
           tone: OurnegoButtonTone.tonal,
           outlined: true,

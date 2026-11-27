@@ -41,6 +41,14 @@ card in the map sheet (`BusinessConfirmationCardWidget`). Answers go through
 disappears once a row exists. See
 `docs/development/plans/our-165-community-confirmation.md`.
 
+## Reports
+
+"More" button in the map sheet (`BusinessReportMenuButtonWidget`, hidden for
+guests and the owner) opens a menu with "Reportar negocio" and then a reasons
+dialog (`BusinessReportDialogWidget`). Reports go through
+`submit_business_report`; the server decides if they count and when enough of
+them hide a listing. See `docs/development/plans/our-166-reports.md`.
+
 ## Routes
 
 `BusinessRoutes.panel` (shell), `BusinessRoutes.register` and

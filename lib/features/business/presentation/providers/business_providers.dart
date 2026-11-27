@@ -4,13 +4,16 @@ import 'package:ournego/core/geocoding/geocoding_providers.dart';
 import 'package:ournego/features/auth/presentation/providers/auth_providers.dart';
 import 'package:ournego/core/failures.dart';
 import 'package:ournego/features/business/data/datasources/business_confirmation_supabase_datasource.dart';
+import 'package:ournego/features/business/data/datasources/business_report_supabase_datasource.dart';
 import 'package:ournego/features/business/data/datasources/business_supabase_datasource.dart';
 import 'package:ournego/features/business/data/repositories/business_confirmation_repository_impl.dart';
+import 'package:ournego/features/business/data/repositories/business_report_repository_impl.dart';
 import 'package:ournego/features/business/data/repositories/business_repository_impl.dart';
 import 'package:ournego/features/business/domain/entities/business_confirmation_answer.dart';
 import 'package:ournego/features/business/domain/entities/owned_business_profile.dart';
 import 'package:ournego/features/business/domain/entities/business_panel_metrics.dart';
 import 'package:ournego/features/business/domain/repositories/business_confirmation_repository.dart';
+import 'package:ournego/features/business/domain/repositories/business_report_repository.dart';
 import 'package:ournego/features/business/domain/repositories/business_repository.dart';
 import 'package:ournego/features/business/domain/usecases/check_if_owner_usecase.dart';
 import 'package:ournego/features/business/domain/usecases/delete_business_image_usecase.dart';
@@ -22,6 +25,7 @@ import 'package:ournego/features/business/domain/usecases/get_business_panel_met
 import 'package:ournego/features/business/domain/usecases/insert_business_image_usecase.dart';
 import 'package:ournego/features/business/domain/usecases/register_business_usecase.dart';
 import 'package:ournego/features/business/domain/usecases/submit_business_confirmation_usecase.dart';
+import 'package:ournego/features/business/domain/usecases/submit_business_report_usecase.dart';
 import 'package:ournego/features/business/domain/usecases/submit_business_for_review_usecase.dart';
 import 'package:ournego/features/business/domain/usecases/upsert_business_category_usecase.dart';
 import 'package:ournego/features/business/domain/usecases/upsert_business_description_usecase.dart';
@@ -43,6 +47,11 @@ final businessConfirmationDatasourceProvider =
       (ref) => BusinessConfirmationSupabaseDatasource(),
     );
 
+final businessReportDatasourceProvider =
+    Provider<BusinessReportSupabaseDatasource>(
+      (ref) => BusinessReportSupabaseDatasource(),
+    );
+
 // |---------------------------------| \\
 // |------- LAYER 2: REPOSITORIES --| \\
 // |---------------------------------| \\
@@ -61,6 +70,13 @@ final businessConfirmationRepositoryProvider =
       final datasource = ref.watch(businessConfirmationDatasourceProvider);
       return BusinessConfirmationRepositoryImpl(datasource: datasource);
     });
+
+final businessReportRepositoryProvider = Provider<BusinessReportRepository>((
+  ref,
+) {
+  final datasource = ref.watch(businessReportDatasourceProvider);
+  return BusinessReportRepositoryImpl(datasource: datasource);
+});
 
 // |---------------------------------| \\
 // |------- LAYER 3: USECASES ------| \\
@@ -174,6 +190,12 @@ final submitBusinessConfirmationUsecaseProvider =
     Provider<SubmitBusinessConfirmationUsecase>((ref) {
       final repository = ref.watch(businessConfirmationRepositoryProvider);
       return SubmitBusinessConfirmationUsecase(repository: repository);
+    });
+
+final submitBusinessReportUsecaseProvider =
+    Provider<SubmitBusinessReportUsecase>((ref) {
+      final repository = ref.watch(businessReportRepositoryProvider);
+      return SubmitBusinessReportUsecase(repository: repository);
     });
 
 final isOwnerProvider = FutureProvider<bool>((ref) async {
