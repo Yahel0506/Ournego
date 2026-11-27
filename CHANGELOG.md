@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.6.0](https://github.com/Yahel0506/Ournego/compare/ournego-v0.5.0...ournego-v0.6.0) (2026-11-27)
+
+
+### Features
+
+* **business:** add community confirmation of listings (OUR-165) ([d1480ee](https://github.com/Yahel0506/Ournego/commit/d1480eebf3dd4e818bb634540b372af2e2a7d8d7))
+* **business:** add community confirmation of listings (OUR-165) ([afa3e94](https://github.com/Yahel0506/Ournego/commit/afa3e94590b3049a6f8dc0051eebe46b90a9bbdd))
+* **business:** enforce automatic publication and community review ([5ff8da9](https://github.com/Yahel0506/Ournego/commit/5ff8da96792f904a96913f09f88db01906b05fec))
+* **business:** publish eligible listings and support community review ([d3dcc02](https://github.com/Yahel0506/Ournego/commit/d3dcc02f3b1e268f8bead0e7634745a77296d98f))
+* **business:** report businesses and hide them with credible reports (OUR-166) ([29d87dd](https://github.com/Yahel0506/Ournego/commit/29d87ddb82ff2d3e323a487b260d895296bb89d9))
+* **business:** report businesses and hide them with credible reports (OUR-166) ([92bb5f3](https://github.com/Yahel0506/Ournego/commit/92bb5f39c0b3625c0ee86544d2ec50b2a4954194))
+* **business:** submit listings atomically and show review outcomes ([19a0776](https://github.com/Yahel0506/Ournego/commit/19a0776b90520f40f4b77ae7e3894ae4bb96e02a))
+* **map:** call the business directly with a dialer fallback ([79db99e](https://github.com/Yahel0506/Ournego/commit/79db99ee1376c1384fe01d38ffa4d856168c2e8e))
+* **map:** call the business directly with a dialer fallback ([3cb7531](https://github.com/Yahel0506/Ournego/commit/3cb7531f7ec7690e1e2d1587ac562c8a8721f3d6))
+* **map:** explain empty states and hide withdrawn listings (OUR-118) ([#148](https://github.com/Yahel0506/Ournego/issues/148)) ([fc072db](https://github.com/Yahel0506/Ournego/commit/fc072db951b70c9e33ac2dc495858cfac6a919cd))
+* **storage:** compress uploads to webp and clean up orphan images ([3f1e95d](https://github.com/Yahel0506/Ournego/commit/3f1e95df6fbffbf4ca2f7cb4d4478504995b62a5))
+* **storage:** compress uploads to webp and clean up orphan images ([8e47071](https://github.com/Yahel0506/Ournego/commit/8e47071800e7378e5b1ff84ee94d64031b069a82))
+
+
+### Bug Fixes
+
+* **android:** require upload signing for release builds ([#146](https://github.com/Yahel0506/Ournego/issues/146)) ([af2e22c](https://github.com/Yahel0506/Ournego/commit/af2e22cec02fe00116c0f54e0d79d8843d6e3898))
+* **business:** use the app snackbars in report and confirmation feedback ([48f97d4](https://github.com/Yahel0506/Ournego/commit/48f97d4f5efb5b5d39ad101f5b6d2a5a5def29ee))
+* **map:** keep the search panel rect non-negative ([b9331d5](https://github.com/Yahel0506/Ournego/commit/b9331d5ef79e7c7efe3501160bab7e6eb52d33ad))
+
 ## [0.5.0](https://github.com/Yahel0506/Ournego/compare/ournego-v0.4.0...ournego-v0.5.0) (2026-11-12)
 
 
