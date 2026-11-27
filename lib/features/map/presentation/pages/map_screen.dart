@@ -45,6 +45,7 @@ import 'package:ournego/features/map/presentation/widgets/map_stale_businesses_w
 import 'package:ournego/features/map/presentation/widgets/search_morph_surface.dart';
 import 'package:ournego/features/map/presentation/widgets/top_navigation_bar_widget.dart';
 import 'package:ournego/features/map/presentation/widgets/zone_picker_sheet_widget.dart';
+import 'package:ournego/shared/services/phone_call_launcher.dart';
 import 'package:ournego/shared/widgets/buttons/buttons.dart';
 import 'package:ournego/shared/widgets/nego/nego.dart';
 import 'package:ournego/shared/widgets/ournego_content_container.dart';
@@ -829,6 +830,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
             sideStackTop: topBarHeight + 10,
             onFavorite: _onFavorite,
             onContact: _onContact,
+            onCall: _onCall,
             onCatalog: _onCatalog,
             onReviews: _onReviews,
             onShare: _onShare,
@@ -935,6 +937,30 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
     final uri = Uri.parse('https://wa.me/${business.phoneNumber}');
     await launchUrl(uri);
+  }
+
+  Future<void> _onCall(
+    SheetBusinessData business,
+    ContainerTransformOriginController origin,
+  ) async {
+    final phone = business.phoneNumber?.trim();
+    if (phone == null || phone.isEmpty) {
+      if (!context.mounted) return;
+      await showOurnegoPopover<void>(
+        context: context,
+        anchor: origin,
+        builder: (_) => const _NoPhonePopover(),
+      );
+      return;
+    }
+
+    final result = await PhoneCallLauncher().call(phone);
+    if (!mounted) return;
+    if (result == PhoneCallResult.failed) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        OurnegoSnackbars.info(context, 'No se pudo iniciar la llamada'),
+      );
+    }
   }
 
   void _onCatalog(SheetBusinessData business) {

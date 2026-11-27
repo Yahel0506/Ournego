@@ -21,11 +21,11 @@ A value-presence scan compared nonempty local `.env` entries of at least 12 char
 Bundletool confirmed these permissions in the inspected artifact:
 
 - `ACCESS_FINE_LOCATION`: map and business location; `INTERNET`: network services; `ACCESS_NETWORK_STATE`: connectivity; `RECORD_AUDIO`: voice search.
-- `CALL_PHONE`: contributed by `flutter_phone_direct_caller`; no app or test usage. The unused plugin was removed, so its contribution should disappear in the next merged release manifest.
+- `CALL_PHONE`: contributed by `flutter_phone_direct_caller`. The plugin was removed here as unused, but the business sheet's "Llamar" button depended on it (lost in the floating-sheet refactor), so it is restored. `PhoneCallLauncher` calls directly when granted and falls back to `tel:` when the permission is permanently denied.
 - `USE_BIOMETRIC`, `USE_FINGERPRINT`: contributed by AndroidX biometric; `READ_GSERVICES`: contributed by Google reCAPTCHA. These are transitive SDK permissions in the old bundle; removal after dropping Firebase must be confirmed in a new merged manifest. Do not blindly suppress them while their remaining dependency requirements are unverified.
 - `com.ournego.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`: generated signature-level permission for AndroidX receivers.
 
-Removed unused direct dependencies `firebase_core`, `firebase_auth`, `cloud_firestore`, and `flutter_phone_direct_caller`. Google Services Gradle configuration and `google_sign_in` remain: removing Firebase Dart plugins does not establish that Google configuration is unused. Other unreferenced packages were not removed merely because direct imports are absent: tooling, generated code and transitive uses require separate assessment. Existing Linux/Windows generated registrant changes predate this audit and were preserved.
+Removed unused direct dependencies `firebase_core`, `firebase_auth`, and `cloud_firestore`. (`flutter_phone_direct_caller` was removed in this audit and restored later; see `CALL_PHONE` above.) Google Services Gradle configuration and `google_sign_in` remain: removing Firebase Dart plugins does not establish that Google configuration is unused. Other unreferenced packages were not removed merely because direct imports are absent: tooling, generated code and transitive uses require separate assessment. Existing Linux/Windows generated registrant changes predate this audit and were preserved.
 
 The AAB was not rebuilt. Therefore its SDKs and permissions remain unchanged; after a release rebuild, inspect the actual bundle and merged manifest again, including the biometric and Google permissions, and smoke-test Google sign-in, location, microphone and photo selection on Android.
 

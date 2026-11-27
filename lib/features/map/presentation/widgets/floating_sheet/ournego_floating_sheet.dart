@@ -39,6 +39,13 @@ class OurnegoFloatingSheet extends StatefulWidget {
     ContainerTransformOriginController origin,
   )
   onContact;
+
+  /// Dials the business phone. [origin] anchors the "no phone" notice.
+  final Future<void> Function(
+    SheetBusinessData business,
+    ContainerTransformOriginController origin,
+  )
+  onCall;
   final void Function(SheetBusinessData business) onCatalog;
   final void Function(SheetBusinessData business) onReviews;
   final Future<void> Function(SheetBusinessData business) onShare;
@@ -53,6 +60,7 @@ class OurnegoFloatingSheet extends StatefulWidget {
     required this.maxWidth,
     required this.onFavorite,
     required this.onContact,
+    required this.onCall,
     required this.onCatalog,
     required this.onReviews,
     required this.onShare,
@@ -912,6 +920,7 @@ class _OurnegoFloatingSheetState extends State<OurnegoFloatingSheet>
                           business: business,
                           onContact: (origin) =>
                               widget.onContact(business, origin),
+                          onCall: (origin) => widget.onCall(business, origin),
                           onCatalog: () => widget.onCatalog(business),
                           onReviews: () => widget.onReviews(business),
                           onShare: () => widget.onShare(business),
@@ -1425,6 +1434,7 @@ class _SheetAccentIcon extends StatelessWidget {
 class _ExpandedContent extends ConsumerWidget {
   final SheetBusinessData business;
   final ValueChanged<ContainerTransformOriginController> onContact;
+  final ValueChanged<ContainerTransformOriginController> onCall;
   final VoidCallback onCatalog;
   final VoidCallback onReviews;
   final VoidCallback onShare;
@@ -1432,6 +1442,7 @@ class _ExpandedContent extends ConsumerWidget {
   const _ExpandedContent({
     required this.business,
     required this.onContact,
+    required this.onCall,
     required this.onCatalog,
     required this.onReviews,
     required this.onShare,
@@ -1507,7 +1518,11 @@ class _ExpandedContent extends ConsumerWidget {
           onPressed: onReviews,
         ),
         const SizedBox(height: 12),
-        _ContactCard(ownerName: ownerName, onContact: onContact),
+        _ContactCard(
+          ownerName: ownerName,
+          onContact: onContact,
+          onCall: onCall,
+        ),
         const SizedBox(height: 12),
         BusinessHoursCompactCard(hours: business.hours),
         const SizedBox(height: 12),
@@ -1525,8 +1540,13 @@ class _ExpandedContent extends ConsumerWidget {
 class _ContactCard extends StatelessWidget {
   final String ownerName;
   final ValueChanged<ContainerTransformOriginController> onContact;
+  final ValueChanged<ContainerTransformOriginController> onCall;
 
-  const _ContactCard({required this.ownerName, required this.onContact});
+  const _ContactCard({
+    required this.ownerName,
+    required this.onContact,
+    required this.onCall,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1577,7 +1597,7 @@ class _ContactCard extends StatelessWidget {
                   label: 'Llamar',
                   icon: Icons.call_rounded,
                   iconMotion: OurnegoIconMotion.wiggle,
-                  onPressed: () => onContact(origin),
+                  onPressed: () => onCall(origin),
                 ),
               ),
             ],
