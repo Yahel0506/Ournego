@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.1](https://github.com/Yahel0506/Ournego/compare/ournego-v0.6.0...ournego-v0.6.1) (2026-11-28)
+
+
+### Performance
+
+* **ui:** bake the animated background blur into pre-rendered blobs (OUR-157) ([14b91d7](https://github.com/Yahel0506/Ournego/commit/14b91d78ef51650788f1883ae469f5239a75c403))
+* **ui:** bake the animated background blur into pre-rendered blobs (OUR-157) ([f4fe9c1](https://github.com/Yahel0506/Ournego/commit/f4fe9c1caa2ab676f542299f3743844d186727c7))
+
 ## [0.6.0](https://github.com/Yahel0506/Ournego/compare/ournego-v0.5.0...ournego-v0.6.0) (2026-11-27)
 
 
