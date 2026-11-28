@@ -573,6 +573,7 @@ This repo has multiple documentation entrypoints. Before creating new docs, pref
 - `docs/development/plans/our-110-debug-simulation.md`: debug simulator (startup, network, session, location, Google) and its panel.
 - `docs/development/features/image-uploads.md`: image upload pipeline (WebP compression, Storage naming, cleanup of orphan files).
 - `docs/development/release/android-package-audit.md`: Android package, configuration and RLS audit.
+- `docs/development/performance/animated-background.md`: animated background (blobs) performance: cause, method, before/after numbers and the benchmark harness `tool/perf/background_bench.dart`.
 - `docs/development/design/motion/README.md`: container transform (windows that grow out of their trigger): pieces, presets and differences from the spec.
 - `SYSTEM_DESIGN.md`: alias entrypoint; canonical doc is `DESIGN_SYSTEM.md`.
 - `components.md`: project-specific component notes.

@@ -258,7 +258,7 @@ The app is mostly flat. Depth is reserved for floating UI above map or navigatio
 - Map controls: lip buttons (`glass` tone, radius 16); no `Material` elevation.
 - Floating sheets: black alpha `0.35`, `blurRadius: 24`, `spreadRadius: -4`, `offset: Offset(0, 8)`.
 - User location marker: green shadow alpha `150`, `spreadRadius: 1`, `blurRadius: 5`.
-- `AnimatedBackground`: blurred colored circles with `ImageFilter.blur` sigma `80`.
+- `AnimatedBackground`: soft colored blobs (disc blurred with a Gaussian of sigma `80`, baked once into small images; no `BackdropFilter`). See `docs/development/performance/animated-background.md`.
 - `OurnegoContentContainer` optional blur: `BackdropFilter` sigma `10`.
 - `NegoAvatar`: glow via `MaskFilter.blur` `40 * scale`, happy pulse blur `8 * scale`.
 
@@ -463,7 +463,7 @@ Rules:
 - Onboarding back arrow: opacity `220ms`, `Curves.easeOut`.
 - Exit onboarding: title/description slide+fade `1000ms`, `Cubic(0.22, 1, 0.36, 1)`, timers at `300ms`, `900ms`, finish at `3200ms`.
 - Discover orb: custom 28-second repeating animation.
-- Animated background blobs: position changes every `4s`, `Curves.easeInOut`, blur sigma `80`.
+- Animated background blobs: position changes every `4s`, `Curves.easeInOut`, blur sigma `80` (baked into the blob images). The drift pauses when another route covers the screen, in the background and with reduced motion (static soft blobs).
 - Animated particles: continuous long-running controller, paused by route/lifecycle, reduced-motion aware.
 - Business hours picker: `AnimatedCrossFade` `200ms`.
 - Address focus scroll: `300ms`, `Curves.linear`.
